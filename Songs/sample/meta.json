@@ -1,0 +1,12 @@
+{
+  "Id": "sample",
+  "Title": "Silent Sample (built-in chart for judge testing)",
+  "AudioPath": "",
+  "DurationSeconds": 48.0,
+  "Difficulties": [
+    "easy",
+    "normal",
+    "hard",
+    "expert"
+  ]
+}

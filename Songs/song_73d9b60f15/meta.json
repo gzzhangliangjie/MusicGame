@@ -1,0 +1,12 @@
+{
+    "Id": "song_73d9b60f15",
+    "Title": "刘德华 - 木鱼与金鱼",
+    "AudioPath": "E:\\MusicGame\\Songs\\song_73d9b60f15\\audio.mp3",
+    "DurationSeconds": 288.260986328125,
+    "Difficulties": [
+        "easy",
+        "normal",
+        "hard",
+        "expert"
+    ]
+}

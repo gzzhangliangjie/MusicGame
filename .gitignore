@@ -1,0 +1,49 @@
+# ===== Unity 生成的目录与文件 =====
+# 工程根 = 本目录；Unity 首次打开后自动生成下列内容，均不入库
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]serSettings/
+/[Mm]emoryCaptures/
+/[Ss]ysinfo.txt
+
+# Visual Studio / Rider / VS Code 本地缓存
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.tmp
+*.unitypackage
+
+# Unity 构建产物
+*.apk
+*.aab
+*.unitypackage
+crashlytics-build/
+
+# ===== dotnet 自检工程（AnalysisCore）构建产物 =====
+[Bb]in/
+[Oo]bj/
+
+# 注意（显式保留，勿改为忽略）：
+# - AnalysisCore/ 下的 *.cs 与 *.csproj 是纯 C# 层的 dotnet 自检工程源码，必须入库
+# !AnalysisCore/*.csproj
+# - 工作区根 Songs/（按歌曲 ID 缓存的谱面）与 Assets/Songs/（内置测试谱）均入库
+# - 但导入歌曲的音频本体不入库（体积大且有版权）：本地保留即可，缺音频时重新导入会自动复制
+Songs/*/audio.*
+
+# ===== 系统杂项 =====
+Thumbs.db
+.DS_Store
+
+# 本机工具草稿目录（工作流脚本等，不入库）
+.zcode/

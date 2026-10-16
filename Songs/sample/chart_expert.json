@@ -1,0 +1,554 @@
+{
+  "SongId": "sample",
+  "Difficulty": "expert",
+  "Bpm": 120.0,
+  "OffsetSeconds": 0.0,
+  "Notes": [
+    {
+      "Time": 2.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 2.5,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 3.0,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 3.5,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 4.0,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 4.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 5.0,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 5.5,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 6.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 6.25,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 6.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 6.75,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 7.0,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 7.25,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 7.5,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 7.75,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 8.0,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 8.25,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 8.5,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 8.625,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 8.75,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 9.0,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 9.25,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 9.375,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 11.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 11.5,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 12.0,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 12.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.125,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.25,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.375,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.625,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.75,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 13.875,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 14.0,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 14.125,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 14.25,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 14.375,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 15.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 15.25,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 15.5,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 15.75,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 16.0,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 16.25,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 16.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 16.75,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 18.0,
+      "Lane": 1,
+      "Type": "hold",
+      "Duration": 1.0
+    },
+    {
+      "Time": 19.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 19.25,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 19.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 20.0,
+      "Lane": 3,
+      "Type": "hold",
+      "Duration": 1.0
+    },
+    {
+      "Time": 21.0,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 21.25,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 21.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 21.75,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 22.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 22.25,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 22.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 22.625,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 22.75,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 23.0,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 23.25,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 25.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 25.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 26.0,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 26.5,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.125,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.25,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.375,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.5,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.625,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.75,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 27.875,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 28.0,
+      "Lane": 0,
+      "Type": "hold",
+      "Duration": 2.0
+    },
+    {
+      "Time": 30.0,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 30.25,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 30.5,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 31.0,
+      "Lane": 2,
+      "Type": "hold",
+      "Duration": 2.0
+    },
+    {
+      "Time": 33.0,
+      "Lane": 1,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 33.25,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 33.5,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 34.0,
+      "Lane": 0,
+      "Type": "hold",
+      "Duration": 2.0
+    },
+    {
+      "Time": 36.0,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 36.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 38.0,
+      "Lane": 1,
+      "Type": "hold",
+      "Duration": 2.0
+    },
+    {
+      "Time": 40.0,
+      "Lane": 0,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 40.5,
+      "Lane": 2,
+      "Type": "tap",
+      "Duration": 0.0
+    },
+    {
+      "Time": 41.5,
+      "Lane": 3,
+      "Type": "tap",
+      "Duration": 0.0
+    }
+  ]
+}
