@@ -12,7 +12,8 @@ namespace AnalysisCore
     /// ② 合成 10 秒 120BPM 节拍轨(每 0.5s 一个短脉冲) → SpectralFluxOnsetDetector
     ///    → ≥18 个 onset 落在预期时刻 ±30ms，且 BpmEstimator ≈ 120(±1)；
     /// ③ ChartGenerator 喂合成 onset → 四档谱均满足：时间升序、nps ≤ MaxNotesPerSecond、
-    ///    同 lane 间隔 ≥ MinSameLaneGapSeconds、hold 期间同 lane 无重叠新 note。
+    ///    同 lane 间隔 ≥ MinSameLaneGapSeconds、hold 期间同 lane 无重叠新 note；
+    /// ④ Lyrics 解析 LRC（时间戳/元数据/空行/乱序行）并按时刻取行。
     /// 每项打印 PASS/FAIL 行，任一失败 Environment.Exit(1)。
     /// </summary>
     internal static class Program
@@ -33,6 +34,10 @@ namespace AnalysisCore
             // ③ 谱面生成器约束
             try { allOk &= CheckChartGenerator(); }
             catch (Exception e) { Fail("chart check threw: " + e.Message); allOk = false; }
+
+            // ④ LRC 歌词解析
+            try { allOk &= CheckLyrics(); }
+            catch (Exception e) { Fail("lyrics check threw: " + e.Message); allOk = false; }
 
             Console.WriteLine();
             if (!allOk)
@@ -198,6 +203,34 @@ namespace AnalysisCore
                 }
             }
             return allOk;
+        }
+
+        // ---------------- ④ LRC 歌词 ----------------
+        private static bool CheckLyrics()
+        {
+            const string lrc = "[ti:Test]\n"                 // 元数据，忽略
+                + "[00:30.50]third\n"                        // 乱序输入，应被排序
+                + "[00:01.00]first\n"
+                + "[00:05]second\n"                          // 无小数位
+                + "[00:45.00]\n";                            // 间奏空行
+            var lyrics = Lyrics.Parse(lrc);
+
+            bool countOk = lyrics.Count == 4;
+            bool beforeFirst = !lyrics.TryGetLine(0.5, out _);
+            string s1, s2, s3, s4;
+            bool first = lyrics.TryGetLine(1.5, out s1) && s1 == "first";
+            bool second = lyrics.TryGetLine(6.0, out s2) && s2 == "second";
+            bool third = lyrics.TryGetLine(30.6, out s3) && s3 == "third";
+            bool interlude = lyrics.TryGetLine(50.0, out s4) && s4 == "";
+
+            bool ok = countOk && beforeFirst && first && second && third && interlude;
+            if (ok) Pass("Lyrics: parse " + lyrics.Count + " lines, sorted lookup + interlude clear correct");
+            else Fail("Lyrics: count=" + lyrics.Count + " beforeFirst=" + beforeFirst
+                      + " first=" + first + "(" + (s1 ?? "null") + ")"
+                      + " second=" + second + "(" + (s2 ?? "null") + ")"
+                      + " third=" + third + "(" + (s3 ?? "null") + ")"
+                      + " interlude=" + interlude + "('" + (s4 ?? "null") + "')");
+            return ok;
         }
 
         // 返回 null 表示通过；否则返回违规描述。音符须已按时间升序（第一项检查保证）。

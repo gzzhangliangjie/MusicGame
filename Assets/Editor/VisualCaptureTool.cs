@@ -22,9 +22,12 @@ namespace MusicGame.EditorTools
         private static int step;
         private static int ticks;
         private static GameManager gm;
+        private static UnityEngine.UI.Text lyricText;
 
         public static void Capture()
         {
+            // 干净场景：避免加载 Main.unity 时 GameFlow 主菜单盖住演示画面
+            EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
             EditorSettings.enterPlayModeOptionsEnabled = true;
             EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
             Screen.SetResolution(720, 1280, false);
@@ -38,9 +41,13 @@ namespace MusicGame.EditorTools
             if (!EditorApplication.isPlaying) return;
             EditorApplication.update -= CaptureBootstrap;
 
-            var camGo = new GameObject("CaptureCamera");
-            camGo.tag = "MainCamera";
-            var cam = camGo.AddComponent<Camera>();
+            Camera cam = Camera.main;
+            if (cam == null)
+            {
+                var camGo = new GameObject("CaptureCamera");
+                camGo.tag = "MainCamera";
+                cam = camGo.AddComponent<Camera>();
+            }
             cam.orthographic = true;
             cam.orthographicSize = 6f;
             cam.transform.position = new Vector3(0f, 0f, -10f);
@@ -57,6 +64,11 @@ namespace MusicGame.EditorTools
             errorGo.transform.SetParent(canvas.transform, false);
             var errorBar = errorGo.AddComponent<HitErrorBar>();
             errorBar.Setup((RectTransform)canvas.transform);
+
+            // 歌词行（与 GameFlow HUD 同款式）
+            lyricText = UiKit.Label(canvas.transform, "CaptureLyric", "", 34, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.85f), true);
+            UiKit.Stretch(lyricText.rectTransform, new Vector2(0.06f, 0.52f), new Vector2(0.94f, 0.62f));
+            lyricText.raycastTarget = false;
 
             // 玩法：sample easy 无声谱（MISS 弹窗/灰色光柱/频谱波浪全部走真实路径）
             string metaPath = System.IO.Path.Combine(
@@ -77,6 +89,12 @@ namespace MusicGame.EditorTools
         {
             if (!EditorApplication.isPlaying || gm == null) return;
             ticks++;
+
+            if (lyricText != null && gm.Lyrics != null && gm.Conductor != null)
+            {
+                string line = gm.Lyrics.TryGetLine(gm.Conductor.SongTimeSeconds, out string lyric) ? lyric : "";
+                if (lyricText.text != line) lyricText.text = line;
+            }
 
             if (step == 0 && gm.Conductor != null && gm.Conductor.SongTimeSeconds > 2.6)
             {

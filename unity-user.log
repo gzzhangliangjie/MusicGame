@@ -1,0 +1,447 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-zlj10" at "2026-10-25T04:02:50.5666121Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 41584, path: "D:/Unity/2022.3.57f1c2/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.16.1+e780b2e
+  Session Id:              1a0492211954411ab44da90c2c3ee629
+  Correlation Id:          e76c694cf9b3e93aef05cdda2b47f658
+  External correlation Id: 8182493402494550863
+  Machine Id:              TEbets/KqYhQMZHZMfSybbtVYGw=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-zlj10" (connect: 0.00s, validation: 0.01s, handshake: 0.03s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-zlj10-notifications" at "2026-10-25T04:02:50.6069358Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully updated license
+Built from '2022.3/china_unity/release' branch; Version is '2022.3.57f1c2 (32588f90613b) revision 3299471'; Using compiler version '192829333'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) 64bit CoreCountrySpecific' Language: 'zh' Physical Memory: 32386 MB
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "F4-AGWX-G3BN-MC9A-UYN4-XXXX"
+BatchMode: 0, IsHumanControllingUs: 1, StartBugReporterOnCrash: 1, Is64bit: 1, IsPro: 0
+[Licensing::Client] Successfully resolved entitlement details
+
+COMMAND LINE ARGUMENTS:
+D:\Unity\2022.3.57f1c2\Editor\Unity.exe
+-projectPath
+E:/MusicGame
+-executeMethod
+MusicGame.EditorTools.VisualCaptureTool.OpenForUser
+-logFile
+E:/MusicGame/unity-user.log
+Successfully changed project path to: E:/MusicGame
+E:/MusicGame
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [22948]  Target information:
+
+Player connection [22948]  * "[IP] 192.168.1.25 [Port] 55504 [Flags] 2 [Guid] 2210488168 [EditorId] 2210488168 [Version] 1048832 [Id] WindowsEditor(7,gzzhangliangjie) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [22948] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [22948] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+[Package Manager] UpmClient::Connect -- Connected to IPC stream "Upm-24220" after 0.2 seconds.
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 51 packages:
+  Packages from [https://packages.unity.cn]:
+    com.unity.ads@4.4.2 (location: E:\MusicGame\Library\PackageCache\com.unity.ads@4.4.2)
+    com.unity.ai.navigation@1.1.5 (location: E:\MusicGame\Library\PackageCache\com.unity.ai.navigation@1.1.5)
+    com.unity.analytics@3.8.1 (location: E:\MusicGame\Library\PackageCache\com.unity.analytics@3.8.1)
+    com.unity.collab-proxy@2.6.0 (location: E:\MusicGame\Library\PackageCache\com.unity.collab-proxy@2.6.0)
+    com.unity.ide.rider@3.0.34 (location: E:\MusicGame\Library\PackageCache\com.unity.ide.rider@3.0.34)
+    com.unity.ide.visualstudio@2.0.22 (location: E:\MusicGame\Library\PackageCache\com.unity.ide.visualstudio@2.0.22)
+    com.unity.ide.vscode@1.2.5 (location: E:\MusicGame\Library\PackageCache\com.unity.ide.vscode@1.2.5)
+    com.unity.purchasing@4.11.0 (location: E:\MusicGame\Library\PackageCache\com.unity.purchasing@4.11.0)
+    com.unity.test-framework@1.1.33 (location: E:\MusicGame\Library\PackageCache\com.unity.test-framework@1.1.33)
+    com.unity.textmeshpro@3.0.7 (location: E:\MusicGame\Library\PackageCache\com.unity.textmeshpro@3.0.7)
+    com.unity.timeline@1.7.6 (location: E:\MusicGame\Library\PackageCache\com.unity.timeline@1.7.6)
+    com.unity.xr.legacyinputhelpers@2.1.11 (location: E:\MusicGame\Library\PackageCache\com.unity.xr.legacyinputhelpers@2.1.11)
+    com.unity.ext.nunit@1.0.6 (location: E:\MusicGame\Library\PackageCache\com.unity.ext.nunit@1.0.6)
+    com.unity.services.core@1.14.0 (location: E:\MusicGame\Library\PackageCache\com.unity.services.core@1.14.0)
+    com.unity.services.analytics@6.0.2 (location: E:\MusicGame\Library\PackageCache\com.unity.services.analytics@6.0.2)
+    com.unity.nuget.newtonsoft-json@3.2.1 (location: E:\MusicGame\Library\PackageCache\com.unity.nuget.newtonsoft-json@3.2.1)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.2d.sprite@1.0.0)
+    com.unity.2d.tilemap@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.2d.tilemap@1.0.0)
+    com.unity.ugui@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.ugui@1.0.0)
+    com.unity.modules.ai@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.ai@1.0.0)
+    com.unity.modules.androidjni@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.androidjni@1.0.0)
+    com.unity.modules.animation@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.animation@1.0.0)
+    com.unity.modules.assetbundle@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.assetbundle@1.0.0)
+    com.unity.modules.audio@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.audio@1.0.0)
+    com.unity.modules.cloth@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.cloth@1.0.0)
+    com.unity.modules.director@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.director@1.0.0)
+    com.unity.modules.imageconversion@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.imageconversion@1.0.0)
+    com.unity.modules.imgui@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.imgui@1.0.0)
+    com.unity.modules.jsonserialize@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.jsonserialize@1.0.0)
+    com.unity.modules.particlesystem@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.particlesystem@1.0.0)
+    com.unity.modules.physics@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.physics@1.0.0)
+    com.unity.modules.physics2d@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.physics2d@1.0.0)
+    com.unity.modules.screencapture@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.screencapture@1.0.0)
+    com.unity.modules.terrain@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.terrain@1.0.0)
+    com.unity.modules.terrainphysics@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.terrainphysics@1.0.0)
+    com.unity.modules.tilemap@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.tilemap@1.0.0)
+    com.unity.modules.ui@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.ui@1.0.0)
+    com.unity.modules.uielements@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.uielements@1.0.0)
+    com.unity.modules.umbra@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.umbra@1.0.0)
+    com.unity.modules.unityanalytics@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.unityanalytics@1.0.0)
+    com.unity.modules.unitywebrequest@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.unitywebrequest@1.0.0)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle@1.0.0)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.unitywebrequestaudio@1.0.0)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.unitywebrequesttexture@1.0.0)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.unitywebrequestwww@1.0.0)
+    com.unity.modules.vehicles@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.vehicles@1.0.0)
+    com.unity.modules.video@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.video@1.0.0)
+    com.unity.modules.vr@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.vr@1.0.0)
+    com.unity.modules.wind@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.wind@1.0.0)
+    com.unity.modules.xr@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.xr@1.0.0)
+    com.unity.modules.subsystems@1.0.0 (location: E:\MusicGame\Library\PackageCache\com.unity.modules.subsystems@1.0.0)
+[Subsystems] No new subsystems found in resolved package list.
+Package Manager log level set to [2]
+[Package Manager] Done registering packages in 0.37 seconds
+Refreshing native plugins compatible for Editor in 7.22 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 2022.3.57f1c2 (32588f90613b)
+[Subsystems] Discovering subsystems at path D:/Unity/2022.3.57f1c2/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path E:/MusicGame/Assets
+GfxDevice: creating device client; threaded=1; jobified=0
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: NVIDIA GeForce RTX 4060 Laptop GPU (ID=0x28e0)
+    Vendor:   NVIDIA
+    VRAM:     7957 MB
+    Driver:   32.0.15.5597
+[Licensing::Client] Successfully resolved entitlement details
+Initialize mono
+Mono path[0] = 'D:/Unity/2022.3.57f1c2/Editor/Data/Managed'
+Mono path[1] = 'D:/Unity/2022.3.57f1c2/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'D:/Unity/2022.3.57f1c2/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56220
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: D:/Unity/2022.3.57f1c2/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: D:/Unity/2022.3.57f1c2/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.001887 seconds.
+- Loaded All Assemblies, in  0.194 seconds
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.156 seconds
+Domain Reload Profiling: 350ms
+	BeginReloadAssembly (60ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (0ms)
+	RebuildCommonClasses (18ms)
+	RebuildNativeTypeToScriptingClass (6ms)
+	initialDomainReloadingComplete (29ms)
+	LoadAllAssembliesAndSetupDomain (80ms)
+		LoadAssemblies (60ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (79ms)
+			TypeCache.Refresh (78ms)
+				TypeCache.ScanAssembly (71ms)
+			ScanForSourceGeneratedMonoScriptInfo (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (156ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (131ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (5ms)
+			SetLoadedEditorAssemblies (3ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (1ms)
+			ProcessInitializeOnLoadAttributes (88ms)
+			ProcessInitializeOnLoadMethodAttributes (33ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:80
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: E:\MusicGame\
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc - - 200 - application/grpc 25.4894ms
+Starting: D:\Unity\2022.3.57f1c2\Editor\Data\bee_backend.exe --dont-print-to-structured-log --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: E:/MusicGame
+ExitCode: 0 Duration: 0s93ms
+*** Tundra build success (0.06 seconds), 0 items updated, 626 evaluated
+AssetDatabase: script compilation time: 0.442127s
+Begin MonoManager ReloadAssembly
+Total cache size 268054936
+Total cache size after purge 268054936
+Symbol file LoadedFromMemory is not a mono symbol file
+- Loaded All Assemblies, in  0.336 seconds
+Refreshing native plugins compatible for Editor in 4.90 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Refreshing native plugins compatible for Editor in 4.36 ms, found 2 plugins.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.416 seconds
+Domain Reload Profiling: 751ms
+	BeginReloadAssembly (83ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (4ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (14ms)
+	RebuildCommonClasses (20ms)
+	RebuildNativeTypeToScriptingClass (6ms)
+	initialDomainReloadingComplete (16ms)
+	LoadAllAssembliesAndSetupDomain (211ms)
+		LoadAssemblies (185ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (71ms)
+			TypeCache.Refresh (59ms)
+				TypeCache.ScanAssembly (49ms)
+			ScanForSourceGeneratedMonoScriptInfo (10ms)
+			ResolveRequiredComponents (1ms)
+	FinalizeReload (416ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (344ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (3ms)
+			SetLoadedEditorAssemblies (2ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (28ms)
+			ProcessInitializeOnLoadAttributes (219ms)
+			ProcessInitializeOnLoadMethodAttributes (90ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (4ms)
+Asset Pipeline Refresh (id=fa3f0ada3f664ae429f8d39045a87856): Total: 1.759 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=505 ms
+		Asset DB Callback time: managed=8 ms, native=0 ms
+		Scripting: domain reloads=1, domain reload time=785 ms, compile time=442 ms, other=17 ms
+		Project Asset Count: scripts=3276, non-scripts=842
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokeBeforeRefreshCallbacks: 0.316ms
+	ApplyChangesToAssetFolders: 0.043ms
+	Scan: 93.993ms
+	OnSourceAssetsModified: 0.001ms
+	GetAllGuidsForCategorization: 0.281ms
+	CategorizeAssets: 35.882ms
+	ImportOutOfDateAssets: 439.841ms (-11.408ms without children)
+		CompileScripts: 442.232ms
+		ReloadNativeAssets: 0.001ms
+		UnloadImportedAssets: 7.863ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.603ms
+		InitializingProgressBar: 0.000ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.551ms
+	PostProcessAllAssets: 8.373ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.000ms
+	UnloadStreamsBegin: 0.191ms
+	PersistCurrentRevisions: 0.118ms
+	UnloadStreamsEnd: 0.020ms
+	GenerateScriptTypeHashes: 0.717ms
+	Untracked: 1180.381ms
+Application.AssetDatabase Initial Refresh End
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.04 seconds
+Scanning for USB devices : 1.901ms
+Initializing Unity extensions:
+[Licensing::Client] Successfully resolved entitlement details
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-MusicGame
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+ProgressiveSceneManager::Cancel()
+Unloading 3 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 77 unused Assets / (493.5 KB). Loaded Objects now: 3040.
+Memory consumption went from 118.2 MB to 117.7 MB.
+Total: 6.205300 ms (FindLiveObjects: 0.164800 ms CreateObjectMapping: 0.071100 ms MarkObjects: 5.749100 ms  DeleteObjects: 0.219400 ms)
+
+[LAYOUT] About to load UserSettings\Layouts\default-2022.dwlt, keepMainWindow=False
+<RI> Initialized touch support.
+<RI> Initialized touch support.
+<RI> Initialized touch support.
+<RI> Initialized touch support.
+<RI> Initialized touch support.
+<RI> Initialized touch support.
+<RI> Initialized touch support.
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+[MODES] ModeService[default].InitializeCurrentMode
+[MODES] ModeService[default].RaiseModeChanged(default, default)
+Opening scene 'Assets/Scenes/Main.unity'
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/Scenes/Main.unity'
+	Deserialize:            10.903 ms
+	Integration:            7.014 ms
+	Integration of assets:  0.004 ms
+	Thread Wait Time:       0.090 ms
+	Total Operation Time:   18.011 ms
+Unloading 2 unused Assets / (1.1 KB). Loaded Objects now: 3183.
+Memory consumption went from 118.4 MB to 118.4 MB.
+Total: 6.066900 ms (FindLiveObjects: 0.134100 ms CreateObjectMapping: 0.053800 ms MarkObjects: 5.847900 ms  DeleteObjects: 0.030100 ms)
+
+[VisCap] 已打开 Main 场景并进入 Play，交给用户试玩
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MusicGame.EditorTools.VisualCaptureTool:OpenForUser () (at Assets/Editor/VisualCaptureTool.cs:120)
+
+(Filename: Assets/Editor/VisualCaptureTool.cs Line: 120)
+
+IsTimeToCheckForNewEditor: Update time 1792900993 current 1792900977
+<RI> Initializing input.
+<RI> Input initialized.
+[Project] Loading completed in 6.497 seconds
+	Project init time: 				5.380 seconds
+		Template init time: 		0.000 seconds
+		Package Manager init time: 		0.273 seconds
+		Asset Database init time: 		0.532 seconds
+		Global illumination init time: 	0.003 seconds
+		Assemblies load time: 			0.358 seconds
+		Unity extensions init time: 	0.002 seconds
+		Asset Database refresh time: 	0.000 seconds
+	Scene opening time: 			0.593 seconds
+##utp:{"type":"ProjectInfo","version":2,"phase":"Immediate","time":1792900977055,"processId":24220,"projectLoad":6.4965534,"projectInit":5.3801759,"templateInit":0.0,"packageManagerInit":0.2728292,"assetDatabaseInit":0.53199,"globalIlluminationInit":0.0033294,"assembliesLoad":0.3579091,"unityExtensionsInit":0.0020468,"assetDatabaseRefresh":0.0,"sceneOpening":0.593491}
+##utp:{"type":"EditorInfo","version":2,"phase":"Immediate","time":1792900977055,"processId":24220,"editorVersion":"2022.3.57f1c2 (32588f90613b)","branch":"2022.3/china_unity/release","buildType":"Release","platform":"Windows"}
+Reloading assemblies for play mode.
+Reloading assemblies after forced synchronous recompile.
+Begin MonoManager ReloadAssembly
+Symbol file LoadedFromMemory is not a mono symbol file
+- Loaded All Assemblies, in  0.209 seconds
+Refreshing native plugins compatible for Editor in 3.74 ms, found 2 plugins.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-MusicGame
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.782 seconds
+Domain Reload Profiling: 991ms
+	BeginReloadAssembly (142ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (37ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (38ms)
+	RebuildCommonClasses (19ms)
+	RebuildNativeTypeToScriptingClass (6ms)
+	initialDomainReloadingComplete (15ms)
+	LoadAllAssembliesAndSetupDomain (27ms)
+		LoadAssemblies (70ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (7ms)
+			TypeCache.Refresh (3ms)
+				TypeCache.ScanAssembly (0ms)
+			ScanForSourceGeneratedMonoScriptInfo (0ms)
+			ResolveRequiredComponents (2ms)
+	FinalizeReload (782ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (363ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (4ms)
+			SetLoadedEditorAssemblies (4ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (90ms)
+			ProcessInitializeOnLoadAttributes (185ms)
+			ProcessInitializeOnLoadMethodAttributes (78ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (288ms)
+Asset Pipeline Refresh (id=2b8b1d4580d709f4490c76e2f41637b0): Total: 1.128 seconds - Initiated by StopAssetImportingV2(ForceSynchronousImport | ForceDomainReload)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=110 ms
+		Asset DB Callback time: managed=10 ms, native=0 ms
+		Scripting: domain reloads=1, domain reload time=1007 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=3276, non-scripts=842
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokeBeforeRefreshCallbacks: 0.295ms
+	ApplyChangesToAssetFolders: 0.047ms
+	Scan: 0.001ms
+	OnSourceAssetsModified: 0.001ms
+	GetAllGuidsForCategorization: 0.321ms
+	CategorizeAssets: 47.557ms
+	ImportOutOfDateAssets: 798.017ms (795.538ms without children)
+		CompileScripts: 0.011ms
+		CollectScriptTypesHashes: 0.000ms
+		ReloadNativeAssets: 0.001ms
+		UnloadImportedAssets: 0.621ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.822ms
+		InitializingProgressBar: 0.000ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 1.024ms
+	PostProcessAllAssets: 10.521ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.213ms
+	UnloadStreamsBegin: 0.668ms
+	PersistCurrentRevisions: 0.187ms
+	UnloadStreamsEnd: 0.023ms
+	GenerateScriptTypeHashes: 0.376ms
+	Untracked: 270.627ms
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+Loaded scene 'Temp/__Backupscenes/0.backup'
+	Deserialize:            0.774 ms
+	Integration:            35.574 ms
+	Integration of assets:  0.004 ms
+	Thread Wait Time:       0.128 ms
+	Total Operation Time:   36.481 ms
+Created GICache directory at C:/Users/zlj10/AppData/LocalLow/Unity/Caches/GiCache. Took: 0.026s, timestamps: [8.770 - 8.796]
+[Licensing::Client] Successfully resolved entitlement details
+Asset Pipeline Refresh (id=556e69ac80d49d94181df6c19c8d3bab): Total: 0.015 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=95e5a04941a42f948a01e91af9e3c04c): Total: 0.003 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+TrimDiskCacheJob: Current cache size 1mb

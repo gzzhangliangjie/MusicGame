@@ -12,7 +12,7 @@ namespace MusicGame.Gameplay
     {
         private const float ExplosionDuration = 0.20f; // 核心爆炸时长（osu 同款）
         private const float FaintDuration = 0.40f;     // 大光晕横扫时长
-        private const float BeamDuration = 0.16f;      // 轨道光柱衰减
+        private const float BeamDuration = 0.22f;      // 轨道光柱衰减（低 alpha 快衰减，只做提示不抢判定区）
         private const int ExplosionPoolSize = 24;
         private const int BeamPoolSize = 8;
 
@@ -58,14 +58,14 @@ namespace MusicGame.Gameplay
             EnsureAssets();
             if (headMiss)
             {
-                SpawnBeam(lane, MissBeamColor, 0.22f);
+                SpawnBeam(lane, MissBeamColor, 0.10f);
                 return;
             }
             Color color = judgement == Judgement.Perfect ? PerfectColor
                 : judgement == Judgement.Great ? GreatColor
                 : GreatColor;
             SpawnExplosion(lane, color, isTail ? 0.7f : 1f);
-            SpawnBeam(lane, color, 0.30f);
+            SpawnBeam(lane, color, 0.14f);
         }
 
         private void SpawnExplosion(int lane, Color color, float intensity)
@@ -241,7 +241,7 @@ namespace MusicGame.Gameplay
             return texture;
         }
 
-        // 16x64 纵向渐变光柱（底部最亮向上淡出）
+        // 16x64 纵向渐变光柱（底部最亮，平方衰减让上段近乎透明——只照亮判定区附近）
         private static Texture2D MakeBeamTexture()
         {
             const int w = 16, h = 64;
@@ -250,7 +250,8 @@ namespace MusicGame.Gameplay
             var pixels = new Color32[w * h];
             for (int y = 0; y < h; y++)
             {
-                byte a = (byte)((1f - (float)y / h) * 255f);
+                float t = (float)y / h;
+                byte a = (byte)((1f - t) * (1f - t) * 255f);
                 for (int x = 0; x < w; x++) pixels[y * w + x] = new Color32(255, 255, 255, a);
             }
             texture.SetPixels32(pixels);

@@ -65,7 +65,7 @@ namespace MusicGame.UI
         Image progressFill;
         Transform diffListHolder;
         Text diffSongLabel;
-        Text hudScore, hudCombo, hudAcc, hudSong, hudHint;
+        Text hudScore, hudCombo, hudAcc, hudSong, hudHint, hudLyric;
 
         // ---------------------------------------------------------------- 基础
 
@@ -243,6 +243,11 @@ namespace MusicGame.UI
             UiKit.Stretch(hudSong.rectTransform, new Vector2(0.01f, 0.01f), new Vector2(0.55f, 0.07f), new Vector2(24f, 0f), new Vector2(0f, 0f));
             hudHint = UiKit.Label(hudScreen, "hint", "D F J K 击打 · Esc 暂停", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(hudHint.rectTransform, new Vector2(0.25f, 0.01f), new Vector2(0.75f, 0.07f));
+
+            // 歌词行：屏幕中部，半透明白，随乐曲时间换行显示
+            hudLyric = UiKit.Label(hudScreen, "lyric", "", 34, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.85f), true);
+            UiKit.Stretch(hudLyric.rectTransform, new Vector2(0.06f, 0.52f), new Vector2(0.94f, 0.62f));
+            hudLyric.raycastTarget = false;
 
             // 判定反馈层：弹窗 + hit-error 误差条（不挡射线）
             var popupGo = new GameObject("JudgementPopups", typeof(RectTransform));
@@ -773,7 +778,7 @@ namespace MusicGame.UI
             watchRoutineHandle = StartCoroutine(SongWatchRoutine(chartEnd, entry.Meta.DurationSeconds));
         }
 
-        /// <summary>每 0.1s 轮询成绩（ScoreSystem 经反射解析）刷新 HUD。</summary>
+        /// <summary>每 0.1s 轮询成绩（ScoreSystem 经反射解析）刷新 HUD，并同步当前歌词行。</summary>
         IEnumerator HudRoutine()
         {
             var wait = new WaitForSecondsRealtime(0.1f);
@@ -786,8 +791,15 @@ namespace MusicGame.UI
                     hudCombo.text = scoreSystem.Combo >= 2 ? scoreSystem.Combo + " combo" : "";
                     hudAcc.text = FormatAccuracy(AccuracyToPercent(scoreSystem.Accuracy));
                 }
+                if (gameManager != null && gameManager.Lyrics != null && gameManager.Conductor != null)
+                {
+                    string line = gameManager.Lyrics.TryGetLine(gameManager.Conductor.SongTimeSeconds, out string lyric)
+                        ? lyric : "";
+                    if (hudLyric.text != line) hudLyric.text = line;
+                }
                 yield return wait;
             }
+            if (hudLyric != null) hudLyric.text = "";
         }
 
         /// <summary>

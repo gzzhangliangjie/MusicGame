@@ -51,6 +51,8 @@ namespace MusicGame.Gameplay
         public string CurrentDifficulty => lastDifficulty;
         /// <summary>判定用时钟（已扣除用户校准偏移）。</summary>
         public double JudgedTime => conductor != null ? conductor.SongTimeSeconds - audioOffsetSeconds : 0.0;
+        /// <summary>已加载的歌词（歌曲目录下无 .lrc 时为 null）。</summary>
+        public Lyrics Lyrics => lyrics;
 
         private readonly bool[] lanePressed = new bool[4];
         private readonly bool[] laneHeld = new bool[4];
@@ -62,6 +64,7 @@ namespace MusicGame.Gameplay
         private ScoreSystem score;
         private HitEffects hitEffects;
         private SpectrumVisualizer visualizer;
+        private Lyrics lyrics;
         private GameObject runtimeRoot;
         private bool playing;
         private bool paused;
@@ -150,6 +153,7 @@ namespace MusicGame.Gameplay
                 FinishPlay(false, "chart not found or empty: Songs/" + lastSongId + "/chart_" + lastDifficulty + ".json");
                 yield break;
             }
+            lyrics = LoadLyrics(chartPath, meta);
 
             // 2) 组装判定/计分（hold = 头+尾两次判定）
             double chartEnd = 0.0;
@@ -406,6 +410,32 @@ namespace MusicGame.Gameplay
             return null;
         }
 
+        // 歌词：优先 <歌曲名>.lrc（与歌曲同名），回退 lyrics.lrc；缺失/损坏静默降级为无歌词
+        private static Lyrics LoadLyrics(string chartPath, SongMeta meta)
+        {
+            try
+            {
+                if (chartPath == null) return null;
+                string dir = Path.GetDirectoryName(chartPath);
+                if (string.IsNullOrEmpty(dir)) return null;
+                var candidates = new List<string>();
+                if (meta != null && !string.IsNullOrEmpty(meta.Title))
+                    candidates.Add(Path.Combine(dir, meta.Title + ".lrc"));
+                candidates.Add(Path.Combine(dir, "lyrics.lrc"));
+                foreach (string path in candidates)
+                {
+                    if (!File.Exists(path)) continue;
+                    Lyrics parsed = Lyrics.LoadFile(path);
+                    if (parsed != null && parsed.Count > 0) return parsed;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[GameManager] lyrics load failed: " + e.Message);
+            }
+            return null;
+        }
+
         private PlayResult BuildResult(bool completed, string error)
         {
             var result = new PlayResult
@@ -456,6 +486,7 @@ namespace MusicGame.Gameplay
             judge = null;
             hitEffects = null;
             visualizer = null;
+            lyrics = null;
             // score 保留，供结算后查询
         }
 

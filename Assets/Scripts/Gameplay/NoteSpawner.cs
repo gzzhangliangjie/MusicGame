@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MusicGame.Core;
 using MusicGame.Pure.Model;
@@ -34,6 +35,11 @@ namespace MusicGame.Gameplay
         private GameObject playfieldRoot;
         private SpriteRenderer judgeLine;
         private Vector3 judgeLineBaseScale;
+        private TextMesh[] keycaps;
+
+        private static readonly string[] LaneKeyNames = { "D", "F", "J", "K" };
+        private static readonly Color KeycapIdleColor = new Color(1f, 1f, 1f, 0.40f);
+        private static readonly Color KeycapPressedColor = new Color(0.20f, 0.85f, 0.95f);
 
         /// <summary>计分系统（hold 尾判上报用，由 GameManager 注入）。</summary>
         internal ScoreSystem Score { get; set; }
@@ -100,6 +106,7 @@ namespace MusicGame.Gameplay
                 nextIndex++;
             }
             UpdateJudgeLinePulse(now);
+            UpdateKeycaps();
         }
 
         // 判定线随节拍呼吸脉冲（视觉设计受 Phira/Phigros 风格启发，自行实现）：
@@ -182,6 +189,45 @@ namespace MusicGame.Gameplay
                 new Vector2(LaneWidth * LaneCount, 0.14f), Color.white, 1);
             judgeLine = playfieldRoot.transform.Find("JudgeLine")?.GetComponent<SpriteRenderer>();
             if (judgeLine != null) judgeLineBaseScale = judgeLine.transform.localScale;
+
+            BuildKeycaps();
+        }
+
+        // 轨道底部按键提示：标注 D/F/J/K 对应轨道，按住时高亮——玩家不用猜哪条轨是哪个键
+        private void BuildKeycaps()
+        {
+            keycaps = new TextMesh[LaneCount];
+            Font font = GetBuiltinFont();
+            for (int lane = 0; lane < LaneCount; lane++)
+            {
+                var go = new GameObject("Keycap" + lane);
+                go.transform.SetParent(playfieldRoot.transform, false);
+                go.transform.localPosition = new Vector3(LaneX(lane), JudgeLineY - 1.1f, 0f);
+                var tm = go.AddComponent<TextMesh>();
+                tm.text = LaneKeyNames[lane];
+                tm.font = font;
+                tm.fontSize = 64;
+                tm.characterSize = 0.12f;
+                tm.anchor = TextAnchor.MiddleCenter;
+                tm.alignment = TextAlignment.Center;
+                tm.color = KeycapIdleColor;
+                go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+                keycaps[lane] = tm;
+            }
+        }
+
+        private static Font GetBuiltinFont()
+        {
+            try { return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
+            catch (Exception) { return Resources.GetBuiltinResource<Font>("Arial.ttf"); }
+        }
+
+        // 按住高亮（IsLaneHeld 内部会刷新输入状态，与判定同源）
+        private void UpdateKeycaps()
+        {
+            if (keycaps == null || Game == null) return;
+            for (int lane = 0; lane < keycaps.Length; lane++)
+                keycaps[lane].color = Game.IsLaneHeld(lane) ? KeycapPressedColor : KeycapIdleColor;
         }
 
         private static SpriteRenderer CreateSprite(string name, Transform parent, Vector3 localPosition, Vector2 size, Color color, int sortingOrder)
