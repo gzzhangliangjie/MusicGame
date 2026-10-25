@@ -122,7 +122,7 @@ namespace MusicGame.EditorTools
         {
             HitEffects fx = Object.FindFirstObjectByType<HitEffects>();
             if (fx == null) return;
-            Judgement[] js = { Judgement.Perfect, Judgement.Great, Judgement.Perfect, Judgement.Great };
+            Judgement[] js = { Judgement.Perfect, Judgement.Good, Judgement.Perfect, Judgement.Good };
             for (int lane = 0; lane < 4; lane++)
             {
                 fx.Spawn(lane, js[lane], false, false);

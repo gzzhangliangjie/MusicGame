@@ -244,10 +244,16 @@ namespace MusicGame.UI
             hudHint = UiKit.Label(hudScreen, "hint", "D F J K / 鼠标点击轨道 · Esc 暂停", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(hudHint.rectTransform, new Vector2(0.25f, 0.01f), new Vector2(0.75f, 0.07f));
 
-            // 歌词行：屏幕中部，半透明白，随乐曲时间换行显示
-            hudLyric = UiKit.Label(hudScreen, "lyric", "", 34, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.85f), true);
-            UiKit.Stretch(hudLyric.rectTransform, new Vector2(0.06f, 0.52f), new Vector2(0.94f, 0.62f));
+            // 歌词行：屏幕中部大号显示（Phigros 风格：大白字 + 黑描边 + 投影）
+            hudLyric = UiKit.Label(hudScreen, "lyric", "", 52, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.95f), true);
+            UiKit.Stretch(hudLyric.rectTransform, new Vector2(0.05f, 0.46f), new Vector2(0.95f, 0.64f));
             hudLyric.raycastTarget = false;
+            var lyricOutline = hudLyric.gameObject.AddComponent<Outline>();
+            lyricOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            lyricOutline.effectDistance = new Vector2(2.6f, -2.6f);
+            var lyricShadow = hudLyric.gameObject.AddComponent<Shadow>();
+            lyricShadow.effectColor = new Color(0f, 0f, 0f, 0.55f);
+            lyricShadow.effectDistance = new Vector2(0f, -3.5f);
 
             // 判定反馈层：弹窗 + hit-error 误差条（不挡射线）
             var popupGo = new GameObject("JudgementPopups", typeof(RectTransform));

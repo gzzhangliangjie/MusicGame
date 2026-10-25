@@ -82,7 +82,8 @@ namespace MusicGame.Gameplay
             public double Accuracy = 1.0;
             public int MaxCombo;
             public int PerfectCount;
-            public int GreatCount;
+            public int GoodCount;
+            public int BadCount;
             public int MissCount;
             public bool Completed;
             public string Error;
@@ -249,7 +250,7 @@ namespace MusicGame.Gameplay
                 spawner.NotifyMissed(missed);
                 hitEffects.Spawn(missed.Lane, Judgement.Miss, false, true);
                 OnJudged?.Invoke(Judgement.Miss, missed.Lane, false);
-                OnJudgedWithDelta?.Invoke(Judgement.Miss, missed.Lane, false, JudgeSystem.GreatWindowSeconds);
+                OnJudgedWithDelta?.Invoke(Judgement.Miss, missed.Lane, false, JudgeSystem.BadWindowSeconds);
             }
         }
 
@@ -472,7 +473,8 @@ namespace MusicGame.Gameplay
                 result.Accuracy = score.Accuracy;
                 result.MaxCombo = score.MaxCombo;
                 result.PerfectCount = score.PerfectCount;
-                result.GreatCount = score.GreatCount;
+                result.GoodCount = score.GoodCount;
+                result.BadCount = score.BadCount;
                 result.MissCount = score.MissCount;
             }
             return result;

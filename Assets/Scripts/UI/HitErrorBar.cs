@@ -17,7 +17,8 @@ namespace MusicGame.UI
         private const float TickLifeSeconds = 1.2f;
 
         private static readonly Color PerfectColor = new Color(0.98f, 0.80f, 0.25f);
-        private static readonly Color GreatColor = new Color(0.35f, 0.85f, 0.45f);
+        private static readonly Color GoodColor = new Color(0.35f, 0.85f, 0.45f);
+        private static readonly Color BadColor = new Color(0.95f, 0.55f, 0.20f);
 
         private readonly List<Tick> pool = new List<Tick>();
         private int nextIndex;
@@ -86,7 +87,9 @@ namespace MusicGame.UI
             float normalized = Mathf.Clamp((float)deltaSeconds / FullScaleSeconds, -1f, 1f);
             var rt = tick.Image.rectTransform;
             rt.anchoredPosition = new Vector2(normalized * BarWidth * 0.5f, 0f);
-            Color baseColor = judgement == Gameplay.Judgement.Perfect ? PerfectColor : GreatColor;
+            Color baseColor = judgement == Gameplay.Judgement.Perfect ? PerfectColor
+                : judgement == Gameplay.Judgement.Good ? GoodColor
+                : BadColor;
             tick.Image.color = baseColor;
             tick.Image.gameObject.SetActive(true);
             tick.Age = 0f;

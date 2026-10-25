@@ -18,6 +18,7 @@ namespace MusicGame.Gameplay
 
         private static readonly Color PerfectColor = new Color(0.98f, 0.80f, 0.25f);
         private static readonly Color GreatColor = new Color(0.35f, 0.85f, 0.45f);
+        private static readonly Color BadColor = new Color(0.95f, 0.55f, 0.20f);
         private static readonly Color MissBeamColor = new Color(0.55f, 0.55f, 0.55f);
 
         private Material additive;
@@ -43,9 +44,7 @@ namespace MusicGame.Gameplay
         private void EnsureAssets()
         {
             if (additive != null) return;
-            Shader shader = Shader.Find("Particles/Additive");
-            if (shader == null) shader = Shader.Find("Sprites/Default");
-            additive = new Material(shader);
+            additive = NoteSpawner.MakeAdditiveMaterial();
             circleSprite = Sprite.Create(MakeCircleTexture(), new Rect(0f, 0f, 64f, 64f), new Vector2(0.5f, 0.5f), 64f);
             circleSprite.name = "HitFxCircle";
             beamSprite = Sprite.Create(MakeBeamTexture(), new Rect(0f, 0f, 16f, 64f), new Vector2(0.5f, 0f), 64f); // PPU=64：贴图原生 1x1 单位（高度按 16PPU 会变成 4 单位，再被缩放拉成贯穿全屏）
@@ -62,8 +61,8 @@ namespace MusicGame.Gameplay
                 return;
             }
             Color color = judgement == Judgement.Perfect ? PerfectColor
-                : judgement == Judgement.Great ? GreatColor
-                : GreatColor;
+                : judgement == Judgement.Good ? GreatColor
+                : BadColor;
             SpawnExplosion(lane, color, isTail ? 0.7f : 1f);
             SpawnBeam(lane, color, 0.14f);
         }

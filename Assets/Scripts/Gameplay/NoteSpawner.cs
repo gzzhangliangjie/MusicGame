@@ -24,6 +24,11 @@ namespace MusicGame.Gameplay
         public const int LaneCount = 4;
 
         private static Sprite squareSprite;
+        private static Sprite noteSprite;
+        private static Sprite holdBodySprite;
+        private static Sprite padSprite;
+        private static Sprite judgeGlowSprite;
+        private static Sprite panelSprite;
 
         private readonly List<NoteData> sortedNotes = new List<NoteData>();
         private readonly Dictionary<NoteData, NoteController> live = new Dictionary<NoteData, NoteController>();
@@ -78,6 +83,145 @@ namespace MusicGame.Gameplay
                 squareSprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 8f);
             }
             return squareSprite;
+        }
+
+        // ---------------- 程序化皮肤（osu!mania 圆角渐变音符 + Phigros 场地氛围，无外部资源） ----------------
+
+        /// <summary>音符：2x1 单位圆角矩形，纵向渐变（下亮上暗）+ 亮色描边。</summary>
+        internal static Sprite GetNoteSprite()
+        {
+            if (noteSprite == null)
+                noteSprite = Sprite.Create(
+                    MakeRoundedRect(96, 48, 15, 3,
+                        new Color32(150, 175, 215, 255), new Color32(255, 255, 255, 255), new Color32(210, 235, 255, 255)),
+                    new Rect(0f, 0f, 96f, 48f), new Vector2(0.5f, 0.5f), 48f);
+            return noteSprite;
+        }
+
+        /// <summary>hold 身体：1x1 纵向渐变光带，底部锚点，向上拉伸。</summary>
+        internal static Sprite GetHoldBodySprite()
+        {
+            if (holdBodySprite == null)
+            {
+                const int w = 64, h = 64;
+                var texture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+                texture.filterMode = FilterMode.Bilinear;
+                var pixels = new Color32[h * w];
+                for (int y = 0; y < h; y++)
+                {
+                    float t = (float)y / h; // 0=底(贴头端,亮) 1=顶(尾端,淡)
+                    byte a = (byte)((1f - t * 0.65f) * 235f);
+                    byte r = (byte)(115 + 60 * t);
+                    byte g = (byte)(185 + 30 * t);
+                    byte b = 255;
+                    for (int x = 0; x < w; x++) pixels[y * w + x] = new Color32(r, g, b, a);
+                }
+                texture.SetPixels32(pixels);
+                texture.Apply(false, true);
+                holdBodySprite = Sprite.Create(texture, new Rect(0f, 0f, w, h), new Vector2(0.5f, 0f), 64f);
+            }
+            return holdBodySprite;
+        }
+
+        /// <summary>按键板：圆角矩形，暗色填充 + 灰边，按下时整体染青。</summary>
+        internal static Sprite GetPadSprite()
+        {
+            if (padSprite == null)
+                padSprite = Sprite.Create(
+                    MakeRoundedRect(96, 48, 14, 2,
+                        new Color32(255, 255, 255, 22), new Color32(255, 255, 255, 48), new Color32(255, 255, 255, 95)),
+                    new Rect(0f, 0f, 96f, 48f), new Vector2(0.5f, 0.5f), 50f); // 原生 1.92x0.96 ≈ 轨宽
+            return padSprite;
+        }
+
+        /// <summary>判定线辉光：横向柔光带（加法混合，垫在判定线下）。</summary>
+        internal static Sprite GetJudgeGlowSprite()
+        {
+            if (judgeGlowSprite == null)
+            {
+                const int w = 256, h = 32;
+                var texture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+                texture.filterMode = FilterMode.Bilinear;
+                var pixels = new Color32[h * w];
+                for (int y = 0; y < h; y++)
+                {
+                    float d = (y + 0.5f) / h - 0.5f;
+                    float a = Mathf.Exp(-d * d * 60f) * 255f; // 高斯纵向衰减
+                    for (int x = 0; x < w; x++) pixels[y * w + x] = new Color32(255, 255, 255, (byte)a);
+                }
+                texture.SetPixels32(pixels);
+                texture.Apply(false, true);
+                judgeGlowSprite = Sprite.Create(texture, new Rect(0f, 0f, w, h), new Vector2(0.5f, 0.5f), 32f);
+            }
+            return judgeGlowSprite;
+        }
+
+        /// <summary>场地底板：纵向渐变（底部微亮深蓝 → 顶部透明），给下落区纵深。</summary>
+        internal static Sprite GetPanelSprite()
+        {
+            if (panelSprite == null)
+            {
+                const int w = 64, h = 128;
+                var texture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+                texture.filterMode = FilterMode.Bilinear;
+                var pixels = new Color32[h * w];
+                for (int y = 0; y < h; y++)
+                {
+                    float t = (float)y / h; // 0=底 1=顶
+                    byte a = (byte)((1f - t) * 105f);
+                    byte r = (byte)(45 + 25 * (1f - t));
+                    byte g = (byte)(65 + 30 * (1f - t));
+                    byte b = (byte)(110 + 40 * (1f - t));
+                    for (int x = 0; x < w; x++) pixels[y * w + x] = new Color32(r, g, b, a);
+                }
+                texture.SetPixels32(pixels);
+                texture.Apply(false, true);
+                panelSprite = Sprite.Create(texture, new Rect(0f, 0f, w, h), new Vector2(0.5f, 0.5f), 16f);
+            }
+            return panelSprite;
+        }
+
+        /// <summary>加法混合材质工厂：Play 早期内置 Particles shader 可能未加载，必须带回退。</summary>
+        internal static Material MakeAdditiveMaterial()
+        {
+            Shader shader = Shader.Find("Particles/Additive");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            return new Material(shader);
+        }
+
+        // 圆角矩形 SDF：内部按 y 从 bottom 渐变到 top，边缘 borderPx 内为边框色，1.5px 抗锯齿
+        private static Texture2D MakeRoundedRect(int w, int h, int radius, int borderPx, Color32 top, Color32 bottom, Color32 border)
+        {
+            var texture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Bilinear;
+            var pixels = new Color32[h * w];
+            float halfW = w * 0.5f, halfH = h * 0.5f;
+            float innerW = halfW - radius, innerH = halfH - radius;
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    float px = x + 0.5f - halfW, py = y + 0.5f - halfH;
+                    float qx = Mathf.Max(Mathf.Abs(px) - innerW, 0f);
+                    float qy = Mathf.Max(Mathf.Abs(py) - innerH, 0f);
+                    float dist = Mathf.Sqrt(qx * qx + qy * qy) + Mathf.Min(Mathf.Max(Mathf.Abs(px) - innerW, Mathf.Abs(py) - innerH), 0f) - radius;
+                    float fill = Mathf.Clamp01(0.5f - dist);           // 内部 1 → 外部 0
+                    float edge = Mathf.Clamp01(-dist / borderPx);      // 0=贴边 1=内部深处
+                    float v = (y + 0.5f) / h;
+                    float r = Mathf.Lerp(bottom.r, top.r, v);
+                    float g = Mathf.Lerp(bottom.g, top.g, v);
+                    float b = Mathf.Lerp(bottom.b, top.b, v);
+                    float a = Mathf.Lerp(bottom.a, top.a, v);
+                    float br = Mathf.Lerp(border.r, r, edge);
+                    float bg = Mathf.Lerp(border.g, g, edge);
+                    float bb = Mathf.Lerp(border.b, b, edge);
+                    float ba = Mathf.Lerp(Mathf.Max(border.a, a), a, edge);
+                    pixels[y * w + x] = new Color32((byte)br, (byte)bg, (byte)bb, (byte)(ba * fill));
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            return texture;
         }
 
         /// <summary>装配谱面、时钟与对象池，并绘制判定线。</summary>
@@ -175,21 +319,36 @@ namespace MusicGame.Gameplay
             foreach (NoteController controller in controllers) controller.ForceRelease();
         }
 
-        // 绘制 4 条轨道参考线 + 1 条判定线
+        // 绘制场地底板 + 4 条轨道参考线 + 判定线辉光/本体 + 按键板
         private void BuildPlayfield()
         {
             if (playfieldRoot != null) Destroy(playfieldRoot);
             playfieldRoot = new GameObject("Playfield");
             playfieldRoot.transform.SetParent(transform, false);
+
+            // 场地底板：底部微亮的渐变，垫在频谱之下（Phigros 式纵深）
+            var panel = CreateSprite("LanePanel", playfieldRoot.transform,
+                new Vector3(0f, (JudgeLineY + SpawnY) * 0.5f, 0f),
+                new Vector2(LaneWidth * LaneCount + 0.6f, FallHeight + 2.8f), Color.white, -4);
+            panel.sprite = GetPanelSprite();
+
             for (int lane = 0; lane < LaneCount; lane++)
             {
                 CreateSprite("LaneGuide" + lane, playfieldRoot.transform,
                     new Vector3(LaneX(lane), (JudgeLineY + SpawnY) * 0.5f, 0f),
                     new Vector2(0.06f, FallHeight + 1.5f), new Color(1f, 1f, 1f, 0.16f), 0);
             }
+
+            // 判定线 = 加法辉光（宽柔光） + 白色本体（节拍脉冲只作用本体）
+            var glow = CreateSprite("JudgeGlow", playfieldRoot.transform,
+                new Vector3(0f, JudgeLineY, 0f),
+                new Vector2(LaneWidth * LaneCount + 1.5f, 0.9f), new Color(0.65f, 0.85f, 1f, 0.55f), 1);
+            glow.material = MakeAdditiveMaterial();
+            glow.sprite = GetJudgeGlowSprite();
+
             CreateSprite("JudgeLine", playfieldRoot.transform,
                 new Vector3(0f, JudgeLineY, 0f),
-                new Vector2(LaneWidth * LaneCount, 0.14f), Color.white, 1);
+                new Vector2(LaneWidth * LaneCount, 0.14f), Color.white, 2);
             judgeLine = playfieldRoot.transform.Find("JudgeLine")?.GetComponent<SpriteRenderer>();
             if (judgeLine != null) judgeLineBaseScale = judgeLine.transform.localScale;
 
@@ -208,6 +367,7 @@ namespace MusicGame.Gameplay
                 lanePads[lane] = CreateSprite("KeyPad" + lane, playfieldRoot.transform,
                     new Vector3(LaneX(lane), JudgeLineY - 0.85f, 0f),
                     new Vector2(LaneWidth * 0.96f, 0.95f), PadIdleColor, 2);
+                lanePads[lane].sprite = GetPadSprite();
 
                 var go = new GameObject("Keycap" + lane);
                 go.transform.SetParent(playfieldRoot.transform, false);

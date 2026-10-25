@@ -5,14 +5,17 @@ namespace MusicGame.Gameplay
 {
     /// <summary>
     /// 判定系统（纯逻辑，无 MonoBehaviour）：
-    /// 头判在该轨 ±Great 窗内查最近未判定音符；超窗音符由外部每帧调用 TryMiss 自动 Miss 回收。
+    /// 头判在该轨 ±Bad 窗内查最近未判定音符，按 |Δ| 分四档（Perfect/Good/Bad）；
+    /// 超窗音符由外部每帧调用 TryMiss 自动 Miss 回收。仅 Miss 断连击。
     /// </summary>
     public class JudgeSystem
     {
         /// <summary>Perfect 判定窗（秒）。</summary>
         public const double PerfectWindowSeconds = 0.040;
-        /// <summary>Great 判定窗（秒），超过即 Miss。</summary>
-        public const double GreatWindowSeconds = 0.080;
+        /// <summary>Good 判定窗（秒）。</summary>
+        public const double GoodWindowSeconds = 0.080;
+        /// <summary>Bad 判定窗（秒），超过即 Miss。</summary>
+        public const double BadWindowSeconds = 0.140;
 
         private readonly List<NoteData>[] pending = new List<NoteData>[4];
         private int remainingHeads;
@@ -40,7 +43,7 @@ namespace MusicGame.Gameplay
 
         /// <summary>
         /// 头判：在该轨判定窗内找与 songTimeSeconds 最近且未判定的音符。
-        /// 命中即从待判队列移除（防重复判定），|Δ|≤0.040 为 Perfect，≤0.080 为 Great。
+        /// 命中即从待判队列移除（防重复判定）；|Δ|≤0.040 Perfect，≤0.080 Good，≤0.140 Bad。
         /// </summary>
         public bool TryHit(int lane, double songTimeSeconds, out NoteData note, out Judgement judgement)
         {
@@ -53,9 +56,9 @@ namespace MusicGame.Gameplay
             for (int i = 0; i < list.Count; i++)
             {
                 NoteData candidate = list[i];
-                if (candidate.Time > songTimeSeconds + GreatWindowSeconds) break; // 已排序，后面更晚
+                if (candidate.Time > songTimeSeconds + BadWindowSeconds) break; // 已排序，后面更晚
                 double delta = System.Math.Abs(candidate.Time - songTimeSeconds);
-                if (delta <= GreatWindowSeconds && delta < bestAbs)
+                if (delta <= BadWindowSeconds && delta < bestAbs)
                 {
                     bestAbs = delta;
                     bestIndex = i;
@@ -65,12 +68,14 @@ namespace MusicGame.Gameplay
             note = list[bestIndex];
             list.RemoveAt(bestIndex);
             remainingHeads--;
-            judgement = bestAbs <= PerfectWindowSeconds ? Judgement.Perfect : Judgement.Great;
+            judgement = bestAbs <= PerfectWindowSeconds ? Judgement.Perfect
+                : bestAbs <= GoodWindowSeconds ? Judgement.Good
+                : Judgement.Bad;
             return true;
         }
 
         /// <summary>
-        /// 自动 Miss：取出任意轨最早已超过 Great 窗仍未头判的音符（外部循环调用直到返回 false）。
+        /// 自动 Miss：取出任意轨最早已超过 Bad 窗仍未头判的音符（外部循环调用直到返回 false）。
         /// </summary>
         public bool TryMiss(double songTimeSeconds, out NoteData note)
         {
@@ -80,7 +85,7 @@ namespace MusicGame.Gameplay
                 List<NoteData> list = pending[lane];
                 if (list.Count == 0) continue;
                 NoteData head = list[0];
-                if (songTimeSeconds - head.Time > GreatWindowSeconds)
+                if (songTimeSeconds - head.Time > BadWindowSeconds)
                 {
                     note = head;
                     list.RemoveAt(0);

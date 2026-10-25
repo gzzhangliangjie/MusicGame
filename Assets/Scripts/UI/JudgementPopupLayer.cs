@@ -15,7 +15,8 @@ namespace MusicGame.UI
         private const int PoolSize = 10;
 
         private static readonly Color PerfectColor = new Color(0.98f, 0.80f, 0.25f);
-        private static readonly Color GreatColor = new Color(0.35f, 0.85f, 0.45f);
+        private static readonly Color GoodColor = new Color(0.35f, 0.85f, 0.45f);
+        private static readonly Color BadColor = new Color(0.95f, 0.55f, 0.20f);
         private static readonly Color MissColor = new Color(0.90f, 0.26f, 0.36f);
 
         private readonly List<Popup> pool = new List<Popup>();
@@ -44,6 +45,9 @@ namespace MusicGame.UI
                 text.alignment = TextAnchor.MiddleCenter;
                 text.raycastTarget = false;
                 text.text = "";
+                var outline = text.gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0f, 0f, 0f, 0.7f);
+                outline.effectDistance = new Vector2(2f, -2f);
                 rt.gameObject.SetActive(false);
                 pool.Add(new Popup { Rt = rt, Text = text });
             }
@@ -57,10 +61,12 @@ namespace MusicGame.UI
             if (popup.Running != null) StopCoroutine(popup.Running);
 
             popup.Text.text = judgement == Gameplay.Judgement.Perfect ? "PERFECT"
-                : judgement == Gameplay.Judgement.Great ? "GREAT"
+                : judgement == Gameplay.Judgement.Good ? "GOOD"
+                : judgement == Gameplay.Judgement.Bad ? "BAD"
                 : "MISS";
             popup.Text.color = judgement == Gameplay.Judgement.Perfect ? PerfectColor
-                : judgement == Gameplay.Judgement.Great ? GreatColor
+                : judgement == Gameplay.Judgement.Good ? GoodColor
+                : judgement == Gameplay.Judgement.Bad ? BadColor
                 : MissColor;
 
             popup.Rt.anchoredPosition = LaneToCanvasPosition(lane);

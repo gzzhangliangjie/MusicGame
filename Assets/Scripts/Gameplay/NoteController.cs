@@ -29,6 +29,9 @@ namespace MusicGame.Gameplay
         /// <summary>下落速度（世界单位/秒）。</summary>
         private float UnitsPerSecond => NoteSpawner.FallHeight / Mathf.Max(0.05f, spawner != null ? spawner.TravelTime : 1f);
 
+        /// <summary>音符外观尺寸（世界单位）：GetNoteSprite 原生 2x1，缩放到 1.7x0.6。</summary>
+        private static readonly Vector3 NoteScale = new Vector3(0.85f, 0.6f, 1f);
+
         /// <summary>从对象池租出后初始化。</summary>
         internal void Initialize(NoteData note, NoteSpawner owner)
         {
@@ -39,7 +42,7 @@ namespace MusicGame.Gameplay
             EnsureVisuals();
             head.color = isHold ? HoldHeadColor : TapColor;
             body.color = HoldBodyColor;
-            transform.localScale = Vector3.one;
+            transform.localScale = NoteScale;
             transform.position = new Vector3(NoteSpawner.LaneX(note.Lane), NoteSpawner.SpawnY, 0f);
             if (isHold) SetBodyLength((float)(note.Duration * UnitsPerSecond));
             body.gameObject.SetActive(isHold);
@@ -50,21 +53,21 @@ namespace MusicGame.Gameplay
             if (head != null) return;
             head = GetComponent<SpriteRenderer>();
             if (head == null) head = gameObject.AddComponent<SpriteRenderer>();
-            head.sprite = NoteSpawner.GetSquareSprite();
+            head.sprite = NoteSpawner.GetNoteSprite();
             head.sortingOrder = 10;
             var bodyGo = new GameObject("Body");
             bodyGo.transform.SetParent(transform, false);
             body = bodyGo.AddComponent<SpriteRenderer>();
-            body.sprite = NoteSpawner.GetSquareSprite();
+            body.sprite = NoteSpawner.GetHoldBodySprite();
             body.sortingOrder = 9;
         }
 
-        // hold 身体：底端贴着头顶向上延伸，长度随剩余时长收缩
+        // hold 身体：底端锚在头部中心，向上延伸，长度随剩余时长收缩
         private void SetBodyLength(float length)
         {
             length = Mathf.Max(0f, length);
             body.transform.localScale = new Vector3(0.92f, length, 1f);
-            body.transform.localPosition = new Vector3(0f, 0.5f + length * 0.5f, 0f);
+            body.transform.localPosition = new Vector3(0f, 0f, 0f);
         }
 
         private void Update()
@@ -90,7 +93,7 @@ namespace MusicGame.Gameplay
                         SetBodyLength((float)(tailTime - now) * UnitsPerSecond);
                         bool held = spawner.Game != null && spawner.Game.IsLaneHeld(data.Lane);
                         if (!held) JudgeTail(delta);                      // 松手：按与尾时刻的差值判
-                        else if (delta > JudgeSystem.GreatWindowSeconds) JudgeTail(0.0); // 按住到底：Perfect
+                        else if (delta > JudgeSystem.GoodWindowSeconds) JudgeTail(0.0); // 按住到底：Perfect
                         break;
                     }
 
@@ -145,7 +148,8 @@ namespace MusicGame.Gameplay
         {
             double abs = System.Math.Abs(deltaSeconds);
             Judgement j = abs <= JudgeSystem.PerfectWindowSeconds ? Judgement.Perfect
-                : abs <= JudgeSystem.GreatWindowSeconds ? Judgement.Great
+                : abs <= JudgeSystem.GoodWindowSeconds ? Judgement.Good
+                : abs <= JudgeSystem.BadWindowSeconds ? Judgement.Bad
                 : Judgement.Miss;
             spawner.RegisterTail(data, j);
             Finish();
