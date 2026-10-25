@@ -48,7 +48,7 @@ namespace MusicGame.Gameplay
             additive = new Material(shader);
             circleSprite = Sprite.Create(MakeCircleTexture(), new Rect(0f, 0f, 64f, 64f), new Vector2(0.5f, 0.5f), 64f);
             circleSprite.name = "HitFxCircle";
-            beamSprite = Sprite.Create(MakeBeamTexture(), new Rect(0f, 0f, 16f, 64f), new Vector2(0.5f, 0f), 16f);
+            beamSprite = Sprite.Create(MakeBeamTexture(), new Rect(0f, 0f, 16f, 64f), new Vector2(0.5f, 0f), 64f); // PPU=64：贴图原生 1x1 单位（高度按 16PPU 会变成 4 单位，再被缩放拉成贯穿全屏）
             beamSprite.name = "HitFxBeam";
         }
 
