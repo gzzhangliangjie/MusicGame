@@ -61,6 +61,7 @@ namespace MusicGame.Gameplay
         private JudgeSystem judge;
         private ScoreSystem score;
         private HitEffects hitEffects;
+        private SpectrumVisualizer visualizer;
         private GameObject runtimeRoot;
         private bool playing;
         private bool paused;
@@ -360,6 +361,10 @@ namespace MusicGame.Gameplay
 
             hitEffects = new GameObject("HitEffects").AddComponent<HitEffects>();
             hitEffects.transform.SetParent(runtimeRoot.transform, false);
+
+            visualizer = new GameObject("SpectrumVisualizer").AddComponent<SpectrumVisualizer>();
+            visualizer.transform.SetParent(runtimeRoot.transform, false);
+            visualizer.Setup(audioSource, conductor);
         }
 
         private static GameObject BuildNotePrefab()
@@ -450,6 +455,7 @@ namespace MusicGame.Gameplay
             spawner = null;
             judge = null;
             hitEffects = null;
+            visualizer = null;
             // score 保留，供结算后查询
         }
 

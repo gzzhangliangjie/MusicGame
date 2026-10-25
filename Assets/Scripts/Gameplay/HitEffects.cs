@@ -213,8 +213,8 @@ namespace MusicGame.Gameplay
 
         private static float OutCubic(float t) { t = Mathf.Clamp01(t); float u = 1f - t; return 1f - u * u * u; }
 
-        // 64x64 径向渐变圆（中心实、边缘透明），供加法混合出光斑
-        private static Texture2D MakeCircleTexture()
+        // 64x64 径向渐变圆（中心实、边缘透明），供加法混合出光斑；SpectrumVisualizer 复用
+        internal static Texture2D MakeCircleTexture()
         {
             const int size = 64;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
