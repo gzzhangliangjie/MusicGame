@@ -137,5 +137,121 @@ namespace MusicGame.EditorTools
             EditorApplication.isPlaying = true; // 直接进 Play，落地即主菜单
             Debug.Log("[VisCap] 已打开 Main 场景并进入 Play，交给用户试玩");
         }
+
+        // ---------------- 真实路径复现（Main.unity + GameFlow 全流程） ----------------
+
+        private static int flowStep;
+        private static int flowTicks;
+
+        /// <summary>完全复刻用户路径：Main.unity 进 Play → 自动点 开始游戏→sample→easy → 截图。</summary>
+        public static void CaptureFlow()
+        {
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+            Screen.SetResolution(720, 1280, false);
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += FlowPump;
+            Debug.Log("[VisCap] 真实路径复现启动：Main.unity + GameFlow");
+        }
+
+        private static void FlowPump()
+        {
+            if (!EditorApplication.isPlaying) return;
+            flowTicks++;
+
+            try
+            {
+                switch (flowStep)
+                {
+                    case 0: // 主菜单就绪后点"开始游戏"
+                        if (flowTicks > 60) { ClickButton("btnStart"); Advance("主菜单 -> 开始游戏"); }
+                        break;
+                    case 1: // 选曲列表：点第二项（真实歌曲，带音频与分析缓存；第一项 sample 无音频）
+                        if (flowTicks > 40)
+                        {
+                            var buttons = UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(
+                                UnityEngine.FindObjectsSortMode.None);
+                            UnityEngine.UI.Button target = null;
+                            int seen = 0;
+                            foreach (var b in buttons)
+                            {
+                                if (b.name != "songItem") continue;
+                                if (seen == 1) { target = b; break; }
+                                seen++;
+                            }
+                            if (target == null) { Debug.LogError("[VisCap] 选曲项不足两首"); EditorApplication.Exit(1); return; }
+                            target.onClick.Invoke();
+                            Advance("选曲 -> song_73d9b60f15");
+                        }
+                        break;
+                    case 2: // 难度选 easy
+                        if (flowTicks > 40) { ClickButton("diff_easy"); Advance("难度 -> easy"); }
+                        break;
+                    case 3: // 等 4 秒让音符下落，诊断 + 截图
+                        if (flowTicks > 240)
+                        {
+                            DumpDiagnostics();
+                            ScreenCapture.CaptureScreenshot("E:/MusicGame/vis_flow.png");
+                            flowStep = 4; flowTicks = 0;
+                            Debug.Log("[VisCap] 真实路径截图已请求");
+                        }
+                        break;
+                    case 4:
+                        if (flowTicks > 30)
+                        {
+                            Debug.Log("[VisCap] 真实路径复现完成，退出");
+                            EditorApplication.Exit(0);
+                        }
+                        break;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VisCap] 流程异常 @step" + flowStep + ": " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static void Advance(string label)
+        {
+            Debug.Log("[VisCap] " + label);
+            flowStep++;
+            flowTicks = 0;
+        }
+
+        private static void ClickButton(string name)
+        {
+            var go = GameObject.Find(name);
+            if (go == null) { Debug.LogError("[VisCap] 找不到按钮: " + name); EditorApplication.Exit(1); return; }
+            var button = go.GetComponent<UnityEngine.UI.Button>();
+            if (button == null) { Debug.LogError("[VisCap] " + name + " 无 Button 组件"); EditorApplication.Exit(1); return; }
+            button.onClick.Invoke();
+        }
+
+        private static void DumpDiagnostics()
+        {
+            Camera cam = Camera.main;
+            Debug.Log("[VisCap] 相机: " + (cam != null
+                ? "ortho=" + cam.orthographic + " size=" + cam.orthographicSize + " pos=" + cam.transform.position + " aspect=" + cam.aspect
+                : "null"));
+
+            var spawner = UnityEngine.Object.FindFirstObjectByType<NoteSpawner>();
+            Debug.Log("[VisCap] NoteSpawner: " + (spawner != null ? "存在, 子物体=" + spawner.transform.childCount : "null"));
+
+            for (int lane = 0; lane < 4; lane++)
+            {
+                var cap = GameObject.Find("Keycap" + lane);
+                var pad = GameObject.Find("KeyPad" + lane);
+                string capInfo = cap != null
+                    ? "active=" + cap.activeInHierarchy + " visible=" + cap.GetComponent<MeshRenderer>().isVisible
+                      + " viewport=" + cam.WorldToViewportPoint(cap.transform.position)
+                    : "不存在";
+                string padInfo = pad != null
+                    ? "active=" + pad.activeInHierarchy + " visible=" + pad.GetComponent<SpriteRenderer>().isVisible
+                    : "不存在";
+                Debug.Log("[VisCap] lane" + lane + " 键帽[" + capInfo + "] 按键板[" + padInfo + "]");
+            }
+        }
     }
 }

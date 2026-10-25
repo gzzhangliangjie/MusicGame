@@ -521,8 +521,8 @@ namespace MusicGame.UI
         {
             currentEntry = entry;
             var diffs = ProbeDifficulties(entry);
-            bool cached = diffs.Count > 0 && File.Exists(Path.Combine(entry.Dir, "analysis.json"));
-            if (cached)
+            // 有谱面文件即可直接玩（无声谱/他人分享的目录都没有 analysis.json，不该被拒）
+            if (diffs.Count > 0)
             {
                 ShowDifficultySelect(entry); // 缓存命中：秒进难度选择
                 return;
@@ -735,7 +735,8 @@ namespace MusicGame.UI
             yield return null; // 等待上一局的旧对象销毁完成
 
             gameplayRoot = new GameObject("GameplayRoot");
-            gameplayRoot.transform.SetParent(transform, false);
+            // 绝不挂到本类所在 Canvas 下：ScreenSpaceOverlay 画布的世界空间是 GUI 像素坐标，
+            // 世界对象（音符/判定线/按键板）挂进去会被带出相机视野（诊断实测 viewport=(38,38)）
             gameManager = gameplayRoot.AddComponent<GameManager>();
             try
             {
