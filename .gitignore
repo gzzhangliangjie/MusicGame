@@ -50,3 +50,6 @@ Thumbs.db
 
 # 参考仓库（本地阅读用，不入库）
 references/
+
+# 视觉验收临时截图
+vis_capture_*.png

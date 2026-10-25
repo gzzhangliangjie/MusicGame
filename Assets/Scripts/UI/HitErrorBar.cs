@@ -36,7 +36,7 @@ namespace MusicGame.UI
             var root = UiKit.Node(host, "HitErrorBar");
             root.anchorMin = new Vector2(0.5f, 0.5f);
             root.anchorMax = new Vector2(0.5f, 0.5f);
-            root.anchoredPosition = new Vector2(0f, -540f * 0.62f - 56f); // 判定线弹窗下方一行
+            root.anchoredPosition = new Vector2(0f, -540f * 0.62f - 96f); // 判定线弹窗下方，避开 MISS 下坠路径
             root.sizeDelta = new Vector2(BarWidth, 14f);
 
             var bg = root.gameObject.AddComponent<Image>();

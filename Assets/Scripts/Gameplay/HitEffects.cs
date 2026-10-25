@@ -33,6 +33,7 @@ namespace MusicGame.Gameplay
         {
             public GameObject Go;
             public SpriteRenderer[] Renderers; // 爆炸=4 层；光柱=1 层
+            public Vector3[] BaseScales;       // 各层基础缩放（动画在其上乘系数，避免覆写丢失尺寸）
             public float Age;
             public float Duration;
             public float BaseAlpha;
@@ -57,14 +58,14 @@ namespace MusicGame.Gameplay
             EnsureAssets();
             if (headMiss)
             {
-                SpawnBeam(lane, MissBeamColor, 0.30f);
+                SpawnBeam(lane, MissBeamColor, 0.22f);
                 return;
             }
             Color color = judgement == Judgement.Perfect ? PerfectColor
                 : judgement == Judgement.Great ? GreatColor
                 : GreatColor;
             SpawnExplosion(lane, color, isTail ? 0.7f : 1f);
-            SpawnBeam(lane, color, 0.45f);
+            SpawnBeam(lane, color, 0.30f);
         }
 
         private void SpawnExplosion(int lane, Color color, float intensity)
@@ -78,7 +79,7 @@ namespace MusicGame.Gameplay
             for (int i = 0; i < fx.Renderers.Length; i++)
             {
                 fx.Renderers[i].color = new Color(color.r, color.g, color.b, 1f);
-                fx.Renderers[i].transform.localScale = Vector3.one;
+                fx.Renderers[i].transform.localScale = fx.BaseScales[i];
             }
             fx.Go.SetActive(true);
         }
@@ -120,26 +121,26 @@ namespace MusicGame.Gameplay
             }
         }
 
-        // 爆炸动画：0=大光晕 1=核心 2/3=斜光条（osu 分层同构）
+        // 爆炸动画：0=大光晕 1=核心 2/3=斜光条（osu 分层同构）；全部在基础缩放上乘系数
         private static void AnimateExplosion(EffectFx fx, float t)
         {
             SpriteRenderer faint = fx.Renderers[0];
             float faintT = Mathf.Min(1f, fx.Age / FaintDuration);
             float sweep = OutQuint(faintT);
-            faint.transform.localScale = new Vector3(1f + sweep * 4f, 1f + sweep * 0.2f, 1f);
-            faint.color = MulAlpha(faint.color, (1f - faintT) * 0.5f * fx.BaseAlpha);
+            faint.transform.localScale = Vector3.Scale(fx.BaseScales[0], new Vector3(1f + sweep * 4f, 1f + sweep * 0.2f, 1f));
+            faint.color = MulAlpha(faint.color, (1f - faintT) * 0.35f * fx.BaseAlpha);
 
             SpriteRenderer core = fx.Renderers[1];
             float coreT = Mathf.Min(1f, fx.Age / ExplosionDuration);
-            core.transform.localScale = Vector3.one * (1f + 0.4f * OutQuint(coreT));
-            core.color = MulAlpha(core.color, (1f - OutCubic(coreT)) * 0.9f * fx.BaseAlpha);
+            core.transform.localScale = Vector3.Scale(fx.BaseScales[1], Vector3.one * (1f + 0.4f * OutQuint(coreT)));
+            core.color = MulAlpha(core.color, (1f - OutCubic(coreT)) * 0.75f * fx.BaseAlpha);
 
             for (int i = 2; i < 4; i++)
             {
                 SpriteRenderer streak = fx.Renderers[i];
                 float streakT = Mathf.Min(1f, fx.Age / ExplosionDuration);
-                streak.transform.localScale = new Vector3(1f, 1f + OutQuint(streakT) * 1.2f, 1f);
-                streak.color = MulAlpha(streak.color, (1f - OutCubic(streakT)) * 0.8f * fx.BaseAlpha);
+                streak.transform.localScale = Vector3.Scale(fx.BaseScales[i], new Vector3(1f, 1f + OutQuint(streakT) * 1.2f, 1f));
+                streak.color = MulAlpha(streak.color, (1f - OutCubic(streakT)) * 0.6f * fx.BaseAlpha);
             }
         }
 
@@ -147,7 +148,7 @@ namespace MusicGame.Gameplay
         {
             SpriteRenderer beam = fx.Renderers[0];
             beam.color = MulAlpha(beam.color, (1f - OutCubic(t)) * fx.BaseAlpha);
-            beam.transform.localScale = new Vector3(1f + t * 0.15f, 1f, 1f);
+            beam.transform.localScale = Vector3.Scale(fx.BaseScales[0], new Vector3(1f + t * 0.15f, 1f, 1f));
         }
 
         private EffectFx Rent(List<EffectFx> free, List<EffectFx> active, int cap, System.Func<EffectFx> build)
@@ -170,12 +171,14 @@ namespace MusicGame.Gameplay
         {
             var go = new GameObject("HitExplosion");
             var renderers = new SpriteRenderer[4];
-            renderers[0] = MakeChild(go.transform, "faint", circleSprite, 8f * 0.8f, 0);
-            renderers[1] = MakeChild(go.transform, "core", circleSprite, 8f * 0.5f, 1);
+            renderers[0] = MakeChild(go.transform, "faint", circleSprite, NoteSpawner.LaneWidth * 0.8f, 0);
+            renderers[1] = MakeChild(go.transform, "core", circleSprite, NoteSpawner.LaneWidth * 0.5f, 1);
             renderers[2] = MakeChild(go.transform, "streakA", circleSprite, 1f, 2, new Vector2(0.28f, 2.6f), UnityEngine.Random.Range(-15f, 15f));
             renderers[3] = MakeChild(go.transform, "streakB", circleSprite, 1f, 2, new Vector2(0.28f, 2.6f), UnityEngine.Random.Range(-15f, 15f));
+            var baseScales = new Vector3[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++) baseScales[i] = renderers[i].transform.localScale;
             go.SetActive(false);
-            return new EffectFx { Go = go, Renderers = renderers };
+            return new EffectFx { Go = go, Renderers = renderers, BaseScales = baseScales };
         }
 
         private EffectFx BuildBeam()
@@ -183,7 +186,7 @@ namespace MusicGame.Gameplay
             var go = new GameObject("LaneBeam");
             var renderer = MakeChild(go.transform, "beam", beamSprite, 1f, 7, new Vector2(NoteSpawner.LaneWidth * 0.96f, NoteSpawner.FallHeight * 0.7f), 0f);
             go.SetActive(false);
-            return new EffectFx { Go = go, Renderers = new[] { renderer } };
+            return new EffectFx { Go = go, Renderers = new[] { renderer }, BaseScales = new[] { renderer.transform.localScale } };
         }
 
         private SpriteRenderer MakeChild(Transform parent, string name, Sprite sprite, float size, int order)

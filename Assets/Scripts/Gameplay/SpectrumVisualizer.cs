@@ -120,7 +120,7 @@ namespace MusicGame.Gameplay
                 for (int i = 0; i < BarCount; i++)
                 {
                     float wave = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.5f + i * 0.45f);
-                    UpdateBar(i, beat * (0.15f + 0.55f * wave), dt);
+                    UpdateBar(i, beat * (0.25f + 0.7f * wave), dt);
                 }
             }
 
