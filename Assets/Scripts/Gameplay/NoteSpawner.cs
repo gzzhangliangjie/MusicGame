@@ -32,6 +32,8 @@ namespace MusicGame.Gameplay
         private float travelTime = 1f;
         private int nextIndex;
         private GameObject playfieldRoot;
+        private SpriteRenderer judgeLine;
+        private Vector3 judgeLineBaseScale;
 
         /// <summary>计分系统（hold 尾判上报用，由 GameManager 注入）。</summary>
         internal ScoreSystem Score { get; set; }
@@ -97,6 +99,24 @@ namespace MusicGame.Gameplay
                 Spawn(sortedNotes[nextIndex]);
                 nextIndex++;
             }
+            UpdateJudgeLinePulse(now);
+        }
+
+        // 判定线随节拍呼吸脉冲（视觉设计受 Phira/Phigros 风格启发，自行实现）：
+        // 每个 beat 时刻强度最高，随后按三次方衰减；仅缩放横轴与调亮，不改判定逻辑
+        private void UpdateJudgeLinePulse(double songTime)
+        {
+            if (judgeLine == null || chart.Bpm <= 0.0) return;
+            double period = 60.0 / chart.Bpm;
+            double phase = (songTime - chart.OffsetSeconds) % period;
+            if (phase < 0) phase += period;
+            float k = 1f - (float)(phase / period);
+            k = k * k * k; // 衰减曲线
+            judgeLine.transform.localScale = new Vector3(
+                judgeLineBaseScale.x * (1f + 0.05f * k),
+                judgeLineBaseScale.y,
+                1f);
+            judgeLine.color = new Color(1f, 1f, 1f, 0.85f + 0.15f * k);
         }
 
         private void Spawn(NoteData data)
@@ -160,6 +180,8 @@ namespace MusicGame.Gameplay
             CreateSprite("JudgeLine", playfieldRoot.transform,
                 new Vector3(0f, JudgeLineY, 0f),
                 new Vector2(LaneWidth * LaneCount, 0.14f), Color.white, 1);
+            judgeLine = playfieldRoot.transform.Find("JudgeLine")?.GetComponent<SpriteRenderer>();
+            if (judgeLine != null) judgeLineBaseScale = judgeLine.transform.localScale;
         }
 
         private static SpriteRenderer CreateSprite(string name, Transform parent, Vector3 localPosition, Vector2 size, Color color, int sortingOrder)

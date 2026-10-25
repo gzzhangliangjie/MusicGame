@@ -53,6 +53,9 @@ namespace MusicGame.UI
         RectTransform menuScreen, selectScreen, analyzeScreen, diffScreen, hudScreen, pauseScreen;
         ResultsScreen results;
         CalibrationScreen calibration;
+        JudgementPopupLayer popupLayer;
+        HitErrorBar errorBar;
+        Action<Judgement, int, bool, double> judgedHandler;
 
         // 选曲/分析/难度/HUD 控件
         Transform songListContent;
@@ -240,6 +243,16 @@ namespace MusicGame.UI
             UiKit.Stretch(hudSong.rectTransform, new Vector2(0.01f, 0.01f), new Vector2(0.55f, 0.07f), new Vector2(24f, 0f), new Vector2(0f, 0f));
             hudHint = UiKit.Label(hudScreen, "hint", "D F J K 击打 · Esc 暂停", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(hudHint.rectTransform, new Vector2(0.25f, 0.01f), new Vector2(0.75f, 0.07f));
+
+            // 判定反馈层：弹窗 + hit-error 误差条（不挡射线）
+            var popupGo = new GameObject("JudgementPopups", typeof(RectTransform));
+            popupGo.transform.SetParent(hudScreen, false);
+            popupLayer = popupGo.AddComponent<JudgementPopupLayer>();
+            popupLayer.Setup(hudScreen);
+            var errorGo = new GameObject("HitErrorBar", typeof(RectTransform));
+            errorGo.transform.SetParent(hudScreen, false);
+            errorBar = errorGo.AddComponent<HitErrorBar>();
+            errorBar.Setup(hudScreen);
         }
 
         void BuildPauseOverlay()
@@ -735,6 +748,15 @@ namespace MusicGame.UI
                 ShowOnly(selectScreen);
                 yield break;
             }
+
+            // 订阅判定反馈：弹窗 + 误差条（先退订旧局，避免重复）
+            if (judgedHandler != null && gameManager != null) gameManager.OnJudgedWithDelta -= judgedHandler;
+            judgedHandler = (j, lane, isTail, delta) =>
+            {
+                if (popupLayer != null) popupLayer.Show(j, lane, isTail);
+                if (!isTail && errorBar != null) errorBar.AddTick(j, delta);
+            };
+            gameManager.OnJudgedWithDelta += judgedHandler;
 
             state = FlowState.Playing;
             isPaused = false;

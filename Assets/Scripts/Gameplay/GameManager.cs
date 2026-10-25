@@ -36,6 +36,8 @@ namespace MusicGame.Gameplay
         public event Action<PlayResult> OnSongFinished;
         /// <summary>每次判定的反馈：判定结果、轨道、是否 hold 尾判（供 HUD/特效使用）。</summary>
         public event Action<Judgement, int, bool> OnJudged;
+        /// <summary>同 OnJudged，另携带本次判定的早/晚偏移（秒，早负晚正；Miss 时为超窗时刻的近似值）。</summary>
+        public event Action<Judgement, int, bool, double> OnJudgedWithDelta;
 
         /// <summary>计分系统（游玩中/结束后可读）。</summary>
         public ScoreSystem Score => score;
@@ -58,6 +60,7 @@ namespace MusicGame.Gameplay
         private NoteSpawner spawner;
         private JudgeSystem judge;
         private ScoreSystem score;
+        private HitEffects hitEffects;
         private GameObject runtimeRoot;
         private bool playing;
         private bool paused;
@@ -225,9 +228,12 @@ namespace MusicGame.Gameplay
                 if (!lanePressed[lane]) continue;
                 if (judge.TryHit(lane, now, out NoteData note, out Judgement judgement))
                 {
+                    double delta = now - note.Time;
                     score.Register(judgement, false);
                     spawner.NotifyJudged(note, judgement);
+                    hitEffects.Spawn(lane, judgement, false, false);
                     OnJudged?.Invoke(judgement, lane, false);
+                    OnJudgedWithDelta?.Invoke(judgement, lane, false, delta);
                 }
             }
 
@@ -236,7 +242,9 @@ namespace MusicGame.Gameplay
             {
                 score.Register(Judgement.Miss, false);
                 spawner.NotifyMissed(missed);
+                hitEffects.Spawn(missed.Lane, Judgement.Miss, false, true);
                 OnJudged?.Invoke(Judgement.Miss, missed.Lane, false);
+                OnJudgedWithDelta?.Invoke(Judgement.Miss, missed.Lane, false, JudgeSystem.GreatWindowSeconds);
             }
         }
 
@@ -252,6 +260,11 @@ namespace MusicGame.Gameplay
         internal void NotifyJudgementFeedback(NoteData note, Judgement judgement, bool isTail)
         {
             OnJudged?.Invoke(judgement, note != null ? note.Lane : -1, isTail);
+            if (note == null) return;
+            double target = note.Time + (isTail ? note.Duration : 0.0);
+            double delta = JudgedTime - target;
+            OnJudgedWithDelta?.Invoke(judgement, note.Lane, isTail, delta);
+            if (judgement != Judgement.Miss) hitEffects.Spawn(note.Lane, judgement, isTail, false);
         }
 
         private void PollInput()
@@ -344,6 +357,9 @@ namespace MusicGame.Gameplay
             spawner.Score = score;
             spawner.Game = this;
             spawner.Setup(chart, conductor, pool, noteTravelTimeSeconds);
+
+            hitEffects = new GameObject("HitEffects").AddComponent<HitEffects>();
+            hitEffects.transform.SetParent(runtimeRoot.transform, false);
         }
 
         private static GameObject BuildNotePrefab()
@@ -433,6 +449,7 @@ namespace MusicGame.Gameplay
             pool = null;
             spawner = null;
             judge = null;
+            hitEffects = null;
             // score 保留，供结算后查询
         }
 
