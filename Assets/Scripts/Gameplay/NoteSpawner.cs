@@ -196,8 +196,8 @@ namespace MusicGame.Gameplay
             BuildKeycaps();
         }
 
-        // 判定区下方：每条轨道一个"按键板"（按钮区 + 键位字母），按住时整板亮青、字母弹大——
-        // 玩家能看到四条轨道各对应哪个键、当前按着哪个，反馈一目了然
+        // 判定区下方：每条轨道一个可点击的"按键板"（D/F/J/K），鼠标/触屏/键盘均可触发——
+        // 按住时整板亮青、字母弹大，按钮与轨道一一对应
         private void BuildKeycaps()
         {
             keycaps = new TextMesh[LaneCount];
@@ -207,7 +207,7 @@ namespace MusicGame.Gameplay
             {
                 lanePads[lane] = CreateSprite("KeyPad" + lane, playfieldRoot.transform,
                     new Vector3(LaneX(lane), JudgeLineY - 0.85f, 0f),
-                    new Vector2(LaneWidth * 0.92f, 0.85f), PadIdleColor, 2);
+                    new Vector2(LaneWidth * 0.96f, 0.95f), PadIdleColor, 2);
 
                 var go = new GameObject("Keycap" + lane);
                 go.transform.SetParent(playfieldRoot.transform, false);
@@ -216,7 +216,7 @@ namespace MusicGame.Gameplay
                 tm.text = LaneKeyNames[lane];
                 tm.font = font;
                 tm.fontSize = 64;
-                tm.characterSize = 0.14f;
+                tm.characterSize = 0.15f;
                 tm.anchor = TextAnchor.MiddleCenter;
                 tm.alignment = TextAlignment.Center;
                 tm.color = KeycapIdleColor;

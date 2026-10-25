@@ -143,8 +143,8 @@ namespace MusicGame.UI
             UiKit.ButtonRect(menuScreen, "btnStart", "开 始 游 戏", new Vector2(0f, -40f), new Vector2(480f, 96f), OnStartClicked, UiKit.Theme.Primary, 36);
             UiKit.ButtonRect(menuScreen, "btnCalibrate", "延 迟 校 准", new Vector2(0f, -160f), new Vector2(480f, 96f), OnCalibrateClicked, UiKit.Theme.Secondary, 36);
             UiKit.ButtonRect(menuScreen, "btnQuit", "退 出", new Vector2(0f, -280f), new Vector2(480f, 80f), OnQuitClicked, UiKit.Theme.Quit, 30);
-            var help = UiKit.Label(menuScreen, "help", "导入 mp3 / ogg / wav → 自动分析生成四档谱面 → DFJK 击打 · 游戏中 Esc 暂停", 22, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
-            UiKit.Stretch(help.rectTransform, new Vector2(0f, 0.01f), new Vector2(1f, 0.09f));
+            var help = UiKit.Label(menuScreen, "help", "导入 mp3 / ogg / wav → 自动分析生成四档谱面\nD F J K 或 鼠标点击轨道击打 · 游戏中 Esc 暂停", 22, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
+            UiKit.Stretch(help.rectTransform, new Vector2(0f, -0.03f), new Vector2(1f, 0.09f));
         }
 
         void BuildSongSelect()
@@ -241,7 +241,7 @@ namespace MusicGame.UI
             UiKit.Stretch(hudCombo.rectTransform, new Vector2(0.30f, 0.86f), new Vector2(0.70f, 0.985f));
             hudSong = UiKit.Label(hudScreen, "song", "", 24, TextAnchor.MiddleLeft, UiKit.Theme.Dim, true);
             UiKit.Stretch(hudSong.rectTransform, new Vector2(0.01f, 0.01f), new Vector2(0.55f, 0.07f), new Vector2(24f, 0f), new Vector2(0f, 0f));
-            hudHint = UiKit.Label(hudScreen, "hint", "D F J K 击打 · Esc 暂停", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
+            hudHint = UiKit.Label(hudScreen, "hint", "D F J K / 鼠标点击轨道 · Esc 暂停", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(hudHint.rectTransform, new Vector2(0.25f, 0.01f), new Vector2(0.75f, 0.07f));
 
             // 歌词行：屏幕中部，半透明白，随乐曲时间换行显示
@@ -768,8 +768,8 @@ namespace MusicGame.UI
             pauseScreen.gameObject.SetActive(false);
             hudSong.text = entry.Meta.Title + " · " + UiKit.PrettyDifficulty(diff);
             hudHint.text = string.IsNullOrEmpty(entry.Meta.AudioPath)
-                ? "无声测试模式 · D F J K · Esc 暂停"
-                : "D F J K 击打 · Esc 暂停";
+                ? "无声测试模式 · D F J K / 鼠标点击 · Esc 暂停"
+                : "D F J K / 鼠标点击轨道 · Esc 暂停";
             hudScore.text = "0";
             hudCombo.text = "";
             hudAcc.text = "--";

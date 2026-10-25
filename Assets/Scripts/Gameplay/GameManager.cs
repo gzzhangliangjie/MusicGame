@@ -293,6 +293,17 @@ namespace MusicGame.Gameplay
                 lanePressed[3] |= keyboard.kKey.wasPressedThisFrame;
                 laneHeld[3] |= keyboard.kKey.isPressed;
             }
+            // 鼠标：点击/按住哪条轨道就判定哪条（桌面端可直接用鼠标玩）
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse != null)
+            {
+                int mouseLane = ScreenXToLane(mouse.position.ReadValue().x);
+                if (mouseLane >= 0)
+                {
+                    laneHeld[mouseLane] |= mouse.leftButton.isPressed;
+                    lanePressed[mouseLane] |= mouse.leftButton.wasPressedThisFrame;
+                }
+            }
             Touchscreen touchscreen = Touchscreen.current;
             if (touchscreen != null)
             {
@@ -317,6 +328,16 @@ namespace MusicGame.Gameplay
             laneHeld[2] = Input.GetKey(KeyCode.J);
             lanePressed[3] = Input.GetKeyDown(KeyCode.K);
             laneHeld[3] = Input.GetKey(KeyCode.K);
+            // 鼠标：点击/按住哪条轨道就判定哪条
+            if (Input.GetMouseButton(0))
+            {
+                int mouseLane = ScreenXToLane(Input.mousePosition.x);
+                if (mouseLane >= 0)
+                {
+                    laneHeld[mouseLane] = true;
+                    lanePressed[mouseLane] |= Input.GetMouseButtonDown(0);
+                }
+            }
             for (int i = 0; i < Input.touchCount; i++)
             {
                 Touch touch = Input.GetTouch(i);
