@@ -221,30 +221,50 @@ namespace MusicGame.Gameplay.Taiko
             CreateSprite("HitLine", playfieldRoot.transform,
                 new Vector3(HitX, NoteY, 0f), new Vector2(0.08f, 3.4f), new Color(1f, 1f, 1f, 0.35f), 0);
 
-            // 左侧鼓面：优先皮肤包 drum.png（原色），否则程序化红圆盘
+            // 左侧鼓面：优先皮肤包 drum.png（原色，按高度等比缩放防拉伸），否则程序化红圆盘
             Sprite drumTex = SkinManager.Load("drum");
             var drum = CreateSprite("Drum", playfieldRoot.transform,
-                new Vector3(HitX - 0.85f, NoteY, 0f), new Vector2(1.7f, 1.7f),
+                new Vector3(HitX - 0.85f, NoteY, 0f), new Vector2(1.8f, 1.8f),
                 drumTex != null ? Color.white : new Color(0.85f, 0.2f, 0.18f, 0.95f), 1);
-            drum.sprite = drumTex != null ? drumTex : GetDiscSprite();
+            if (drumTex != null) FitSprite(drum, drumTex, 1.8f);
+            else drum.sprite = GetDiscSprite();
 
-            // 底部咚/咔鼓垫：优先皮肤包 don/katsu 贴图（原色，按下提亮）
+            // 底部咚/咔鼓垫：优先皮肤包 don/katsu 圆形小鼓（原色，等比缩放，按下提亮）
             Sprite donTex = SkinManager.Load("don");
             Sprite kaTex = SkinManager.Load("katsu");
             padsSkinned = donTex != null && kaTex != null;
             padDon = CreateSprite("PadDon", playfieldRoot.transform,
-                new Vector3(-2.0f, -5.0f, 0f), new Vector2(2.2f, 1.15f),
+                new Vector3(-2.0f, -5.0f, 0f), new Vector2(1.5f, 1.5f),
                 padsSkinned ? new Color(1f, 1f, 1f, 0.62f) : PadIdleDon, 2);
-            padDon.sprite = padsSkinned ? donTex : GetDiscSprite();
+            if (padsSkinned) FitSprite(padDon, donTex, 1.5f);
+            else padDon.sprite = GetDiscSprite();
             padKa = CreateSprite("PadKa", playfieldRoot.transform,
-                new Vector3(2.0f, -5.0f, 0f), new Vector2(2.2f, 1.15f),
+                new Vector3(2.0f, -5.0f, 0f), new Vector2(1.5f, 1.5f),
                 padsSkinned ? new Color(1f, 1f, 1f, 0.62f) : PadIdleKa, 2);
-            padKa.sprite = padsSkinned ? kaTex : GetDiscSprite();
-            CreatePadLabel("咚", new Vector3(-2.0f, -5.0f, 0f), 1);
-            CreatePadLabel("咔", new Vector3(2.0f, -5.0f, 0f), 1);
+            if (padsSkinned) FitSprite(padKa, kaTex, 1.5f);
+            else padKa.sprite = GetDiscSprite();
+            // 白字 + 黑投影（双层），压在彩色圆心/米白鼓面上都清晰
+            CreatePadLabel("咚", new Vector3(-2.0f, -5.0f, 0f), 1, Color.white);
+            CreatePadLabel("咔", new Vector3(2.0f, -5.0f, 0f), 1, Color.white);
         }
 
-        private void CreatePadLabel(string text, Vector3 localPos, int order)
+        /// <summary>皮肤贴图替换占位方块后按目标高度等比缩放（贴图自带宽高比，禁止非均匀拉伸）。</summary>
+        private static void FitSprite(SpriteRenderer renderer, Sprite sprite, float targetHeight)
+        {
+            renderer.sprite = sprite;
+            var size = sprite.bounds.size;
+            float k = targetHeight / Mathf.Max(0.01f, size.y);
+            renderer.transform.localScale = new Vector3(size.x * k, size.y * k, 1f);
+        }
+
+        private void CreatePadLabel(string text, Vector3 localPos, int order, Color color)
+        {
+            // 双层文字：黑色投影 + 白字（Phigros 歌词同款），保证压在彩色圆心/米白鼓面上都清晰
+            CreatePadTextLayer(text, localPos + new Vector3(0.05f, -0.05f, 0f), order + 2, new Color(0f, 0f, 0f, 0.85f));
+            CreatePadTextLayer(text, localPos, order + 3, color);
+        }
+
+        private void CreatePadTextLayer(string text, Vector3 localPos, int order, Color color)
         {
             var go = new GameObject("PadLabel_" + text);
             go.transform.SetParent(playfieldRoot.transform, false);
@@ -256,9 +276,9 @@ namespace MusicGame.Gameplay.Taiko
             tm.characterSize = 0.14f;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
-            tm.color = new Color(1f, 1f, 1f, 0.95f);
+            tm.color = color;
             go.GetComponent<MeshRenderer>().sharedMaterial = tm.font.material;
-            go.GetComponent<MeshRenderer>().sortingOrder = order + 3;
+            go.GetComponent<MeshRenderer>().sortingOrder = order;
         }
 
         private static Font GetBuiltinFont()

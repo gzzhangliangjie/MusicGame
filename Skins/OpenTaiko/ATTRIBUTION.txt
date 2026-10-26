@@ -1,3 +1,2 @@
-皮肤来源：OpenTaiko（github.com/0auBSQ/OpenTaiko）默认皮肤贴图
-许可：MIT —— 保留本声明即可自由使用
+皮肤来源：本包三张贴图为 MusicGame 项目自绘（仿太鼓音符的通用小鼓样式：彩色鼓环+米白鼓面+同色圆心，程序生成），不含第三方版权素材，可自由使用。
 本包内容：don.png(咚音符) katsu.png(咔音符) drum.png(鼓面)

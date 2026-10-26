@@ -7,7 +7,8 @@ namespace MusicGame.Core
     /// <summary>
     /// 运行时皮肤包：把 PNG 放进 工程根/Skins/&lt;皮肤名&gt;/ 即生效（下一局生效），零打包零导入。
     /// 支持的文件名（缺哪个用哪个的程序化默认）：
-    ///   note.png(音符) holdbody.png(hold 光带) pad.png(按键板) disc.png(太鼓圆盘) keycap.png(太鼓垫底)
+    ///   note.png(音符) holdbody.png(hold 光带) pad.png(按键板) disc.png(圆盘/太鼓通用)
+    ///   don.png(咚) katsu.png(咔) drum.png(太鼓鼓面) rollstrip.png(连击条) keycap.png(太鼓垫底)
     /// 皮肤来源：CC0 素材站（kenney.nl / opengameart.org，CC0 可自由使用）下载 PNG 改成上述文件名即可。
     /// </summary>
     public static class SkinManager
