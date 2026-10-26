@@ -49,6 +49,15 @@ namespace MusicGame.Gameplay
         private static readonly Color PadIdleColor = new Color(1f, 1f, 1f, 0.10f);
         private static readonly Color PadPressedColor = new Color(0.20f, 0.85f, 0.95f, 0.38f);
 
+        /// <summary>每轨主题色（青/蓝/紫/粉）：音符、轨道线、按键板同色系，视觉对应零歧义。</summary>
+        public static readonly Color[] LaneColors =
+        {
+            new Color(0.25f, 0.78f, 0.95f),
+            new Color(0.32f, 0.56f, 0.95f),
+            new Color(0.68f, 0.46f, 0.95f),
+            new Color(0.95f, 0.46f, 0.75f)
+        };
+
         /// <summary>计分系统（hold 尾判上报用，由 GameManager 注入）。</summary>
         internal ScoreSystem Score { get; set; }
         /// <summary>所属 GameManager（判定时钟与按住状态，由 GameManager 注入）。</summary>
@@ -336,7 +345,7 @@ namespace MusicGame.Gameplay
             {
                 CreateSprite("LaneGuide" + lane, playfieldRoot.transform,
                     new Vector3(LaneX(lane), (JudgeLineY + SpawnY) * 0.5f, 0f),
-                    new Vector2(0.06f, FallHeight + 1.5f), new Color(1f, 1f, 1f, 0.16f), 0);
+                    new Vector2(0.06f, FallHeight + 1.5f), new Color(LaneColors[lane].r, LaneColors[lane].g, LaneColors[lane].b, 0.30f), 0);
             }
 
             // 判定线 = 加法辉光（宽柔光） + 白色本体（节拍脉冲只作用本体）
@@ -379,7 +388,7 @@ namespace MusicGame.Gameplay
                 tm.characterSize = 0.15f;
                 tm.anchor = TextAnchor.MiddleCenter;
                 tm.alignment = TextAlignment.Center;
-                tm.color = KeycapIdleColor;
+                tm.color = Color.Lerp(LaneColors[lane], Color.white, 0.45f);
                 go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
                 keycaps[lane] = tm;
             }
@@ -391,16 +400,19 @@ namespace MusicGame.Gameplay
             catch (Exception) { return Resources.GetBuiltinResource<Font>("Arial.ttf"); }
         }
 
-        // 按住反馈：按键板亮青 + 字母提亮放大（IsLaneHeld 内部会刷新输入状态，与判定同源）
+        // 按住反馈：按键板亮轨色 + 字母提亮放大（IsLaneHeld 内部会刷新输入状态，与判定同源）
         private void UpdateKeycaps()
         {
             if (keycaps == null || lanePads == null || Game == null) return;
             for (int lane = 0; lane < keycaps.Length; lane++)
             {
                 bool held = Game.IsLaneHeld(lane);
-                keycaps[lane].color = held ? KeycapPressedColor : KeycapIdleColor;
+                keycaps[lane].color = held ? KeycapPressedColor : Color.Lerp(LaneColors[lane], Color.white, 0.45f);
                 keycaps[lane].transform.localScale = held ? new Vector3(1.18f, 1.18f, 1f) : Vector3.one;
-                lanePads[lane].color = held ? PadPressedColor : PadIdleColor;
+                Color pad = held
+                    ? new Color(LaneColors[lane].r * 0.8f, LaneColors[lane].g * 0.8f, LaneColors[lane].b * 0.8f, PadPressedColor.a)
+                    : new Color(LaneColors[lane].r, LaneColors[lane].g, LaneColors[lane].b, PadIdleColor.a * 1.6f);
+                lanePads[lane].color = pad;
             }
         }
 

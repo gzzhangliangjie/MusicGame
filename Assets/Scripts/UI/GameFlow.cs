@@ -68,12 +68,16 @@ namespace MusicGame.UI
         Transform diffListHolder;
         Text diffSongLabel;
         Text hudScore, hudCombo, hudAcc, hudSong, hudHint, hudLyric;
+        Coroutine lyricIntroHandle;
 
         // ---------------------------------------------------------------- 基础
 
         void Awake()
         {
             canvas = UiKit.EnsureCanvas();
+            var backdropGo = new GameObject("UiBackdrop", typeof(RectTransform));
+            backdropGo.transform.SetParent(canvas.transform, false);
+            backdropGo.AddComponent<UiBackdrop>().Setup((RectTransform)canvas.transform); // 最底层动态背景
             analyzer = FindFirstObjectByType<SongAnalyzer>();
             if (analyzer == null)
             {
@@ -117,9 +121,19 @@ namespace MusicGame.UI
 
         RectTransform CreateScreen(string name, Color? bg = null)
         {
-            // bg 仅 HUD 屏传入透底色：ScreenSpaceOverlay 画布盖在世界空间音符之上，不透明背景会遮住整个下落区
+            // bg 仅 HUD 屏传入透底色：ScreenSpaceOverlay 画布盖在世界空间音符之上，不透明背景会遮住整个下落区。
+            // 菜单屏用渐变底+半透明（0.90），透出动态背景
             var panel = UiKit.Panel(canvas.transform, name, bg ?? UiKit.Theme.Bg);
-            if (bg != null) panel.raycastTarget = false;
+            if (bg == null)
+            {
+                panel.sprite = UiKit.ScreenBgSprite;
+                var c = panel.color;
+                panel.color = new Color(c.r * 3.2f, c.g * 3.2f, c.b * 3.2f, 0.90f);
+            }
+            else
+            {
+                panel.raycastTarget = false;
+            }
             var rt = panel.rectTransform;
             screens.Add(rt);
             return rt;
@@ -138,8 +152,11 @@ namespace MusicGame.UI
 
         void BuildMainMenu()
         {
-            var title = UiKit.Label(menuScreen, "title", "MUSIC GAME", 88, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
+            var title = UiKit.Label(menuScreen, "title", "MUSIC GAME", 96, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
             UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.58f), new Vector2(1f, 0.88f));
+            var titleOutline = title.gameObject.AddComponent<Outline>();
+            titleOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            titleOutline.effectDistance = new Vector2(3f, -3f);
             var sub = UiKit.Label(menuScreen, "subtitle", "本地导入 · 自动谱面 · 四轨下落 · D F J K", 28, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(sub.rectTransform, new Vector2(0f, 0.50f), new Vector2(1f, 0.58f));
             UiKit.ButtonRect(menuScreen, "btnStart", "开 始 游 戏", new Vector2(0f, -40f), new Vector2(480f, 96f), OnStartClicked, UiKit.Theme.Primary, 36);
@@ -780,12 +797,13 @@ namespace MusicGame.UI
                 yield break;
             }
 
-            // 订阅判定反馈：弹窗 + 误差条（先退订旧局，避免重复）
+            // 订阅判定反馈：弹窗 + 误差条 + 连击打点（先退订旧局，避免重复）
             if (judgedHandler != null && gameManager != null) gameManager.OnJudgedWithDelta -= judgedHandler;
             judgedHandler = (j, lane, isTail, delta) =>
             {
                 if (popupLayer != null) popupLayer.Show(j, lane, isTail);
                 if (!isTail && errorBar != null) errorBar.AddTick(j, delta);
+                if (!isTail && j != Judgement.Miss && hudCombo != null) StartCoroutine(ComboPunch());
             };
             gameManager.OnJudgedWithDelta += judgedHandler;
 
@@ -802,6 +820,40 @@ namespace MusicGame.UI
             ShowOnly(hudScreen);
             hudRoutineHandle = StartCoroutine(HudRoutine());
             watchRoutineHandle = StartCoroutine(SongWatchRoutine(chartEnd, entry.Meta.DurationSeconds));
+        }
+
+        /// <summary>歌词行入场：淡入 + 轻微缩放回落（0.2s）。</summary>
+        IEnumerator LyricIntro()
+        {
+            var cg = hudLyric.GetComponent<CanvasGroup>() ?? hudLyric.gameObject.AddComponent<CanvasGroup>();
+            var rt = hudLyric.rectTransform;
+            float t = 0f;
+            while (t < 0.2f)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / 0.2f);
+                cg.alpha = k;
+                float s = Mathf.Lerp(1.05f, 1f, k);
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+            cg.alpha = 1f;
+            rt.localScale = Vector3.one;
+        }
+
+        /// <summary>连击数字打点：1.25 → 1 快速回落（打击感的最低成本实现）。</summary>
+        IEnumerator ComboPunch()
+        {
+            var rt = hudCombo.rectTransform;
+            rt.localScale = new Vector3(1.25f, 1.25f, 1f);
+            float t = 0f;
+            while (t < 0.12f)
+            {
+                t += Time.unscaledDeltaTime;
+                float s = Mathf.Lerp(1.25f, 1f, Mathf.Clamp01(t / 0.12f));
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
         }
 
         /// <summary>每 0.1s 轮询成绩（ScoreSystem 经反射解析）刷新 HUD，并同步当前歌词行。</summary>
@@ -821,7 +873,12 @@ namespace MusicGame.UI
                 {
                     string line = gameManager.Lyrics.TryGetLine(gameManager.Conductor.SongTimeSeconds, out string lyric)
                         ? lyric : "";
-                    if (hudLyric.text != line) hudLyric.text = line;
+                    if (hudLyric.text != line)
+                    {
+                        hudLyric.text = line;
+                        if (lyricIntroHandle != null) StopCoroutine(lyricIntroHandle);
+                        lyricIntroHandle = StartCoroutine(LyricIntro());
+                    }
                 }
                 yield return wait;
             }

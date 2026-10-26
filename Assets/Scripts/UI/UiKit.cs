@@ -28,6 +28,64 @@ namespace MusicGame.UI
         public const string UiRootName = "MusicGameUiRoot";
 
         static Font cachedFont;
+        static Sprite roundedSprite;   // 白色圆角矩形（九宫格），按钮/面板通用
+        static Sprite screenBgSprite;  // 全屏渐变底（上深下微亮）
+
+        /// <summary>白色圆角九宫格 sprite：Image.type=Sliced 任意尺寸圆角。</summary>
+        public static Sprite RoundedSprite
+        {
+            get
+            {
+                if (roundedSprite != null) return roundedSprite;
+                const int size = 64, r = 14, b = 2;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                texture.filterMode = FilterMode.Bilinear;
+                var pixels = new Color32[size * size];
+                float half = size * 0.5f, inner = half - r;
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float px = x + 0.5f - half, py = y + 0.5f - half;
+                        float qx = Mathf.Max(Mathf.Abs(px) - inner, 0f);
+                        float qy = Mathf.Max(Mathf.Abs(py) - inner, 0f);
+                        float dist = Mathf.Sqrt(qx * qx + qy * qy) + Mathf.Min(Mathf.Max(Mathf.Abs(px) - inner, Mathf.Abs(py) - inner), 0f) - r;
+                        float fill = Mathf.Clamp01(0.5f - dist);
+                        float edge = Mathf.Clamp01(-dist / b);
+                        byte v = (byte)((80f + 175f * edge) * fill); // 边缘亮、内部稍暗，形成细腻层次
+                        pixels[y * size + x] = new Color32(v, v, v, (byte)(255f * fill));
+                    }
+                }
+                texture.SetPixels32(pixels);
+                texture.Apply(false, true);
+                roundedSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size,
+                    0, SpriteMeshType.FullRect, new Vector4(r, r, r, r)); // 九宫格边框
+                return roundedSprite;
+            }
+        }
+
+        /// <summary>全屏渐变底（上暗下微亮的深蓝），替代平面色块。</summary>
+        public static Sprite ScreenBgSprite
+        {
+            get
+            {
+                if (screenBgSprite != null) return screenBgSprite;
+                const int w = 32, h = 128;
+                var texture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+                texture.filterMode = FilterMode.Bilinear;
+                var pixels = new Color32[h * w];
+                for (int y = 0; y < h; y++)
+                {
+                    float t = (float)y / h; // 0=底 1=顶
+                    byte r = (byte)(16 + 10 * t), g = (byte)(20 + 12 * t), b = (byte)(34 + 18 * t);
+                    for (int x = 0; x < w; x++) pixels[y * w + x] = new Color32(r, g, b, 255);
+                }
+                texture.SetPixels32(pixels);
+                texture.Apply(false, true);
+                screenBgSprite = Sprite.Create(texture, new Rect(0f, 0f, w, h), new Vector2(0.5f, 0.5f), 32f);
+                return screenBgSprite;
+            }
+        }
 
         /// <summary>默认字体：优先系统中文字体，回退 Unity 内置 LegacyRuntime.ttf。</summary>
         public static Font FontOrDefault
@@ -46,6 +104,37 @@ namespace MusicGame.UI
             try { return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
             catch (Exception) { }
             return Font.CreateDynamicFontFromOSFont("Arial", 28);
+        }
+
+        static Sprite softDotSprite;
+
+        /// <summary>径向柔光点（白色，中心实边缘透明）：背景光斑/粒子通用。</summary>
+        public static Sprite SoftDotSprite
+        {
+            get
+            {
+                if (softDotSprite != null) return softDotSprite;
+                const int size = 64;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                texture.filterMode = FilterMode.Bilinear;
+                var pixels = new Color32[size * size];
+                float c = size * 0.5f;
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float dx = (x + 0.5f - c) / c, dy = (y + 0.5f - c) / c;
+                        float r = Mathf.Sqrt(dx * dx + dy * dy);
+                        float a = Mathf.Clamp01(1f - r);
+                        byte v = (byte)(a * a * 255f);
+                        pixels[y * size + x] = new Color32(255, 255, 255, v);
+                    }
+                }
+                texture.SetPixels32(pixels);
+                texture.Apply(false, true);
+                softDotSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 64f);
+                return softDotSprite;
+            }
         }
 
         /// <summary>确保存在本项目专用 Canvas（ScreenSpaceOverlay，参考分辨率 1920x1080）。</summary>
@@ -129,7 +218,7 @@ namespace MusicGame.UI
             return t;
         }
 
-        /// <summary>居中定位按钮（Image 背景 + 子文本）。</summary>
+        /// <summary>居中定位按钮（圆角九宫格底 + 按压变色 + 文本投影）。</summary>
         public static Button ButtonRect(Transform parent, string name, string label,
             Vector2 anchoredPosition, Vector2 size, UnityAction onClick,
             Color? bg = null, int fontSize = 30)
@@ -140,12 +229,24 @@ namespace MusicGame.UI
             rt.anchoredPosition = anchoredPosition;
             rt.sizeDelta = size;
             var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = RoundedSprite;
+            img.type = Image.Type.Sliced;
             img.color = bg ?? Theme.Primary;
             var button = rt.gameObject.AddComponent<Button>();
             button.targetGraphic = img;
+            button.transition = Selectable.Transition.ColorTint;
             button.navigation = new Navigation { mode = Navigation.Mode.None };
+            button.image = img;
+            var tint = button.colors;
+            tint.highlightedColor = new Color(1.15f, 1.15f, 1.18f, 1f);
+            tint.pressedColor = new Color(0.78f, 0.82f, 0.9f, 1f);
+            tint.fadeDuration = 0.08f;
+            button.colors = tint;
             var txt = Label(rt, "label", label, fontSize, TextAnchor.MiddleCenter, Color.white, true);
             Stretch(txt.rectTransform, new Vector2(0f, 0.08f), new Vector2(1f, 0.92f), new Vector2(8f, 0f), new Vector2(-8f, 0f));
+            var textShadow = txt.gameObject.AddComponent<Shadow>();
+            textShadow.effectColor = new Color(0f, 0f, 0f, 0.45f);
+            textShadow.effectDistance = new Vector2(0f, -2f);
             if (onClick != null) button.onClick.AddListener(onClick);
             return button;
         }

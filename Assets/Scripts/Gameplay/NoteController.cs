@@ -40,8 +40,9 @@ namespace MusicGame.Gameplay
             state = State.Falling;
             isHold = string.Equals(note.Type, "hold", System.StringComparison.OrdinalIgnoreCase) && note.Duration > 0.0;
             EnsureVisuals();
-            head.color = isHold ? HoldHeadColor : TapColor;
-            body.color = HoldBodyColor;
+            Color lane = NoteSpawner.LaneColors[Mathf.Clamp(note.Lane, 0, 3)];
+            head.color = isHold ? Color.Lerp(lane, Color.white, 0.4f) : Color.Lerp(lane, Color.white, 0.15f);
+            body.color = new Color(lane.r, lane.g, lane.b, HoldBodyColor.a);
             transform.localScale = NoteScale;
             transform.position = new Vector3(NoteSpawner.LaneX(note.Lane), NoteSpawner.SpawnY, 0f);
             if (isHold) SetBodyLength((float)(note.Duration * UnitsPerSecond));
