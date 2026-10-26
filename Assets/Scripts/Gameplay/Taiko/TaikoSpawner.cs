@@ -33,6 +33,7 @@ namespace MusicGame.Gameplay.Taiko
         private GameObject playfieldRoot;
         private SpriteRenderer padDon;
         private SpriteRenderer padKa;
+        private bool padsSkinned;
 
         private static readonly Color PadIdleDon = new Color(0.92f, 0.28f, 0.24f, 0.55f);
         private static readonly Color PadIdleKa = new Color(0.25f, 0.65f, 0.95f, 0.55f);
@@ -41,6 +42,15 @@ namespace MusicGame.Gameplay.Taiko
 
         private static Sprite discSprite;
         private static Sprite rollStripSprite;
+
+        /// <summary>取某类音符的贴图：优先皮肤包（don/katsu/roll），皮肤贴图自带配色；否则程序化圆盘（由调用方着色）。</summary>
+        internal Sprite GetKindSprite(TaikoNote.Kind kind, out bool skinned)
+        {
+            string key = kind == TaikoNote.Kind.Don ? "don" : kind == TaikoNote.Kind.Katsu ? "katsu" : "roll";
+            Sprite s = SkinManager.Load(key);
+            skinned = s != null;
+            return s != null ? s : GetDiscSprite();
+        }
 
         /// <summary>鼓面/音符圆盘（优先皮肤包 disc.png）。</summary>
         internal static Sprite GetDiscSprite()
@@ -178,12 +188,22 @@ namespace MusicGame.Gameplay.Taiko
             foreach (TaikoNote note in notes) note.ForceRelease();
         }
 
-        // 底部咚/咔鼓垫：按住发亮（鼠标/触屏点击以屏幕左右半区分咚咔）
+        // 底部咚/咔鼓垫：按住发亮（皮肤贴图原色只做透明度闪烁，程序化垫做颜色切换）
         private void UpdatePads()
         {
             if (padDon == null || Game == null) return;
-            padDon.color = Game.IsLaneHeld(0) ? PadPressedDon : PadIdleDon;
-            padKa.color = Game.IsLaneHeld(1) ? PadPressedKa : PadIdleKa;
+            if (padsSkinned)
+            {
+                float aDon = Game.IsLaneHeld(0) ? 1f : 0.62f;
+                float aKa = Game.IsLaneHeld(1) ? 1f : 0.62f;
+                var d = padDon.color; padDon.color = new Color(d.r, d.g, d.b, aDon);
+                var k = padKa.color; padKa.color = new Color(k.r, k.g, k.b, aKa);
+            }
+            else
+            {
+                padDon.color = Game.IsLaneHeld(0) ? PadPressedDon : PadIdleDon;
+                padKa.color = Game.IsLaneHeld(1) ? PadPressedKa : PadIdleKa;
+            }
         }
 
         private void BuildPlayfield()
@@ -201,18 +221,25 @@ namespace MusicGame.Gameplay.Taiko
             CreateSprite("HitLine", playfieldRoot.transform,
                 new Vector3(HitX, NoteY, 0f), new Vector2(0.08f, 3.4f), new Color(1f, 1f, 1f, 0.35f), 0);
 
-            // 左侧鼓面：红圆盘（命中线贴鼓面右缘）
+            // 左侧鼓面：优先皮肤包 drum.png（原色），否则程序化红圆盘
+            Sprite drumTex = SkinManager.Load("drum");
             var drum = CreateSprite("Drum", playfieldRoot.transform,
-                new Vector3(HitX - 0.85f, NoteY, 0f), new Vector2(1.7f, 1.7f), new Color(0.85f, 0.2f, 0.18f, 0.95f), 1);
-            drum.sprite = GetDiscSprite();
+                new Vector3(HitX - 0.85f, NoteY, 0f), new Vector2(1.7f, 1.7f),
+                drumTex != null ? Color.white : new Color(0.85f, 0.2f, 0.18f, 0.95f), 1);
+            drum.sprite = drumTex != null ? drumTex : GetDiscSprite();
 
-            // 底部咚/咔鼓垫
+            // 底部咚/咔鼓垫：优先皮肤包 don/katsu 贴图（原色，按下提亮）
+            Sprite donTex = SkinManager.Load("don");
+            Sprite kaTex = SkinManager.Load("katsu");
+            padsSkinned = donTex != null && kaTex != null;
             padDon = CreateSprite("PadDon", playfieldRoot.transform,
-                new Vector3(-2.0f, -5.0f, 0f), new Vector2(2.2f, 1.15f), PadIdleDon, 2);
-            padDon.sprite = GetDiscSprite();
+                new Vector3(-2.0f, -5.0f, 0f), new Vector2(2.2f, 1.15f),
+                padsSkinned ? new Color(1f, 1f, 1f, 0.62f) : PadIdleDon, 2);
+            padDon.sprite = padsSkinned ? donTex : GetDiscSprite();
             padKa = CreateSprite("PadKa", playfieldRoot.transform,
-                new Vector3(2.0f, -5.0f, 0f), new Vector2(2.2f, 1.15f), PadIdleKa, 2);
-            padKa.sprite = GetDiscSprite();
+                new Vector3(2.0f, -5.0f, 0f), new Vector2(2.2f, 1.15f),
+                padsSkinned ? new Color(1f, 1f, 1f, 0.62f) : PadIdleKa, 2);
+            padKa.sprite = padsSkinned ? kaTex : GetDiscSprite();
             CreatePadLabel("咚", new Vector3(-2.0f, -5.0f, 0f), 1);
             CreatePadLabel("咔", new Vector3(2.0f, -5.0f, 0f), 1);
         }

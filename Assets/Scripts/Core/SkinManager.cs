@@ -22,6 +22,9 @@ namespace MusicGame.Core
             { "holdbody", new[] { "holdbody" } },
             { "disc", new[] { "disc", "taikohitcircle", "taikohitcircle-k" } },
             { "rollstrip", new[] { "rollstrip", "taikobigroll", "taikoroll" } },
+            { "don", new[] { "don", "taikohitcircle" } },
+            { "katsu", new[] { "katsu", "taikohitcircle-k", "taikohitcircle" } },
+            { "drum", new[] { "drum", "taikobase" } },
         };
 
         private static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();

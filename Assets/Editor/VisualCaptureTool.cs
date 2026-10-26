@@ -178,8 +178,13 @@ namespace MusicGame.EditorTools
             {
                 switch (flowStep)
                 {
-                    case 0: // 主菜单就绪后点"开始游戏"
-                        if (flowTicks > 60) { ClickButton("btnStart"); Advance("主菜单 -> 开始游戏"); }
+                    case 0: // 主菜单就绪后（太鼓流程先切皮肤）点"开始游戏"
+                        if (flowTicks > 60)
+                        {
+                            if (flowTaiko) { ClickButton("btnSkin"); Debug.Log("[VisCap] 切换皮肤 -> OpenTaiko"); }
+                            ClickButton("btnStart");
+                            Advance("主菜单 -> 开始游戏");
+                        }
                         break;
                     case 1: // 选曲列表：点第二项（真实歌曲，带音频与分析缓存；第一项 sample 无音频）
                         if (flowTicks > 40)

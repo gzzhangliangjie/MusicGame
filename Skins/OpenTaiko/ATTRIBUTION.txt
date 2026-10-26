@@ -1,0 +1,3 @@
+皮肤来源：OpenTaiko（github.com/0auBSQ/OpenTaiko）默认皮肤贴图
+许可：MIT —— 保留本声明即可自由使用
+本包内容：don.png(咚音符) katsu.png(咔音符) drum.png(鼓面)

@@ -9,7 +9,7 @@ namespace MusicGame.Gameplay.Taiko
     /// </summary>
     public class TaikoNote : MonoBehaviour
     {
-        private enum Kind { Don, Katsu, Roll }
+        internal enum Kind { Don, Katsu, Roll }
         private enum State { Falling, Rolling, Dead, Done }
 
         private static readonly Color DonColor = new Color(0.92f, 0.28f, 0.24f);
@@ -25,6 +25,7 @@ namespace MusicGame.Gameplay.Taiko
         private GameObject rollBody;   // 连击条身体
         private float rollFill;
         private float speed;
+        private Color baseDiscColor;
 
         /// <summary>卷动速度（世界单位/秒，向左为负）。</summary>
         private float Vx => -speed;
@@ -40,7 +41,13 @@ namespace MusicGame.Gameplay.Taiko
             speed = (TaikoSpawner.SpawnX - TaikoSpawner.HitX) / Mathf.Max(0.05f, spawner.TravelTime);
 
             EnsureVisuals();
-            disc.color = kind == Kind.Don ? DonColor : kind == Kind.Katsu ? KatsuColor : RollColor;
+            // 皮肤包贴图自带配色（不重染）；程序化圆盘按类型着色
+            disc.sprite = spawner.GetKindSprite(kind, out bool skinned);
+            disc.color = skinned ? Color.white
+                : kind == Kind.Don ? DonColor
+                : kind == Kind.Katsu ? KatsuColor
+                : RollColor;
+            baseDiscColor = disc.color;
             disc.transform.localScale = Vector3.one * (kind == Kind.Roll ? 0.42f : 0.5f);
             rollBody.SetActive(kind == Kind.Roll);
             if (kind == Kind.Roll)
@@ -165,8 +172,7 @@ namespace MusicGame.Gameplay.Taiko
 
         private void SetRollIntensity(float a)
         {
-            var c = disc.color;
-            disc.color = new Color(RollColor.r, RollColor.g, RollColor.b, Mathf.Clamp01(a));
+            disc.color = new Color(baseDiscColor.r, baseDiscColor.g, baseDiscColor.b, Mathf.Clamp01(a));
         }
 
         /// <summary>强制回收（停止/切歌）。</summary>
