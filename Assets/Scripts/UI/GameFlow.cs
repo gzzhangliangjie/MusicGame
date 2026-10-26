@@ -822,6 +822,7 @@ namespace MusicGame.UI
 
             // 订阅判定反馈：弹窗 + 误差条 + 连击打点（先退订旧局，避免重复）
             if (judgedHandler != null && gameManager != null) gameManager.OnJudgedWithDelta -= judgedHandler;
+            if (popupLayer != null) popupLayer.TaikoMode = gameManager != null && gameManager.TaikoMode;
             judgedHandler = (j, lane, isTail, delta) =>
             {
                 if (popupLayer != null) popupLayer.Show(j, lane, isTail);

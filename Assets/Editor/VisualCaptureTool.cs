@@ -160,10 +160,16 @@ namespace MusicGame.EditorTools
 
         private static void StartFlow()
         {
+            if (flowTaiko)
+            {
+                // 确定性选中太鼓皮肤（btnSkin 是循环切换，皮肤已在 OpenTaiko 时会切走）
+                PlayerPrefs.SetString("MusicGame.Skin", "OpenTaiko");
+                PlayerPrefs.Save();
+            }
             EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
             EditorSettings.enterPlayModeOptionsEnabled = true;
             EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
-            Screen.SetResolution(720, 1280, false);
+            Screen.SetResolution(1280, 720, false); // 横屏贴近真实桌面玩法（SpawnX=8.2 需要横向空间）
             EditorApplication.isPlaying = true;
             EditorApplication.update += FlowPump;
             Debug.Log("[VisCap] 真实路径复现启动：Main.unity + GameFlow，taiko=" + flowTaiko);
@@ -178,10 +184,9 @@ namespace MusicGame.EditorTools
             {
                 switch (flowStep)
                 {
-                    case 0: // 主菜单就绪后（太鼓流程先切皮肤）点"开始游戏"
+                    case 0: // 主菜单就绪后点"开始游戏"
                         if (flowTicks > 60)
                         {
-                            if (flowTaiko) { ClickButton("btnSkin"); Debug.Log("[VisCap] 切换皮肤 -> OpenTaiko"); }
                             ClickButton("btnStart");
                             Advance("主菜单 -> 开始游戏");
                         }
@@ -216,7 +221,14 @@ namespace MusicGame.EditorTools
                             Advance(flowTaiko ? "难度 -> easy（太鼓）" : "难度 -> easy");
                         }
                         break;
-                    case 3: // 等 4 秒让音符下落，诊断 + 截图
+                    case 3: // 等 4 秒让音符下落，弹窗展示 + 诊断 + 截图
+                        if (flowTicks == 228)
+                        {
+                            // 判定艺术字展示：截图前 12 帧触发，拍在弹出动画中段
+                            var pl = UnityEngine.Object.FindFirstObjectByType<JudgementPopupLayer>();
+                            if (pl != null) pl.Show(Judgement.Perfect, 0, false);
+                            else Debug.LogError("[VisCap] 找不到 JudgementPopupLayer");
+                        }
                         if (flowTicks > 240)
                         {
                             DumpDiagnostics();
