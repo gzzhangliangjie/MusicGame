@@ -1,4 +1,5 @@
 using System;
+using MusicGame.Core;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -12,17 +13,19 @@ namespace MusicGame.UI
     /// </summary>
     public static class UiKit
     {
-        /// <summary>统一配色表。</summary>
+        /// <summary>统一配色表（Accent/Primary/Secondary 实时读取当前主题）。</summary>
         public static class Theme
         {
             public static readonly Color Bg = new Color(0.07f, 0.08f, 0.12f, 0.98f);
             public static readonly Color PanelBg = new Color(0.13f, 0.15f, 0.22f, 0.96f);
-            public static readonly Color Primary = new Color(0.15f, 0.55f, 0.95f);
-            public static readonly Color Secondary = new Color(0.55f, 0.30f, 0.85f);
-            public static readonly Color Accent = new Color(0.20f, 0.85f, 0.95f);
-            public static readonly Color Warn = new Color(0.95f, 0.40f, 0.30f);
-            public static readonly Color Dim = new Color(0.62f, 0.66f, 0.74f);
-            public static readonly Color Quit = new Color(0.38f, 0.20f, 0.26f);
+            public static Color Primary => Palette.Current.Accent;
+            public static Color Secondary => Palette.Current.AccentSoft;
+            public static Color Accent => Palette.Current.Accent;
+            public static Color Backdrop1 => Palette.Current.Backdrop1;
+            public static Color Backdrop2 => Palette.Current.Backdrop2;
+            public static Color Warn = new Color(0.95f, 0.40f, 0.30f);
+            public static Color Dim = new Color(0.62f, 0.66f, 0.74f);
+            public static Color Quit = new Color(0.38f, 0.20f, 0.26f);
         }
 
         public const string UiRootName = "MusicGameUiRoot";

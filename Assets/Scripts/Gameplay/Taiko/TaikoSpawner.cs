@@ -42,9 +42,11 @@ namespace MusicGame.Gameplay.Taiko
         private static Sprite discSprite;
         private static Sprite rollStripSprite;
 
-        /// <summary>鼓面/音符圆盘（2 单位原生）。</summary>
+        /// <summary>鼓面/音符圆盘（优先皮肤包 disc.png）。</summary>
         internal static Sprite GetDiscSprite()
         {
+            Sprite skinned = SkinManager.Load("disc");
+            if (skinned != null) return skinned;
             if (discSprite == null)
             {
                 const int size = 128;

@@ -49,14 +49,8 @@ namespace MusicGame.Gameplay
         private static readonly Color PadIdleColor = new Color(1f, 1f, 1f, 0.10f);
         private static readonly Color PadPressedColor = new Color(0.20f, 0.85f, 0.95f, 0.38f);
 
-        /// <summary>每轨主题色（青/蓝/紫/粉）：音符、轨道线、按键板同色系，视觉对应零歧义。</summary>
-        public static readonly Color[] LaneColors =
-        {
-            new Color(0.25f, 0.78f, 0.95f),
-            new Color(0.32f, 0.56f, 0.95f),
-            new Color(0.68f, 0.46f, 0.95f),
-            new Color(0.95f, 0.46f, 0.75f)
-        };
+        /// <summary>每轨主题色（当前主题的四轨色）：音符、轨道线、按键板同色系，视觉对应零歧义。</summary>
+        public static Color[] LaneColors => Palette.Current.Lanes;
 
         /// <summary>计分系统（hold 尾判上报用，由 GameManager 注入）。</summary>
         internal ScoreSystem Score { get; set; }
@@ -96,9 +90,11 @@ namespace MusicGame.Gameplay
 
         // ---------------- 程序化皮肤（osu!mania 圆角渐变音符 + Phigros 场地氛围，无外部资源） ----------------
 
-        /// <summary>音符：2x1 单位圆角矩形，纵向渐变（下亮上暗）+ 亮色描边。</summary>
+        /// <summary>音符：优先当前皮肤包 note.png，否则程序化圆角渐变（2x1 单位）。</summary>
         internal static Sprite GetNoteSprite()
         {
+            Sprite skinned = SkinManager.Load("note");
+            if (skinned != null) return skinned;
             if (noteSprite == null)
                 noteSprite = Sprite.Create(
                     MakeRoundedRect(96, 48, 15, 3,
@@ -132,9 +128,11 @@ namespace MusicGame.Gameplay
             return holdBodySprite;
         }
 
-        /// <summary>按键板：圆角矩形，暗色填充 + 灰边，按下时整体染青。</summary>
+        /// <summary>按键板：优先皮肤包 pad.png，否则程序化圆角。</summary>
         internal static Sprite GetPadSprite()
         {
+            Sprite skinned = SkinManager.Load("pad");
+            if (skinned != null) return skinned;
             if (padSprite == null)
                 padSprite = Sprite.Create(
                     MakeRoundedRect(96, 48, 14, 2,

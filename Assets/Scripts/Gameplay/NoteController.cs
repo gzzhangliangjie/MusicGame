@@ -59,7 +59,7 @@ namespace MusicGame.Gameplay
             var bodyGo = new GameObject("Body");
             bodyGo.transform.SetParent(transform, false);
             body = bodyGo.AddComponent<SpriteRenderer>();
-            body.sprite = NoteSpawner.GetHoldBodySprite();
+            body.sprite = MusicGame.Core.SkinManager.Load("holdbody") ?? NoteSpawner.GetHoldBodySprite();
             body.sortingOrder = 9;
         }
 

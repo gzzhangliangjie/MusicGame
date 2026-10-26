@@ -58,6 +58,8 @@ namespace MusicGame.UI
         Action<Judgement, int, bool, double> judgedHandler;
         bool taikoMode;
         Image modeNormalImg, modeTaikoImg;
+        Text menuTitle;
+        UiBackdrop backdrop;
 
         // 选曲/分析/难度/HUD 控件
         Transform songListContent;
@@ -74,10 +76,12 @@ namespace MusicGame.UI
 
         void Awake()
         {
+            Palette.Restore();
             canvas = UiKit.EnsureCanvas();
             var backdropGo = new GameObject("UiBackdrop", typeof(RectTransform));
             backdropGo.transform.SetParent(canvas.transform, false);
-            backdropGo.AddComponent<UiBackdrop>().Setup((RectTransform)canvas.transform); // 最底层动态背景
+            backdrop = backdropGo.AddComponent<UiBackdrop>();
+            backdrop.Setup((RectTransform)canvas.transform); // 最底层动态背景
             analyzer = FindFirstObjectByType<SongAnalyzer>();
             if (analyzer == null)
             {
@@ -154,6 +158,7 @@ namespace MusicGame.UI
         {
             var title = UiKit.Label(menuScreen, "title", "MUSIC GAME", 96, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
             UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.58f), new Vector2(1f, 0.88f));
+            menuTitle = title;
             var titleOutline = title.gameObject.AddComponent<Outline>();
             titleOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
             titleOutline.effectDistance = new Vector2(3f, -3f);
@@ -162,8 +167,26 @@ namespace MusicGame.UI
             UiKit.ButtonRect(menuScreen, "btnStart", "开 始 游 戏", new Vector2(0f, -40f), new Vector2(480f, 96f), OnStartClicked, UiKit.Theme.Primary, 36);
             UiKit.ButtonRect(menuScreen, "btnCalibrate", "延 迟 校 准", new Vector2(0f, -160f), new Vector2(480f, 96f), OnCalibrateClicked, UiKit.Theme.Secondary, 36);
             UiKit.ButtonRect(menuScreen, "btnQuit", "退 出", new Vector2(0f, -280f), new Vector2(480f, 80f), OnQuitClicked, UiKit.Theme.Quit, 30);
+            UiKit.ButtonRect(menuScreen, "btnTheme", "主题：" + Palette.Current.Name, new Vector2(-250f, -390f), new Vector2(430f, 64f), OnThemeClicked, UiKit.Theme.PanelBg, 24);
+            UiKit.ButtonRect(menuScreen, "btnSkin", "皮肤：" + SkinManager.Current, new Vector2(250f, -390f), new Vector2(430f, 64f), OnSkinClicked, UiKit.Theme.PanelBg, 24);
             var help = UiKit.Label(menuScreen, "help", "导入 mp3 / ogg / wav → 自动分析生成四档谱面\nD F J K 或 鼠标点击轨道击打 · 游戏中 Esc 暂停", 22, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
-            UiKit.Stretch(help.rectTransform, new Vector2(0f, -0.03f), new Vector2(1f, 0.09f));
+            UiKit.Stretch(help.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.07f));
+        }
+
+        void OnThemeClicked()
+        {
+            string name = Palette.Cycle();
+            var btn = menuScreen.Find("btnTheme")?.GetComponentInChildren<Text>();
+            if (btn != null) btn.text = "主题：" + name;
+            if (menuTitle != null) menuTitle.color = UiKit.Theme.Accent;
+            if (backdrop != null) backdrop.ApplyPalette();
+        }
+
+        void OnSkinClicked()
+        {
+            string name = SkinManager.Cycle();
+            var btn = menuScreen.Find("btnSkin")?.GetComponentInChildren<Text>();
+            if (btn != null) btn.text = "皮肤：" + name; // 新皮肤下一局生效
         }
 
         void BuildSongSelect()

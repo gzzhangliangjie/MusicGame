@@ -53,6 +53,13 @@ namespace MusicGame.UI
             return wash;
         }
 
+        /// <summary>主题切换后重染两块柔光。</summary>
+        public void ApplyPalette()
+        {
+            if (washA != null) washA.GetComponent<Image>().color = new Color(UiKit.Theme.Backdrop1.r, UiKit.Theme.Backdrop1.g, UiKit.Theme.Backdrop1.b, 0.10f);
+            if (washB != null) washB.GetComponent<Image>().color = new Color(UiKit.Theme.Backdrop2.r, UiKit.Theme.Backdrop2.g, UiKit.Theme.Backdrop2.b, 0.08f);
+        }
+
         private void Update()
         {
             if (washA != null) washA.Rotate(0f, 0f, 3.5f * Time.unscaledDeltaTime);
