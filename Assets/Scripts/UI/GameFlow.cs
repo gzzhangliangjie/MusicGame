@@ -56,6 +56,8 @@ namespace MusicGame.UI
         JudgementPopupLayer popupLayer;
         HitErrorBar errorBar;
         Action<Judgement, int, bool, double> judgedHandler;
+        bool taikoMode;
+        Image modeNormalImg, modeTaikoImg;
 
         // 选曲/分析/难度/HUD 控件
         Transform songListContent;
@@ -223,10 +225,26 @@ namespace MusicGame.UI
             UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.88f), new Vector2(1f, 0.99f));
             diffSongLabel = UiKit.Label(diffScreen, "song", "", 28, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
             UiKit.Stretch(diffSongLabel.rectTransform, new Vector2(0f, 0.80f), new Vector2(1f, 0.88f));
+
+            // 模式切换：通常（四轨下落）/ 太鼓（咚咔横卷）
+            var normalBtn = UiKit.ButtonRect(diffScreen, "modeNormal", "通 常 模 式", new Vector2(-250f, 430f), new Vector2(430f, 88f), () => SetTaikoMode(false), UiKit.Theme.Primary, 28);
+            var taikoBtn = UiKit.ButtonRect(diffScreen, "modeTaiko", "太 鼓 模 式", new Vector2(250f, 430f), new Vector2(430f, 88f), () => SetTaikoMode(true), UiKit.Theme.Secondary, 28);
+            modeNormalImg = normalBtn.image;
+            modeTaikoImg = taikoBtn.image;
+
             var holderRt = UiKit.Node(diffScreen, "list");
             UiKit.Stretch(holderRt, new Vector2(0f, 0.06f), new Vector2(1f, 0.76f));
             diffListHolder = holderRt;
             UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(0f, -466f), new Vector2(320f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 26);
+            SetTaikoMode(false);
+        }
+
+        /// <summary>切换游玩模式并刷新两个切换按钮的高亮。</summary>
+        void SetTaikoMode(bool taiko)
+        {
+            taikoMode = taiko;
+            if (modeNormalImg != null) modeNormalImg.color = taiko ? new Color(0.25f, 0.28f, 0.36f) : UiKit.Theme.Primary;
+            if (modeTaikoImg != null) modeTaikoImg.color = taiko ? new Color(0.95f, 0.45f, 0.25f) : new Color(0.25f, 0.28f, 0.36f);
         }
 
         void BuildHud()
@@ -744,6 +762,7 @@ namespace MusicGame.UI
             // 绝不挂到本类所在 Canvas 下：ScreenSpaceOverlay 画布的世界空间是 GUI 像素坐标，
             // 世界对象（音符/判定线/按键板）挂进去会被带出相机视野（诊断实测 viewport=(38,38)）
             gameManager = gameplayRoot.AddComponent<GameManager>();
+            gameManager.TaikoMode = taikoMode;
             try
             {
                 gameManager.PlaySong(entry.Meta, diff);
@@ -773,7 +792,7 @@ namespace MusicGame.UI
             state = FlowState.Playing;
             isPaused = false;
             pauseScreen.gameObject.SetActive(false);
-            hudSong.text = entry.Meta.Title + " · " + UiKit.PrettyDifficulty(diff);
+            hudSong.text = entry.Meta.Title + " · " + UiKit.PrettyDifficulty(diff) + (taikoMode ? " · 太鼓" : "");
             hudHint.text = string.IsNullOrEmpty(entry.Meta.AudioPath)
                 ? "无声测试模式 · D F J K / 鼠标点击 · Esc 暂停"
                 : "D F J K / 鼠标点击轨道 · Esc 暂停";

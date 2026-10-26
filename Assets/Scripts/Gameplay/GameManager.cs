@@ -31,6 +31,8 @@ namespace MusicGame.Gameplay
 
         /// <summary>音符下落时间（秒，从生成点落到判定线）。</summary>
         public float noteTravelTimeSeconds = DefaultTravelTimeSeconds;
+        /// <summary>太鼓模式：PlaySong 前置位。音符横向卷动，咚/咔/连击条，复用同一判定计分。</summary>
+        public bool TaikoMode;
 
         /// <summary>谱面结束/出错/停止回调，携带有结算数据。</summary>
         public event Action<PlayResult> OnSongFinished;
@@ -64,6 +66,7 @@ namespace MusicGame.Gameplay
         private ScoreSystem score;
         private HitEffects hitEffects;
         private SpectrumVisualizer visualizer;
+        private Taiko.TaikoSpawner taikoSpawner;
         private Lyrics lyrics;
         private GameObject runtimeRoot;
         private bool playing;
@@ -141,7 +144,7 @@ namespace MusicGame.Gameplay
         {
             audioOffsetSeconds = PlayerPrefs.GetFloat(AudioOffsetPrefKey, 0f);
 
-            // 1) 载谱：Songs/<songId>/chart_<difficulty>.json
+            // 1) 载谱：Songs/<songId>/chart_<difficulty>.json；太鼓模式重映射轨道（0/1→咚 2/3→咔 hold→连击）
             string chartPath = FindChartPath(lastSongId, lastDifficulty);
             ChartData chart = null;
             if (chartPath != null)
@@ -149,6 +152,7 @@ namespace MusicGame.Gameplay
                 try { chart = ChartIO.Load(chartPath); }
                 catch (Exception e) { Debug.LogException(e); }
             }
+            if (chart != null && TaikoMode) chart = RemapChartForTaiko(chart);
             if (chart == null || chart.Notes == null || chart.Notes.Count == 0)
             {
                 FinishPlay(false, "chart not found or empty: Songs/" + lastSongId + "/chart_" + lastDifficulty + ".json");
@@ -224,20 +228,26 @@ namespace MusicGame.Gameplay
 
         private void Update()
         {
-            if (!playing || paused || judge == null || score == null || spawner == null || conductor == null) return;
+            if (!playing || paused || judge == null || score == null || conductor == null) return;
+            if (!TaikoMode && (spawner == null || hitEffects == null)) return;
+            if (TaikoMode && taikoSpawner == null) return;
             PollInput();
             double now = JudgedTime;
 
-            // 头判：D/F/J/K 或触屏
-            for (int lane = 0; lane < lanePressed.Length; lane++)
+            // 头判：太鼓=咚(0)/咔(1)/连击(2 任一鼓)，四轨=lane 0..3
+            for (int lane = 0; lane < (TaikoMode ? 3 : lanePressed.Length); lane++)
             {
                 if (!lanePressed[lane]) continue;
                 if (judge.TryHit(lane, now, out NoteData note, out Judgement judgement))
                 {
                     double delta = now - note.Time;
                     score.Register(judgement, false);
-                    spawner.NotifyJudged(note, judgement);
-                    hitEffects.Spawn(lane, judgement, false, false);
+                    if (TaikoMode) taikoSpawner.NotifyJudged(note, judgement);
+                    else
+                    {
+                        spawner.NotifyJudged(note, judgement);
+                        hitEffects.Spawn(lane, judgement, false, false);
+                    }
                     OnJudged?.Invoke(judgement, lane, false);
                     OnJudgedWithDelta?.Invoke(judgement, lane, false, delta);
                 }
@@ -247,8 +257,12 @@ namespace MusicGame.Gameplay
             while (judge.TryMiss(now, out NoteData missed))
             {
                 score.Register(Judgement.Miss, false);
-                spawner.NotifyMissed(missed);
-                hitEffects.Spawn(missed.Lane, Judgement.Miss, false, true);
+                if (TaikoMode) taikoSpawner.NotifyMissed(missed);
+                else
+                {
+                    spawner.NotifyMissed(missed);
+                    hitEffects.Spawn(missed.Lane, Judgement.Miss, false, true);
+                }
                 OnJudged?.Invoke(Judgement.Miss, missed.Lane, false);
                 OnJudgedWithDelta?.Invoke(Judgement.Miss, missed.Lane, false, JudgeSystem.BadWindowSeconds);
             }
@@ -262,7 +276,7 @@ namespace MusicGame.Gameplay
             return laneHeld[lane];
         }
 
-        // 尾判等内部反馈入口（NoteSpawner.RegisterTail 调用）
+        // 尾判等内部反馈入口（NoteSpawner.RegisterTail / TaikoSpawner.RegisterTail 调用）
         internal void NotifyJudgementFeedback(NoteData note, Judgement judgement, bool isTail)
         {
             OnJudged?.Invoke(judgement, note != null ? note.Lane : -1, isTail);
@@ -270,7 +284,7 @@ namespace MusicGame.Gameplay
             double target = note.Time + (isTail ? note.Duration : 0.0);
             double delta = JudgedTime - target;
             OnJudgedWithDelta?.Invoke(judgement, note.Lane, isTail, delta);
-            if (judgement != Judgement.Miss) hitEffects.Spawn(note.Lane, judgement, isTail, false);
+            if (judgement != Judgement.Miss && !TaikoMode) hitEffects.Spawn(note.Lane, judgement, isTail, false);
         }
 
         private void PollInput()
@@ -280,6 +294,8 @@ namespace MusicGame.Gameplay
                 lanePressed[i] = false;
                 laneHeld[i] = false;
             }
+
+            if (TaikoMode) { PollTaikoInput(); return; }
 
 #if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current;
@@ -355,6 +371,52 @@ namespace MusicGame.Gameplay
 #endif
         }
 
+        // 太鼓输入：F/J=咚(0)，D/K=咔(1)，任意鼓=连击(2)；鼠标/触屏按屏幕左右半区分咚咔
+        private void PollTaikoInput()
+        {
+            bool don = false, katsu = false;
+#if ENABLE_INPUT_SYSTEM
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                don |= keyboard.fKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame;
+                katsu |= keyboard.dKey.wasPressedThisFrame || keyboard.kKey.wasPressedThisFrame;
+                laneHeld[0] |= keyboard.fKey.isPressed || keyboard.jKey.isPressed;
+                laneHeld[1] |= keyboard.dKey.isPressed || keyboard.kKey.isPressed;
+            }
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse != null && !UiBlocked())
+            {
+                bool leftHalf = mouse.position.ReadValue().x < Screen.width * 0.5f;
+                int pad = leftHalf ? 0 : 1;
+                lanePressed[pad] |= mouse.leftButton.wasPressedThisFrame;
+                laneHeld[pad] |= mouse.leftButton.isPressed;
+            }
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            don = Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.J);
+            katsu = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.K);
+            laneHeld[0] = Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.J);
+            laneHeld[1] = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.K);
+            if (Input.GetMouseButton(0) && !UiBlocked())
+            {
+                int pad = Input.mousePosition.x < Screen.width * 0.5f ? 0 : 1;
+                lanePressed[pad] |= Input.GetMouseButtonDown(0);
+                laneHeld[pad] = true;
+            }
+#endif
+            lanePressed[0] |= don;
+            lanePressed[1] |= katsu;
+            bool any = don || katsu;
+            lanePressed[2] |= any;
+            laneHeld[2] |= laneHeld[0] || laneHeld[1];
+        }
+
+        // 触屏（新旧后端）也按左右半映射咚咔
+        private bool UiBlocked()
+        {
+            return false; // 太鼓模式 HUD 无交互元素，点击总是视为打鼓
+        }
+
         // 屏幕横坐标 → 轨道号（0..3，越界返回 -1）
         private int ScreenXToLane(float screenX)
         {
@@ -373,24 +435,45 @@ namespace MusicGame.Gameplay
 
             conductor = runtimeRoot.AddComponent<Conductor>();
 
-            GameObject prefab = BuildNotePrefab();
+            GameObject prefab = BuildNotePrefab(TaikoMode);
             prefab.transform.SetParent(runtimeRoot.transform, false); // 挂到 runtimeRoot 下随 Cleanup 统一销毁，避免每局泄漏一个游离模板
             pool = new GameObject("NotePool").AddComponent<NotePool>();
             pool.transform.SetParent(runtimeRoot.transform, false);
             pool.Setup(prefab, 32);
 
-            spawner = new GameObject("NoteSpawner").AddComponent<NoteSpawner>();
-            spawner.transform.SetParent(runtimeRoot.transform, false);
-            spawner.Score = score;
-            spawner.Game = this;
-            spawner.Setup(chart, conductor, pool, noteTravelTimeSeconds);
+            if (TaikoMode)
+            {
+                taikoSpawner = new GameObject("TaikoSpawner").AddComponent<Taiko.TaikoSpawner>();
+                taikoSpawner.transform.SetParent(runtimeRoot.transform, false);
+                taikoSpawner.Score = score;
+                taikoSpawner.Game = this;
+                taikoSpawner.Setup(chart, conductor, pool, noteTravelTimeSeconds);
+            }
+            else
+            {
+                spawner = new GameObject("NoteSpawner").AddComponent<NoteSpawner>();
+                spawner.transform.SetParent(runtimeRoot.transform, false);
+                spawner.Score = score;
+                spawner.Game = this;
+                spawner.Setup(chart, conductor, pool, noteTravelTimeSeconds);
 
-            hitEffects = new GameObject("HitEffects").AddComponent<HitEffects>();
-            hitEffects.transform.SetParent(runtimeRoot.transform, false);
+                hitEffects = new GameObject("HitEffects").AddComponent<HitEffects>();
+                hitEffects.transform.SetParent(runtimeRoot.transform, false);
+            }
 
             visualizer = new GameObject("SpectrumVisualizer").AddComponent<SpectrumVisualizer>();
             visualizer.transform.SetParent(runtimeRoot.transform, false);
             visualizer.Setup(audioSource, conductor);
+        }
+
+        private static GameObject BuildNotePrefab(bool taiko)
+        {
+            var prefab = new GameObject("NotePrefab");
+            prefab.AddComponent<SpriteRenderer>();
+            if (taiko) prefab.AddComponent<Taiko.TaikoNote>();
+            else prefab.AddComponent<NoteController>();
+            prefab.SetActive(false);
+            return prefab;
         }
 
         private static GameObject BuildNotePrefab()
@@ -433,6 +516,32 @@ namespace MusicGame.Gameplay
         }
 
         // 歌词：优先 <歌曲名>.lrc（与歌曲同名），回退 lyrics.lrc；缺失/损坏静默降级为无歌词
+        // 太鼓轨道重映射：lane 0/1 → 0(咚)，lane 2/3 → 1(咔)，hold → 2(连击条)；其余字段原样复制
+        private static ChartData RemapChartForTaiko(ChartData source)
+        {
+            var mapped = new ChartData
+            {
+                SongId = source.SongId,
+                Difficulty = source.Difficulty,
+                Bpm = source.Bpm,
+                OffsetSeconds = source.OffsetSeconds,
+                Notes = new List<NoteData>(source.Notes.Count)
+            };
+            foreach (NoteData note in source.Notes)
+            {
+                if (note == null || note.Lane < 0 || note.Lane > 3) continue;
+                bool hold = string.Equals(note.Type, "hold", StringComparison.OrdinalIgnoreCase) && note.Duration > 0.0;
+                mapped.Notes.Add(new NoteData
+                {
+                    Time = note.Time,
+                    Lane = hold ? 2 : (note.Lane <= 1 ? 0 : 1),
+                    Type = hold ? "hold" : "tap",
+                    Duration = note.Duration
+                });
+            }
+            return mapped;
+        }
+
         private static Lyrics LoadLyrics(string chartPath, SongMeta meta)
         {
             try
@@ -509,6 +618,7 @@ namespace MusicGame.Gameplay
             judge = null;
             hitEffects = null;
             visualizer = null;
+            taikoSpawner = null;
             lyrics = null;
             // score 保留，供结算后查询
         }

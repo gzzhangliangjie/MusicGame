@@ -142,9 +142,23 @@ namespace MusicGame.EditorTools
 
         private static int flowStep;
         private static int flowTicks;
+        private static bool flowTaiko;
 
         /// <summary>完全复刻用户路径：Main.unity 进 Play → 自动点 开始游戏→sample→easy → 截图。</summary>
         public static void CaptureFlow()
+        {
+            flowTaiko = false;
+            StartFlow();
+        }
+
+        /// <summary>同上，但先切到太鼓模式。</summary>
+        public static void CaptureTaikoFlow()
+        {
+            flowTaiko = true;
+            StartFlow();
+        }
+
+        private static void StartFlow()
         {
             EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
             EditorSettings.enterPlayModeOptionsEnabled = true;
@@ -152,7 +166,7 @@ namespace MusicGame.EditorTools
             Screen.SetResolution(720, 1280, false);
             EditorApplication.isPlaying = true;
             EditorApplication.update += FlowPump;
-            Debug.Log("[VisCap] 真实路径复现启动：Main.unity + GameFlow");
+            Debug.Log("[VisCap] 真实路径复现启动：Main.unity + GameFlow，taiko=" + flowTaiko);
         }
 
         private static void FlowPump()
@@ -185,8 +199,17 @@ namespace MusicGame.EditorTools
                             Advance("选曲 -> song_73d9b60f15");
                         }
                         break;
-                    case 2: // 难度选 easy
-                        if (flowTicks > 40) { ClickButton("diff_easy"); Advance("难度 -> easy"); }
+                    case 2: // 难度选 easy（太鼓流程先切模式）
+                        if (flowTicks > 40)
+                        {
+                            if (flowTaiko)
+                            {
+                                ClickButton("modeTaiko");
+                                Debug.Log("[VisCap] 切换 -> 太鼓模式");
+                            }
+                            ClickButton("diff_easy");
+                            Advance(flowTaiko ? "难度 -> easy（太鼓）" : "难度 -> easy");
+                        }
                         break;
                     case 3: // 等 4 秒让音符下落，诊断 + 截图
                         if (flowTicks > 240)
