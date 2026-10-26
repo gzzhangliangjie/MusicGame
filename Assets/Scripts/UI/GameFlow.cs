@@ -825,7 +825,8 @@ namespace MusicGame.UI
         /// <summary>歌词行入场：淡入 + 轻微缩放回落（0.2s）。</summary>
         IEnumerator LyricIntro()
         {
-            var cg = hudLyric.GetComponent<CanvasGroup>() ?? hudLyric.gameObject.AddComponent<CanvasGroup>();
+            var cg = hudLyric.GetComponent<CanvasGroup>();
+            if (cg == null) cg = hudLyric.gameObject.AddComponent<CanvasGroup>(); // Unity 假 null 不能用 ?? 判空
             var rt = hudLyric.rectTransform;
             float t = 0f;
             while (t < 0.2f)
