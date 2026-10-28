@@ -90,6 +90,29 @@ namespace MusicGame.Pure.Model
             return true;
         }
 
+        /// <summary>
+        /// 当前行文本与其演唱时间窗（start=本行戳，end=下一行戳；末行用 fallbackSeconds 兜底）。
+        /// 供卡拉OK逐字渐亮按 (now-start)/(end-start) 均分推进；窗口为零/倒挂时调用方按满亮处理。
+        /// false = 第一句尚未开始。
+        /// </summary>
+        public bool TryGetLineSpan(double timeSeconds, out string text, out double start, out double end, double fallbackSeconds = 6.0)
+        {
+            text = null;
+            start = end = 0.0;
+            int lo = 0, hi = times.Count - 1, idx = -1;
+            while (lo <= hi)
+            {
+                int mid = (lo + hi) >> 1;
+                if (times[mid] <= timeSeconds) { idx = mid; lo = mid + 1; }
+                else hi = mid - 1;
+            }
+            if (idx < 0) return false;
+            text = texts[idx];
+            start = times[idx];
+            end = idx + 1 < times.Count ? times[idx + 1] : start + fallbackSeconds;
+            return true;
+        }
+
         // "mm:ss" / "mm:ss.xx"（分数位 1~3 位均可）；不合法返回 false（元数据标签）
         private static bool TryParseTimestamp(string tag, out double seconds)
         {

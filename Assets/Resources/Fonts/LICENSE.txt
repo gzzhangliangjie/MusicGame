@@ -1,0 +1,10 @@
+Fonts in this folder:
+
+- SourceHanSansCN-Heavy.otf
+  Source Han Sans CN Heavy (思源黑体)
+  Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name "Source Han".
+  Licensed under the SIL Open Font License 1.1 — free for commercial use, may be bundled.
+  https://github.com/adobe-fonts/source-han-sans
+
+- SourceHanSansCN-Medium.otf
+  Source Han Sans CN Medium (思源黑体) — same family and license as Heavy above.

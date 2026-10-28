@@ -98,6 +98,9 @@ namespace MusicGame.UI
 
         static Font LoadFont()
         {
+            // 正文字体：优先内置思源黑体 CN Medium（OFL 免费商用，比雅黑更有设计感），缺文件回退系统雅黑链
+            var cn = Resources.Load<Font>("Fonts/SourceHanSansCN-Medium");
+            if (cn != null) return cn;
             try
             {
                 return Font.CreateDynamicFontFromOSFont(
@@ -107,6 +110,85 @@ namespace MusicGame.UI
             try { return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
             catch (Exception) { }
             return Font.CreateDynamicFontFromOSFont("Arial", 28);
+        }
+
+        static Font cachedHeavyFont;
+
+        /// <summary>重黑体：歌词/中文大标题展示用。优先内置思源黑体 CN Heavy（OFL 免费商用，Assets/Resources/Fonts），
+        /// 缺文件回退 SimHei/雅黑系统链。</summary>
+        public static Font HeavyFont
+        {
+            get
+            {
+                if (cachedHeavyFont == null)
+                {
+                    cachedHeavyFont = Resources.Load<Font>("Fonts/SourceHanSansCN-Heavy");
+                    if (cachedHeavyFont == null)
+                    {
+                        try
+                        {
+                            cachedHeavyFont = Font.CreateDynamicFontFromOSFont(
+                                new[] { "SimHei", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC" }, 32);
+                        }
+                        catch (Exception) { }
+                    }
+                    if (cachedHeavyFont == null) cachedHeavyFont = FontOrDefault;
+                }
+                return cachedHeavyFont;
+            }
+        }
+
+        static Font cachedDigitFont;
+
+        /// <summary>数字计分板字体（连击/大数字用）：Impact 粗窄计分感，回退 Arial Black/默认字体。</summary>
+        public static Font DigitFont
+        {
+            get
+            {
+                if (cachedDigitFont == null)
+                {
+                    try
+                    {
+                        cachedDigitFont = Font.CreateDynamicFontFromOSFont(new[] { "Impact", "Arial Black", "Arial" }, 32);
+                    }
+                    catch (Exception) { }
+                    if (cachedDigitFont == null) cachedDigitFont = FontOrDefault;
+                }
+                return cachedDigitFont;
+            }
+        }
+
+        static Sprite ringSprite;
+
+        /// <summary>细圆环（白色柔边）：连击升级冲击波等 UI 特效通用。</summary>
+        public static Sprite RingSprite
+        {
+            get
+            {
+                if (ringSprite == null)
+                {
+                    const int size = 128;
+                    var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                    texture.filterMode = FilterMode.Bilinear;
+                    var pixels = new Color32[size * size];
+                    float c = size * 0.5f;
+                    for (int y = 0; y < size; y++)
+                    {
+                        for (int x = 0; x < size; x++)
+                        {
+                            float dx = (x + 0.5f - c) / c, dy = (y + 0.5f - c) / c;
+                            float r = Mathf.Sqrt(dx * dx + dy * dy);
+                            float band = Mathf.Clamp01(1f - Mathf.Abs(r - 0.82f) * size * 0.5f / 3f);
+                            pixels[y * size + x] = new Color32(255, 255, 255, (byte)(band * 255));
+                        }
+                    }
+                    texture.SetPixels32(pixels);
+                    texture.Apply(false, true);
+                    ringSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 64f);
+                    ringSprite.name = "UiRing";
+                }
+                return ringSprite;
+            }
         }
 
         static Sprite softDotSprite;
@@ -200,6 +282,21 @@ namespace MusicGame.UI
             return img;
         }
 
+        /// <summary>居中柔光斑（SoftDot，不挡射线）：标题/主按钮背后的辉光。</summary>
+        public static Image SoftGlow(Transform parent, string name, Vector2 anchoredPosition, float size, Color color, float alpha)
+        {
+            var rt = Node(parent, name);
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = anchoredPosition;
+            rt.sizeDelta = new Vector2(size, size);
+            var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = SoftDotSprite;
+            img.raycastTarget = false;
+            img.color = new Color(color.r, color.g, color.b, alpha);
+            return img;
+        }
+
         /// <summary>文本（全拉伸，由调用方用 Stretch 定区域）。</summary>
         public static Text Label(Transform parent, string name, string text,
             int fontSize, TextAnchor align, Color? color = null, bool bestFit = false)
@@ -245,6 +342,9 @@ namespace MusicGame.UI
             tint.pressedColor = new Color(0.78f, 0.82f, 0.9f, 1f);
             tint.fadeDuration = 0.08f;
             button.colors = tint;
+            var depth = rt.gameObject.AddComponent<Shadow>(); // 按钮投影：平底 Morpheus 式立体感
+            depth.effectColor = new Color(0f, 0f, 0f, 0.35f);
+            depth.effectDistance = new Vector2(0f, -3f);
             var txt = Label(rt, "label", label, fontSize, TextAnchor.MiddleCenter, Color.white, true);
             Stretch(txt.rectTransform, new Vector2(0f, 0.08f), new Vector2(1f, 0.92f), new Vector2(8f, 0f), new Vector2(-8f, 0f));
             var textShadow = txt.gameObject.AddComponent<Shadow>();
