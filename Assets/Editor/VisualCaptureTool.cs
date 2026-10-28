@@ -158,6 +158,251 @@ namespace MusicGame.EditorTools
             StartFlow();
         }
 
+        private static int menuTicks;
+
+        /// <summary>主菜单截图验收：Main.unity 进 Play，等入场动效播完截一帧后退出。</summary>
+        public static void CaptureMenu()
+        {
+            menuTicks = 0;
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+            Screen.SetResolution(1920, 1080, false);
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += MenuPump;
+            Debug.Log("[VisCap] 主菜单截图验收启动");
+        }
+
+        private static void MenuPump()
+        {
+            if (!EditorApplication.isPlaying) return;
+            menuTicks++;
+            if (menuTicks == 150)
+            {
+                ScreenCapture.CaptureScreenshot(CaptureDir + "/vis_menu.png");
+                Debug.Log("[VisCap] 主菜单截图已请求（tick=150，入场动效已结束）");
+            }
+            else if (menuTicks > 180)
+            {
+                Debug.Log("[VisCap] 主菜单截图完成，退出");
+                EditorApplication.Exit(0);
+            }
+        }
+
+        // ---------------- 主界面回归验收（难度页窄窗布局 / 结算残留） ----------------
+
+        private static int probeStep;
+        private static int probeTicks;
+
+        /// <summary>窄窗（832x907，复现用户竖长 Game 视图）截难度选择页，验收纪录面板不被难度按钮遮挡。</summary>
+        public static void CaptureDiffPage()
+        {
+            probeStep = 0; probeTicks = 0;
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+            Screen.SetResolution(832, 907, false);
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += DiffPagePump;
+            Debug.Log("[VisCap] 难度页窄窗验收启动");
+        }
+
+        private static void DiffPagePump()
+        {
+            if (!EditorApplication.isPlaying) return;
+            probeTicks++;
+            try
+            {
+                switch (probeStep)
+                {
+                    case 0:
+                        if (probeTicks > 60) { ClickButton("btnStart"); AdvanceProbe("主菜单 -> 开始游戏"); }
+                        break;
+                    case 1:
+                        if (probeTicks > 40) { ClickSecondSongItem(); AdvanceProbe("选曲 -> 真实歌曲"); }
+                        break;
+                    case 2:
+                        if (probeTicks > 60)
+                        {
+                            DumpDiffGeometry();
+                            ScreenCapture.CaptureScreenshot(CaptureDir + "/vis_diff_narrow.png");
+                            Debug.Log("[VisCap] 难度页窄窗截图已请求");
+                            probeStep = 3; probeTicks = 0;
+                        }
+                        break;
+                    case 3:
+                        if (probeTicks > 30) { Debug.Log("[VisCap] 难度页验收完成，退出"); EditorApplication.Exit(0); }
+                        break;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VisCap] 难度页验收异常 @step" + probeStep + ": " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        /// <summary>结算残留验收：真打一局 → 强制弹结算（NEW RECORD）→ 点“再来一次”→ 校验结算面板已隐藏 + 截图。</summary>
+        public static void CaptureRetryResidue()
+        {
+            probeStep = 0; probeTicks = 0;
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+            Screen.SetResolution(1280, 720, false);
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += RetryPump;
+            Debug.Log("[VisCap] 结算残留验收启动");
+        }
+
+        private static void RetryPump()
+        {
+            if (!EditorApplication.isPlaying) return;
+            probeTicks++;
+            try
+            {
+                switch (probeStep)
+                {
+                    case 0:
+                        if (probeTicks > 60) { ClickButton("btnStart"); AdvanceProbe("主菜单 -> 开始游戏"); }
+                        break;
+                    case 1:
+                        if (probeTicks > 40) { ClickSecondSongItem(); AdvanceProbe("选曲 -> 真实歌曲"); }
+                        break;
+                    case 2:
+                        if (probeTicks > 40) { ClickButton("diff_easy"); AdvanceProbe("难度 -> easy"); }
+                        break;
+                    case 3: // 玩 4 秒：中途探测频谱饱和度，之后强制弹结算（带 NEW RECORD 横幅）
+                        if (probeTicks == 150 || probeTicks == 230) ProbeSpectrum();
+                        if (probeTicks > 240)
+                        {
+                            var flow = Object.FindFirstObjectByType<GameFlow>();
+                            var field = typeof(GameFlow).GetField("results",
+                                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                            var results = field != null ? field.GetValue(flow) as ResultsScreen : null;
+                            if (results == null) { Debug.LogError("[VisCap] 反射取 results 失败"); EditorApplication.Exit(1); return; }
+                            results.Show("验收测试曲", "Easy", 96.5, 123, 456789, 130,
+                                37, 12, 3, 1, "超越纪录！  得分 1,000 → 456,789", true);
+                            AdvanceProbe("强制弹出结算（NEW RECORD）");
+                        }
+                        break;
+                    case 4: // 结算展示中：dump 面板子项几何/颜色，再截一张带判定计数的结算屏
+                        if (probeTicks > 30)
+                        {
+                            var rp = GameObject.Find("ResultsPanel");
+                            if (rp != null)
+                                foreach (Transform child in rp.transform)
+                                {
+                                    var crt = (RectTransform)child;
+                                    var corners = new Vector3[4];
+                                    crt.GetWorldCorners(corners);
+                                    var g = child.GetComponent<UnityEngine.UI.Graphic>();
+                                    Debug.Log("[VisCap] results." + child.name +
+                                              " active=" + child.gameObject.activeInHierarchy +
+                                              " c0=" + corners[0] + " c2=" + corners[2] +
+                                              " color=" + (g != null ? g.color.ToString() : "n/a") +
+                                              " graphicOn=" + (g != null && g.enabled));
+                                }
+                            ScreenCapture.CaptureScreenshot(CaptureDir + "/vis_results.png");
+                            Debug.Log("[VisCap] 结算屏截图已请求（含 Perfect/Good/Bad/Miss 计数）");
+                            probeStep = 5; probeTicks = 0;
+                        }
+                        break;
+                    case 5:
+                        if (probeTicks > 30) { ClickButton("btnRetry"); AdvanceProbe("结算 -> 再来一次"); }
+                        break;
+                    case 6: // 下一局进行中：结算面板必须已隐藏（Find 只命中激活对象，找得到即残留）
+                        if (probeTicks > 180)
+                        {
+                            var panel = GameObject.Find("ResultsPanel");
+                            if (panel != null)
+                            {
+                                Debug.LogError("[VisCap] 残留！下一局开始后 ResultsPanel 仍处于激活状态");
+                                EditorApplication.Exit(1);
+                                return;
+                            }
+                            ScreenCapture.CaptureScreenshot(CaptureDir + "/vis_retry.png");
+                            Debug.Log("[VisCap] 结算无残留，截图已请求");
+                            probeStep = 7; probeTicks = 0;
+                        }
+                        break;
+                    case 7:
+                        if (probeTicks > 30) { Debug.Log("[VisCap] 结算残留验收完成，退出"); EditorApplication.Exit(0); }
+                        break;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VisCap] 结算残留验收异常 @step" + probeStep + ": " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static void AdvanceProbe(string label)
+        {
+            Debug.Log("[VisCap] " + label);
+            probeStep++;
+            probeTicks = 0;
+        }
+
+        /// <summary>频谱饱和度探针：统计顶格（≥95% 最大高度）的光柱数量，验证 AGC 后不再整排全满。</summary>
+        private static void ProbeSpectrum()
+        {
+            int total = 0, pegged = 0;
+            float sum = 0f;
+            for (int i = 0; i < 28; i++)
+            {
+                var bar = GameObject.Find("Bar" + i);
+                if (bar == null) continue;
+                total++;
+                float h = bar.transform.localScale.y;
+                sum += h;
+                if (h >= 2.2f * 0.95f) pegged++;
+            }
+            Debug.Log(string.Format("[VisCap] 频谱探针: 柱数={0} 顶格={1} 平均高度={2:F2}/{3}",
+                total, pegged, total > 0 ? sum / total : 0f, 2.2f));
+        }
+
+        /// <summary>难度页几何诊断：关键元素的世界四角（ScreenSpaceOverlay 画布下即屏幕像素，y 向上）。</summary>
+        private static void DumpDiffGeometry()
+        {
+            Debug.Log("[VisCap] Screen=" + Screen.width + "x" + Screen.height);
+            var canvas = Object.FindFirstObjectByType<Canvas>();
+            if (canvas != null)
+            {
+                var crt = (RectTransform)canvas.transform;
+                Debug.Log("[VisCap] Canvas rect=" + crt.rect.width + "x" + crt.rect.height +
+                          " scaleFactor=" + canvas.scaleFactor);
+            }
+            string[] names = { "title", "song", "modeNormal", "modeTaiko", "diffRecords", "list", "btnBack" };
+            foreach (var name in names)
+            {
+                var go = GameObject.Find(name);
+                if (go == null) { Debug.Log("[VisCap] " + name + ": 不存在"); continue; }
+                var rt = (RectTransform)go.transform;
+                var c = new Vector3[4];
+                rt.GetWorldCorners(c);
+                Debug.Log("[VisCap] " + name + ": 左下=" + c[0] + " 右上=" + c[2]);
+            }
+        }
+
+        private static void ClickSecondSongItem()
+        {
+            var buttons = Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsSortMode.None);
+            UnityEngine.UI.Button target = null;
+            foreach (var b in buttons)
+            {
+                if (b.name != "songItem") continue;
+                // 跳过无声样例歌（FindObjectsByType 顺序不固定，不能按序号取）
+                var label = b.GetComponentInChildren<UnityEngine.UI.Text>();
+                if (label != null && label.text.Contains("Silent")) continue;
+                target = b;
+                break;
+            }
+            if (target == null) { Debug.LogError("[VisCap] 没有可用的真实歌曲项"); EditorApplication.Exit(1); return; }
+            target.onClick.Invoke();
+        }
+
         private static void StartFlow()
         {
             if (flowTaiko)

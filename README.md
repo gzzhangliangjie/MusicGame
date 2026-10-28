@@ -47,6 +47,18 @@
 
 > 手感偏早/偏晚？主菜单进入**延迟校准**（Calibration），按节拍点击数次自动求平均 offset，保存在本地（PlayerPrefs 键 `MusicGame.AudioOffset`）。
 
+### 4.1 一键入库新歌（酷狗格式，固化流程）
+
+游戏内导入之外，工程自带批量入库工具 `tools/add_song.py`——把酷狗下载的加密音频/歌词/MV 一条命令做成可玩歌曲（含谱面与 MV 背景验收）：
+
+```bash
+python tools/add_song.py --audio "C:\Kugou\KugouMusic\王力宏 - 改变自己.kgma"
+```
+
+默认全链执行，幂等可重跑：解密（kgm/kgma→mp3/flac，flac 自动归一 320k mp3）→ KRC 转 LRC（自动在 `C:\Kugou\Lyric` 找同名）→ MV 转 H.264 mp4（HEVC 必须重编码、≤960×540、码率封顶、去音轨）→ **MV↔歌曲对齐量测**（能量包络互相关、分段一致性校验：偏移 ≥0.2s 写入 `meta.json` 的 `MvStartSeconds` 由播放端起播 seek；MV 缺歌头（负偏移）则冻结首帧垫齐；段间不一致判内部剪辑并告警人工复核）→ `Songs/song_<md5前10>/` 落库 → Unity 批处理出四档谱面 → MV 播放无头自检。
+
+常用参数：`--mv` 指定 MV（缺省自动找）、`--title` 改显示名（需与 LRC 同名匹配）、`--no-mv`/`--skip-sync`/`--no-import`/`--no-verify` 跳过环节、`--kugou` 改搜索根。依赖：`pip install imageio-ffmpeg numpy`（解密用 `%USERPROFILE%\.agents\skills\kgm2mp3`，缺失时先手动解密再传 mp3）。
+
 ## 5. 目录结构
 
 ```

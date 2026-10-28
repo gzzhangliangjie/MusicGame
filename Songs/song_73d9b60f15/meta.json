@@ -8,5 +8,6 @@
         "normal",
         "hard",
         "expert"
-    ]
+    ],
+    "MvStartSeconds": 1.55
 }
