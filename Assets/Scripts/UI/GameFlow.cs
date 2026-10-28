@@ -57,6 +57,10 @@ namespace MusicGame.UI
         HitErrorBar errorBar;
         Action<Judgement, int, bool, double> judgedHandler;
         bool taikoMode;
+        bool autoMode; // AUTO 观赏模式（难度选择页切换，PlayerPrefs 持久化）
+        const string AutoModePrefKey = "MusicGame.AutoMode";
+        Text autoBtnText;
+        Image autoBtnImg;
         Image modeNormalImg, modeTaikoImg;
         Text menuTitle;
         TextVerticalGradient menuTitleGrad;
@@ -115,6 +119,7 @@ namespace MusicGame.UI
         void Awake()
         {
             Palette.Restore();
+            autoMode = PlayerPrefs.GetInt(AutoModePrefKey, 0) == 1;
             canvas = UiKit.EnsureCanvas();
             var backdropGo = new GameObject("UiBackdrop", typeof(RectTransform));
             backdropGo.transform.SetParent(canvas.transform, false);
@@ -388,7 +393,8 @@ namespace MusicGame.UI
             var body = UiKit.Label(helpScreen, "body",
                 "【玩法】\n" +
                 "四轨模式：音符落到判定线时按对应键 D F J K，或鼠标点击轨道；长条按住直到尾端\n" +
-                "太鼓模式：F/J=咚(红)  D/K=咔(蓝)，也可按住鼠标左右半屏；气球连击条滚到鼓面后按住任意鼓充气，吹满爆掉得分\n\n" +
+                "太鼓模式：F/J=咚(红)  D/K=咔(蓝)，也可按住鼠标左右半屏；气球连击条滚到鼓面后按住任意鼓充气，吹满爆掉得分\n" +
+                "AUTO 观赏：难度选择页可开启，自动完美演奏整谱（成绩不计入纪录），随时 Esc 暂停\n\n" +
                 "【判定】\n" +
                 "Perfect ±40ms · Good ±80ms · Bad ±140ms · 超出为 Miss（只有 Miss 断连击）\n" +
                 "气球按充气比例判尾：≥90% Perfect / ≥60% Good / ≥30% Bad\n\n" +
@@ -493,6 +499,14 @@ namespace MusicGame.UI
             modeNormalImg = normalBtn.image;
             modeTaikoImg = taikoBtn.image;
 
+            // AUTO 观赏开关：模式行下方居中（0.757 高度分数钉位，落在模式行与难度首钮之间的空档）
+            var autoBtn = UiKit.ButtonRect(diffScreen, "btnAuto", "AUTO 观赏：关",
+                new Vector2(0f, 0f), new Vector2(380f, 58f), OnAutoToggleClicked, GhostBtn, 22);
+            PinFractionY((RectTransform)autoBtn.transform, 0f, 0.757f);
+            autoBtnImg = autoBtn.image;
+            autoBtnText = autoBtn.GetComponentInChildren<Text>();
+            RefreshAutoButton();
+
             // 难度列容器全屏拉伸（无底图），子按钮用画布高度分数钉位
             var holderRt = UiKit.Node(diffScreen, "list");
             UiKit.Stretch(holderRt);
@@ -511,6 +525,21 @@ namespace MusicGame.UI
             if (modeNormalImg != null) modeNormalImg.color = taiko ? new Color(0.25f, 0.28f, 0.36f) : UiKit.Theme.Primary;
             if (modeTaikoImg != null) modeTaikoImg.color = taiko ? new Color(0.95f, 0.45f, 0.25f) : new Color(0.25f, 0.28f, 0.36f);
             UpdateDiffRecordPanel();
+        }
+
+        /// <summary>切换 AUTO 观赏模式并刷新开关按钮（持久化，下一局生效）。</summary>
+        void OnAutoToggleClicked()
+        {
+            autoMode = !autoMode;
+            PlayerPrefs.SetInt(AutoModePrefKey, autoMode ? 1 : 0);
+            PlayerPrefs.Save();
+            RefreshAutoButton();
+        }
+
+        void RefreshAutoButton()
+        {
+            if (autoBtnText != null) autoBtnText.text = autoMode ? "AUTO 观赏：开" : "AUTO 观赏：关";
+            if (autoBtnImg != null) autoBtnImg.color = autoMode ? UiKit.Theme.Accent : GhostBtn;
         }
 
         void BuildHud()
@@ -1100,6 +1129,7 @@ namespace MusicGame.UI
             // 世界对象（音符/判定线/按键板）挂进去会被带出相机视野（诊断实测 viewport=(38,38)）
             gameManager = gameplayRoot.AddComponent<GameManager>();
             gameManager.TaikoMode = taikoMode;
+            gameManager.AutoMode = autoMode;
             try
             {
                 gameManager.PlaySong(entry.Meta, diff);
@@ -1130,10 +1160,13 @@ namespace MusicGame.UI
             state = FlowState.Playing;
             isPaused = false;
             pauseScreen.gameObject.SetActive(false);
-            hudSong.text = entry.Meta.Title + " · " + UiKit.PrettyDifficulty(diff) + (taikoMode ? " · 太鼓" : "");
-            hudHint.text = string.IsNullOrEmpty(entry.Meta.AudioPath)
-                ? "无声测试模式 · D F J K / 鼠标点击 · Esc 暂停"
-                : "D F J K / 鼠标点击轨道 · Esc 暂停";
+            hudSong.text = entry.Meta.Title + " · " + UiKit.PrettyDifficulty(diff)
+                + (taikoMode ? " · 太鼓" : "") + (autoMode ? " · AUTO" : "");
+            hudHint.text = autoMode
+                ? "AUTO 观赏模式 · 自动演奏中 · Esc 暂停"
+                : string.IsNullOrEmpty(entry.Meta.AudioPath)
+                    ? "无声测试模式 · D F J K / 鼠标点击 · Esc 暂停"
+                    : "D F J K / 鼠标点击轨道 · Esc 暂停";
             hudScore.text = "0";
             hudCombo.text = "";
             hudAcc.text = "--";
@@ -1472,10 +1505,14 @@ namespace MusicGame.UI
             StopGameplayObjects();
             ShowOnly(null);
 
-            // 提交本地最佳成绩，生成结算对比文案
+            // 提交本地最佳成绩，生成结算对比文案（AUTO 观赏局不提交，避免污染纪录）
             string recordLine = "";
             bool newRecord = false;
-            if (ss != null && currentEntry != null && !string.IsNullOrEmpty(currentDifficulty))
+            if (autoMode)
+            {
+                recordLine = "AUTO 观赏模式 · 成绩不计入本地纪录";
+            }
+            else if (ss != null && currentEntry != null && !string.IsNullOrEmpty(currentDifficulty))
             {
                 var key = PlayRecords.Key(currentEntry.Dir, taikoMode, currentDifficulty);
                 newRecord = PlayRecords.Submit(key, score, maxCombo, acc, out var prev);
@@ -1487,7 +1524,7 @@ namespace MusicGame.UI
                     recordLine = string.Format("历史最佳  得分 {0:N0} · 连击 {1} · {2:F2}%", prev.bestScore, prev.bestCombo, prev.bestAcc);
             }
             if (results != null)
-                results.Show(title, UiKit.PrettyDifficulty(currentDifficulty), acc, maxCombo, score, total,
+                results.Show(title, UiKit.PrettyDifficulty(currentDifficulty) + (autoMode ? " · AUTO" : ""), acc, maxCombo, score, total,
                     ss != null ? ss.PerfectCount : 0, ss != null ? ss.GoodCount : 0,
                     ss != null ? ss.BadCount : 0, ss != null ? ss.MissCount : 0,
                     recordLine, newRecord);

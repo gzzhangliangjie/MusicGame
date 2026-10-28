@@ -33,6 +33,8 @@ namespace MusicGame.Gameplay
         public float noteTravelTimeSeconds = DefaultTravelTimeSeconds;
         /// <summary>太鼓模式：PlaySong 前置位。音符横向卷动，咚/咔/连击条，复用同一判定计分。</summary>
         public bool TaikoMode;
+        /// <summary>Auto 观赏模式：PlaySong 前置位。自动以 Perfect 演奏整谱，不读取任何输入设备。</summary>
+        public bool AutoMode;
 
         /// <summary>谱面结束/出错/停止回调，携带有结算数据。</summary>
         public event Action<PlayResult> OnSongFinished;
@@ -58,6 +60,7 @@ namespace MusicGame.Gameplay
 
         private readonly bool[] lanePressed = new bool[4];
         private readonly bool[] laneHeld = new bool[4];
+        private readonly List<NoteData> autoActiveHolds = new List<NoteData>(); // Auto：头已命中、尾未到的 hold/气球
         private AudioSource audioSource;
         private Conductor conductor;
         private NotePool pool;
@@ -242,23 +245,18 @@ namespace MusicGame.Gameplay
             PollInput();
             double now = JudgedTime;
 
-            // 头判：太鼓=咚(0)/咔(1)/连击(2 任一鼓)，四轨=lane 0..3
+            // 头判：太鼓=咚(0)/咔(1)/连击(2 任一鼓)，四轨=lane 0..3；Auto 观赏逐帧清空到点队列（恒 Perfect）
             for (int lane = 0; lane < (TaikoMode ? 3 : lanePressed.Length); lane++)
             {
+                if (AutoMode)
+                {
+                    while (judge.TryAutoHit(lane, now, out NoteData autoNote))
+                        RegisterHit(autoNote, Judgement.Perfect);
+                    continue;
+                }
                 if (!lanePressed[lane]) continue;
                 if (judge.TryHit(lane, now, out NoteData note, out Judgement judgement))
-                {
-                    double delta = now - note.Time;
-                    score.Register(judgement, false);
-                    if (TaikoMode) taikoSpawner.NotifyJudged(note, judgement);
-                    else
-                    {
-                        spawner.NotifyJudged(note, judgement);
-                        hitEffects.Spawn(lane, judgement, false, false);
-                    }
-                    OnJudged?.Invoke(judgement, lane, false);
-                    OnJudgedWithDelta?.Invoke(judgement, lane, false, delta);
-                }
+                    RegisterHit(note, judgement);
             }
 
             // 超窗自动 Miss 回收
@@ -274,6 +272,27 @@ namespace MusicGame.Gameplay
                 OnJudged?.Invoke(Judgement.Miss, missed.Lane, false);
                 OnJudgedWithDelta?.Invoke(Judgement.Miss, missed.Lane, false, JudgeSystem.BadWindowSeconds);
             }
+        }
+
+        /// <summary>头判命中统一登记：计分、表现反馈、事件；Auto 模式把 hold/气球登记为持续按住直到尾。</summary>
+        private void RegisterHit(NoteData note, Judgement judgement)
+        {
+            double delta = JudgedTime - note.Time;
+            score.Register(judgement, false);
+            if (TaikoMode) taikoSpawner.NotifyJudged(note, judgement);
+            else
+            {
+                spawner.NotifyJudged(note, judgement);
+                hitEffects.Spawn(note.Lane, judgement, false, false);
+            }
+            if (AutoMode && IsHold(note)) autoActiveHolds.Add(note);
+            OnJudged?.Invoke(judgement, note.Lane, false);
+            OnJudgedWithDelta?.Invoke(judgement, note.Lane, false, delta);
+        }
+
+        private static bool IsHold(NoteData note)
+        {
+            return string.Equals(note.Type, "hold", StringComparison.OrdinalIgnoreCase) && note.Duration > 0.0;
         }
 
         /// <summary>某轨当前是否被按住（键盘或触屏，供 NoteController hold 尾判使用）。</summary>
@@ -303,6 +322,7 @@ namespace MusicGame.Gameplay
                 laneHeld[i] = false;
             }
 
+            if (AutoMode) { AutoPollInput(); return; } // 观赏模式不采样任何输入设备
             if (TaikoMode) { PollTaikoInput(); return; }
 
 #if ENABLE_INPUT_SYSTEM
@@ -377,6 +397,22 @@ namespace MusicGame.Gameplay
                 }
             }
 #endif
+        }
+
+        // Auto 观赏：不采样键盘/鼠标/触屏；进行中的 hold/气球持续视为按住（IsLaneHeld 供尾判与气球充气读取）
+        private void AutoPollInput()
+        {
+            double now = JudgedTime;
+            for (int i = autoActiveHolds.Count - 1; i >= 0; i--)
+            {
+                NoteData hold = autoActiveHolds[i];
+                if (now >= hold.Time + hold.Duration)
+                {
+                    autoActiveHolds.RemoveAt(i);
+                    continue;
+                }
+                laneHeld[hold.Lane] = true;
+            }
         }
 
         // 太鼓输入：F/J=咚(0)，D/K=咔(1)，任意鼓=连击(2)；鼠标/触屏按屏幕左右半区分咚咔
@@ -652,6 +688,7 @@ namespace MusicGame.Gameplay
             hitEffects = null;
             visualizer = null;
             taikoSpawner = null;
+            autoActiveHolds.Clear();
             lyrics = null;
             // score 保留，供结算后查询
         }

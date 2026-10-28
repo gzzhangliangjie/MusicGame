@@ -24,12 +24,37 @@ namespace MusicGame.EditorTools
         static int judgedTicks;
         static double maxSongTime;
         static GameManager.PlayResult result;
+        static bool autoMode; // AutoRun 入口置位：开启 AutoMode，预期全部 Perfect
+        static bool taikoMode; // AutoTaikoRun 入口置位：太鼓重映射轨道 + 气球连击条路径
 
         // easy 谱共 44 音符含 3 hold → 判定总数 47；无输入时全部自动 Miss，判定事件应恰好走满
         const int ExpectedJudgements = 47;
         const float TimeoutSeconds = 180f;
 
         public static void Run()
+        {
+            autoMode = false;
+            taikoMode = false;
+            StartPlay();
+        }
+
+        /// <summary>Auto 观赏冒烟：同谱开启 AutoMode，预期 47 次判定全部 Perfect、零 Miss。</summary>
+        public static void AutoRun()
+        {
+            autoMode = true;
+            taikoMode = false;
+            StartPlay();
+        }
+
+        /// <summary>太鼓 + Auto 观赏冒烟：覆盖轨道重映射与气球连击条（hold→lane2）的自动充气尾判。</summary>
+        public static void AutoTaikoRun()
+        {
+            autoMode = true;
+            taikoMode = true;
+            StartPlay();
+        }
+
+        static void StartPlay()
         {
             // 关闭进 Play 的域重载：静态状态与 update 订阅得以存活（场景会重载，对象改为进 Play 后创建）
             EditorSettings.enterPlayModeOptionsEnabled = true;
@@ -63,13 +88,17 @@ namespace MusicGame.EditorTools
 
                 var go = new GameObject("SmokeRoot");
                 gm = go.AddComponent<GameManager>();
+                gm.TaikoMode = taikoMode;
+                gm.AutoMode = autoMode;
                 gm.OnSongFinished += r => { finished = true; result = r; };
                 gm.OnJudged += (j, lane, isTail) => judgedTicks++;
                 gm.PlaySong(meta, "easy");
 
                 startedAt = Time.realtimeSinceStartup;
                 EditorApplication.update += Pump;
-                Debug.Log("[Smoke] Play 模式冒烟测试启动：sample easy，无声模式，无输入（预期全部 Miss）");
+                Debug.Log("[Smoke] Play 模式冒烟测试启动：sample easy，无声模式，"
+                    + (taikoMode ? "太鼓 " : "")
+                    + (autoMode ? "AUTO 观赏（预期全部 Perfect）" : "无输入（预期全部 Miss）"));
             }
             catch (Exception e)
             {
@@ -96,10 +125,12 @@ namespace MusicGame.EditorTools
                 {
                     bool pass = result != null && result.Completed
                         && judgedTicks >= ExpectedJudgements
-                        && maxSongTime > 30.0;
+                        && maxSongTime > 30.0
+                        && (!autoMode || (result.MissCount == 0 && result.PerfectCount >= ExpectedJudgements));
                     string summary = "[Smoke] 判定事件 " + judgedTicks + "/" + ExpectedJudgements
                         + "，时钟推进至 " + maxSongTime.ToString("F1") + "s"
                         + "，结算 Completed=" + (result != null && result.Completed)
+                        + "，Perfect=" + (result != null ? result.PerfectCount : -1)
                         + "，Miss=" + (result != null ? result.MissCount : -1)
                         + "，用时 " + t.ToString("F0") + "s";
                     if (pass)

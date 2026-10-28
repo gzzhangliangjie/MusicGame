@@ -75,6 +75,24 @@ namespace MusicGame.Gameplay
         }
 
         /// <summary>
+        /// Auto 观赏命中：仅当该轨最早音符已到点（Time ≤ songTimeSeconds）时命中并出队，判定恒为 Perfect。
+        /// 与 TryHit 的区别：不会提前命中窗内尚未到点的音符。
+        /// </summary>
+        public bool TryAutoHit(int lane, double songTimeSeconds, out NoteData note)
+        {
+            note = null;
+            if (lane < 0 || lane > 3) return false;
+            List<NoteData> list = pending[lane];
+            if (list.Count == 0) return false;
+            NoteData head = list[0];
+            if (head.Time > songTimeSeconds) return false;
+            note = head;
+            list.RemoveAt(0);
+            remainingHeads--;
+            return true;
+        }
+
+        /// <summary>
         /// 自动 Miss：取出任意轨最早已超过 Bad 窗仍未头判的音符（外部循环调用直到返回 false）。
         /// </summary>
         public bool TryMiss(double songTimeSeconds, out NoteData note)
