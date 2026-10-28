@@ -21,11 +21,16 @@ namespace MusicGame.Gameplay.Taiko
         private TaikoSpawner spawner;
         private State state;
         private Kind kind;
-        private SpriteRenderer disc;   // 咚/咔圆盘（Roll 为条带头）
-        private GameObject rollBody;   // 连击条身体
+        private SpriteRenderer disc;   // 咚/咔圆盘（Roll 为气球）
+        private GameObject rollBody;   // 连击条身体（剩余时长参考线）
+        private SpriteRenderer rollBodyRenderer;
+        private GameObject counterGo;  // 气球进度计数（仅 Roll）
+        private TextMesh counter;
+        private float rollLen;         // 连击条全长（世界单位）
         private float rollFill;
         private float speed;
-        private Color baseDiscColor;
+        private float counterPunch;    // 气球数字跨档弹跳（30/60/90 判档线）
+        private int counterZone;       // 当前判档（0=不足30 1=Bad 2=Good 3=Perfect）
 
         /// <summary>卷动速度（世界单位/秒，向左为负）。</summary>
         private float Vx => -speed;
@@ -41,21 +46,22 @@ namespace MusicGame.Gameplay.Taiko
             speed = (TaikoSpawner.SpawnX - TaikoSpawner.HitX) / Mathf.Max(0.05f, spawner.TravelTime);
 
             EnsureVisuals();
-            // 皮肤包贴图自带配色（不重染）；程序化圆盘按类型着色
+            // 皮肤包贴图自带配色（不重染）；程序化圆盘/气球为灰阶底，按类型染色（黄=连击气球）
             disc.sprite = spawner.GetKindSprite(kind, out bool skinned);
             disc.color = skinned ? Color.white
                 : kind == Kind.Don ? DonColor
                 : kind == Kind.Katsu ? KatsuColor
                 : RollColor;
-            baseDiscColor = disc.color;
-            disc.transform.localScale = Vector3.one * (kind == Kind.Roll ? 0.42f : 0.5f);
+            disc.transform.localScale = Vector3.one * (kind == Kind.Roll ? 0.34f : 0.5f);
             rollBody.SetActive(kind == Kind.Roll);
+            counterGo.SetActive(kind == Kind.Roll);
+            if (kind == Kind.Roll) { counter.text = "0"; counterZone = 0; counterPunch = 0f; }
             if (kind == Kind.Roll)
             {
-                float len = (float)note.Duration * speed;
+                rollLen = (float)note.Duration * speed;
                 var rt = rollBody.transform;
-                rt.localScale = new Vector3(len, 0.42f, 1f);
-                rt.localPosition = new Vector3(len * 0.5f, 0f, 0f); // 条身从头向右延伸
+                rt.localScale = new Vector3(rollLen, 0.42f, 1f);
+                rt.localPosition = new Vector3(rollLen * 0.5f, 0f, 0f); // 条身从头向右延伸
             }
             transform.position = new Vector3(TaikoSpawner.SpawnX, TaikoSpawner.NoteY, 0f);
         }
@@ -73,7 +79,25 @@ namespace MusicGame.Gameplay.Taiko
             body.sprite = TaikoSpawner.GetRollStripSprite();
             body.sortingOrder = 9;
             body.color = new Color(RollColor.r, RollColor.g, RollColor.b, 0.55f);
+            rollBodyRenderer = body;
             rollBody = bodyGo;
+
+            // 气球进度计数（白字，仅 Roll 显示）
+            counterGo = new GameObject("RollCounter");
+            counterGo.transform.SetParent(transform, false);
+            counterGo.transform.localPosition = new Vector3(0f, 0.05f, 0f);
+            counter = counterGo.AddComponent<TextMesh>();
+            counter.font = TaikoSpawner.GetBuiltinFont();
+            counter.fontSize = 48;
+            counter.characterSize = 0.085f;
+            counter.anchor = TextAnchor.MiddleCenter;
+            counter.alignment = TextAlignment.Center;
+            counter.color = new Color(0.42f, 0.28f, 0.08f, 0.96f); // 深棕字：黄气球上比白字清晰
+            counter.text = "0";
+            var counterRenderer = counterGo.GetComponent<MeshRenderer>();
+            counterRenderer.sharedMaterial = counter.font.material;
+            counterRenderer.sortingOrder = 11;
+            counterGo.SetActive(false);
         }
 
         private void Update()
@@ -96,7 +120,7 @@ namespace MusicGame.Gameplay.Taiko
                     transform.position = new Vector3(TaikoSpawner.HitX, TaikoSpawner.NoteY, 0f);
                     bool held = spawner.Game != null && spawner.Game.IsLaneHeld(2);
                     if (held) rollFill = Mathf.Min(1f, rollFill + dt / Mathf.Max(0.05f, (float)data.Duration));
-                    SetRollIntensity(0.45f + 0.55f * rollFill);
+                    UpdateRollVisuals();
                     if (spawner.Game != null && spawner.Game.Conductor != null
                         && spawner.Game.Conductor.SongTimeSeconds > data.Time + data.Duration)
                         JudgeRoll();
@@ -116,7 +140,7 @@ namespace MusicGame.Gameplay.Taiko
             if (kind == Kind.Roll)
             {
                 state = State.Rolling;
-                SetRollIntensity(0.7f);
+                UpdateRollVisuals();
                 return;
             }
             PopAndFinish();
@@ -130,7 +154,7 @@ namespace MusicGame.Gameplay.Taiko
             Miss();
         }
 
-        // 连击条按填充比例判尾（≥0.9 Perfect / ≥0.6 Good / ≥0.3 Bad / 其余 Miss）
+        // 连击条按填充比例判尾（≥0.9 Perfect / ≥0.6 Good / ≥0.3 Bad / 其余 Miss）；吹起来爆掉，没吹起来泄气掉落
         private void JudgeRoll()
         {
             Judgement j = rollFill >= 0.9f ? Judgement.Perfect
@@ -138,7 +162,8 @@ namespace MusicGame.Gameplay.Taiko
                 : rollFill >= 0.3f ? Judgement.Bad
                 : Judgement.Miss;
             spawner.RegisterTail(data, j);
-            Finish();
+            state = State.Done;
+            StartCoroutine(rollFill >= 0.3f ? PopRoutine() : DeflateRoutine());
         }
 
         private void PopAndFinish()
@@ -150,14 +175,44 @@ namespace MusicGame.Gameplay.Taiko
 
         private System.Collections.IEnumerator PopRoutine()
         {
+            Vector3 startScale = disc.transform.localScale;
             float t = 0f;
             while (t < 0.18f)
             {
                 t += Time.deltaTime;
                 float k = t / 0.18f;
-                disc.transform.localScale = Vector3.one * (0.5f + 0.55f * k);
+                disc.transform.localScale = startScale * (1f + 1.1f * k);
                 var c = disc.color;
                 disc.color = new Color(c.r, c.g, c.b, 1f - k);
+                if (counterGo.activeSelf)
+                {
+                    var cc = counter.color;
+                    counter.color = new Color(cc.r, cc.g, cc.b, 1f - k);
+                }
+                yield return null;
+            }
+            spawner.OnNoteFinished(data, this);
+        }
+
+        /// <summary>气球没吹起来：灰化、泄气缩小并掉落淡出后回收。</summary>
+        private System.Collections.IEnumerator DeflateRoutine()
+        {
+            Vector3 startScale = disc.transform.localScale;
+            Vector3 pos = transform.position;
+            var c0 = disc.color;
+            float t = 0f;
+            while (t < 0.28f)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / 0.28f);
+                disc.transform.localScale = startScale * (1f - 0.55f * k);
+                transform.position = pos + new Vector3(0f, -0.9f * k * k, 0f);
+                disc.color = new Color(c0.r * (1f - 0.4f * k), c0.g * (1f - 0.4f * k), c0.b * (1f - 0.4f * k), 1f - k);
+                if (counterGo.activeSelf)
+                {
+                    var cc = counter.color;
+                    counter.color = new Color(cc.r, cc.g, cc.b, 1f - k);
+                }
                 yield return null;
             }
             spawner.OnNoteFinished(data, this);
@@ -170,9 +225,56 @@ namespace MusicGame.Gameplay.Taiko
             disc.color = MissedColor;
         }
 
-        private void SetRollIntensity(float a)
+        /// <summary>连击（气球）进行中的可视化：气球随填充充气、白字百分比计数、黄带=剩余时长、亮度=已累计。</summary>
+        private void UpdateRollVisuals()
         {
-            disc.color = new Color(baseDiscColor.r, baseDiscColor.g, baseDiscColor.b, Mathf.Clamp01(a));
+            bool held = spawner.Game != null && spawner.Game.IsLaneHeld(2);
+
+            string pctText = Mathf.RoundToInt(rollFill * 100f).ToString();
+            if (counter.text != pctText) counter.text = pctText;
+
+            // 数字动态：跨 30/60/90 判档线 → 弹跳+白闪+气球本体鼓一下；按住时随打气节奏脉动
+            int zone = rollFill >= 0.9f ? 3 : rollFill >= 0.6f ? 2 : rollFill >= 0.3f ? 1 : 0;
+            if (zone != counterZone)
+            {
+                counterZone = zone;
+                counterPunch = 1f;
+            }
+            counterPunch = Mathf.Max(0f, counterPunch - Time.deltaTime * 3.5f);
+            float pump = held ? 0.5f + 0.5f * Mathf.Sin(Time.time * 14f) : 0f;
+            float s = 1f + 0.06f * pump + 0.45f * counterPunch;
+            counterGo.transform.localScale = new Vector3(s, s, 1f);
+
+            // 数字颜色随判档推进：深棕 → 琥珀 → 橙红（90+ 最热），跨档瞬间向白闪
+            Color zoneColor;
+            switch (counterZone)
+            {
+                case 3: zoneColor = new Color(0.85f, 0.22f, 0.05f); break;
+                case 2: zoneColor = new Color(0.72f, 0.40f, 0.05f); break;
+                case 1: zoneColor = new Color(0.52f, 0.30f, 0.07f); break;
+                default: zoneColor = new Color(0.42f, 0.28f, 0.08f); break;
+            }
+            float flash = counterPunch * 0.7f;
+            counter.color = new Color(
+                zoneColor.r + (1f - zoneColor.r) * flash,
+                zoneColor.g + (1f - zoneColor.g) * flash,
+                zoneColor.b + (1f - zoneColor.b) * flash, 0.96f);
+
+            // 气球本体：充气放大 + 跨档同步微鼓
+            disc.transform.localScale = Vector3.one * (0.34f + 0.28f * rollFill) * (1f + 0.10f * counterPunch);
+
+            float remain = 1f;
+            if (data.Duration > 0.0 && spawner.Game != null && spawner.Game.Conductor != null)
+                remain = Mathf.Clamp01(1f - (float)((spawner.Game.Conductor.SongTimeSeconds - data.Time) / data.Duration));
+            float len = Mathf.Max(0.02f, rollLen * remain);
+            var rt = rollBody.transform;
+            rt.localScale = new Vector3(len, 0.42f, 1f);
+            rt.localPosition = new Vector3(len * 0.5f, 0f, 0f);
+            if (rollBodyRenderer != null)
+            {
+                var c = rollBodyRenderer.color;
+                rollBodyRenderer.color = new Color(c.r, c.g, c.b, 0.30f + 0.50f * rollFill);
+            }
         }
 
         /// <summary>强制回收（停止/切歌）。</summary>
