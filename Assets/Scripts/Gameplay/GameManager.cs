@@ -33,8 +33,16 @@ namespace MusicGame.Gameplay
         public float noteTravelTimeSeconds = DefaultTravelTimeSeconds;
         /// <summary>太鼓模式：PlaySong 前置位。音符横向卷动，咚/咔/连击条，复用同一判定计分。</summary>
         public bool TaikoMode;
-        /// <summary>Auto 观赏模式：PlaySong 前置位。自动以 Perfect 演奏整谱，不读取任何输入设备。</summary>
-        public bool AutoMode;
+        private bool autoModeRunning;
+        /// <summary>Auto 观赏模式：PlaySong 前置位；运行中翻转也立即生效（下一帧起切换自动/手动判定，
+        /// 并清理 Auto 登记的进行中 hold，防止切回手动后幽灵按住）。</summary>
+        public bool AutoMode
+        {
+            get { return autoModeRunning; }
+            set { autoModeRunning = value; autoActiveHolds.Clear(); }
+        }
+        /// <summary>osu! 缩圈模式：PlaySong 前置位。点击场上缩圈圆圈判定（鼠标定位 / Z X 交替）。</summary>
+        public bool OsuMode;
 
         /// <summary>谱面结束/出错/停止回调，携带有结算数据。</summary>
         public event Action<PlayResult> OnSongFinished;
@@ -70,6 +78,7 @@ namespace MusicGame.Gameplay
         private HitEffects hitEffects;
         private SpectrumVisualizer visualizer;
         private Taiko.TaikoSpawner taikoSpawner;
+        private Osu.OsuSpawner osuSpawner;
         private Lyrics lyrics;
         private MvBackdrop mvBackdrop;
         private GameObject runtimeRoot;
@@ -240,6 +249,12 @@ namespace MusicGame.Gameplay
         private void Update()
         {
             if (!playing || paused || judge == null || score == null || conductor == null) return;
+            if (OsuMode)
+            {
+                if (osuSpawner == null) return;
+                UpdateOsu();
+                return;
+            }
             if (!TaikoMode && (spawner == null || hitEffects == null)) return;
             if (TaikoMode && taikoSpawner == null) return;
             PollInput();
@@ -280,6 +295,7 @@ namespace MusicGame.Gameplay
             double delta = JudgedTime - note.Time;
             score.Register(judgement, false);
             if (TaikoMode) taikoSpawner.NotifyJudged(note, judgement);
+            else if (OsuMode) osuSpawner.NotifyJudged(note, judgement);
             else
             {
                 spawner.NotifyJudged(note, judgement);
@@ -288,6 +304,85 @@ namespace MusicGame.Gameplay
             if (AutoMode && IsHold(note)) autoActiveHolds.Add(note);
             OnJudged?.Invoke(judgement, note.Lane, false);
             OnJudgedWithDelta?.Invoke(judgement, note.Lane, false, delta);
+        }
+
+        // osu! 缩圈：Auto 逐帧清空到点圈；手玩轮询"本帧点击"（鼠标左键 / Z X 键 / 触屏），
+        // 命中匹配交给 OsuSpawner.TryHit（时间窗 × 空间半径双条件），Miss 由 TryMiss 扫尾
+        private void UpdateOsu()
+        {
+            double now = JudgedTime;
+
+            if (AutoMode)
+            {
+                while (osuSpawner.TryAutoHit(now, out NoteData autoNote))
+                    RegisterHit(autoNote, Judgement.Perfect);
+            }
+            else if (PollOsuClick(out Vector2 clickWorld))
+            {
+                if (osuSpawner.TryHit(now, clickWorld, out NoteData hitNote, out Judgement hitJudgement))
+                    RegisterHit(hitNote, hitJudgement);
+                // 空点不惩罚（osu! 规则）
+            }
+
+            while (osuSpawner.TryMiss(now, out NoteData missed))
+            {
+                score.Register(Judgement.Miss, false);
+                OnJudged?.Invoke(Judgement.Miss, missed.Lane, false);
+                OnJudgedWithDelta?.Invoke(Judgement.Miss, missed.Lane, false, JudgeSystem.BadWindowSeconds);
+            }
+        }
+
+        // 本帧是否发生一次"点击"（含位置）：鼠标左键按下、Z/X 键按下（按当前光标位置判定）、触屏新按下
+        private bool PollOsuClick(out Vector2 worldPos)
+        {
+            worldPos = Vector2.zero;
+            bool clicked = false;
+            Vector2 screenPos = Vector2.zero;
+#if ENABLE_INPUT_SYSTEM
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse != null)
+            {
+                screenPos = mouse.position.ReadValue();
+                clicked |= mouse.leftButton.wasPressedThisFrame;
+            }
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+                clicked |= keyboard.zKey.wasPressedThisFrame || keyboard.xKey.wasPressedThisFrame;
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null)
+            {
+                foreach (TouchControl touch in touchscreen.touches)
+                {
+                    if (touch.phase.ReadValue() != UnityEngine.InputSystem.TouchPhase.Began) continue;
+                    screenPos = touch.position.ReadValue();
+                    clicked = true;
+                    break;
+                }
+            }
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            screenPos = Input.mousePosition;
+            clicked = Input.GetMouseButtonDown(0);
+            if (Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.X)) clicked = true;
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                if (Input.GetTouch(i).phase != TouchPhase.Began) continue;
+                screenPos = Input.GetTouch(i).position;
+                clicked = true;
+                break;
+            }
+#endif
+            if (!clicked) return false;
+            worldPos = ScreenToWorldPos(screenPos);
+            return true;
+        }
+
+        // 屏幕坐标 → 世界平面坐标（缩圈命中匹配用）
+        private Vector2 ScreenToWorldPos(Vector2 screenPos)
+        {
+            Camera cam = Camera.main;
+            if (cam == null) return Vector2.zero;
+            Vector3 world = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -cam.transform.position.z));
+            return new Vector2(world.x, world.y);
         }
 
         private static bool IsHold(NoteData note)
@@ -479,7 +574,7 @@ namespace MusicGame.Gameplay
 
             conductor = runtimeRoot.AddComponent<Conductor>();
 
-            GameObject prefab = BuildNotePrefab(TaikoMode);
+            GameObject prefab = OsuMode ? BuildOsuPrefab() : BuildNotePrefab(TaikoMode);
             prefab.transform.SetParent(runtimeRoot.transform, false); // 挂到 runtimeRoot 下随 Cleanup 统一销毁，避免每局泄漏一个游离模板
             pool = new GameObject("NotePool").AddComponent<NotePool>();
             pool.transform.SetParent(runtimeRoot.transform, false);
@@ -492,6 +587,13 @@ namespace MusicGame.Gameplay
                 taikoSpawner.Score = score;
                 taikoSpawner.Game = this;
                 taikoSpawner.Setup(chart, conductor, pool, noteTravelTimeSeconds);
+            }
+            else if (OsuMode)
+            {
+                osuSpawner = new GameObject("OsuSpawner").AddComponent<Osu.OsuSpawner>();
+                osuSpawner.transform.SetParent(runtimeRoot.transform, false);
+                osuSpawner.Game = this;
+                osuSpawner.Setup(chart, conductor, pool, lastSongId + "|" + lastDifficulty);
             }
             else
             {
@@ -525,6 +627,16 @@ namespace MusicGame.Gameplay
             var prefab = new GameObject("NotePrefab");
             prefab.AddComponent<SpriteRenderer>();
             prefab.AddComponent<NoteController>();
+            prefab.SetActive(false);
+            return prefab;
+        }
+
+        // 缩圈圆圈预制体：圈体 + 缩圈环 + 数字（OsuCircle.Initialize 补齐外观）
+        private static GameObject BuildOsuPrefab()
+        {
+            var prefab = new GameObject("OsuCirclePrefab");
+            prefab.AddComponent<SpriteRenderer>();
+            prefab.AddComponent<Osu.OsuCircle>();
             prefab.SetActive(false);
             return prefab;
         }
@@ -688,6 +800,7 @@ namespace MusicGame.Gameplay
             hitEffects = null;
             visualizer = null;
             taikoSpawner = null;
+            osuSpawner = null;
             autoActiveHolds.Clear();
             lyrics = null;
             // score 保留，供结算后查询

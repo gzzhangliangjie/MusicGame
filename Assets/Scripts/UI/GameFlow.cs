@@ -57,10 +57,20 @@ namespace MusicGame.UI
         HitErrorBar errorBar;
         Action<Judgement, int, bool, double> judgedHandler;
         bool taikoMode;
+        bool osuMode; // osu! 缩圈模式（与四轨/太鼓三选一）
         bool autoMode; // AUTO 观赏模式（难度选择页切换，PlayerPrefs 持久化）
         const string AutoModePrefKey = "MusicGame.AutoMode";
         Text autoBtnText;
         Image autoBtnImg;
+        Image modeOsuImg;
+        Text pauseAutoBtnText;
+        Image pauseAutoBtnImg;
+
+        /// <summary>本地纪录键的模式段（四轨 4K / 太鼓 TAIKO / 缩圈 OSU）。</summary>
+        string ModeKey => osuMode ? "OSU" : taikoMode ? "TAIKO" : "4K";
+
+        /// <summary>纪录面板/结算里显示的模式名。</summary>
+        string ModeName => osuMode ? "缩圈" : taikoMode ? "太鼓" : "四轨";
         Image modeNormalImg, modeTaikoImg;
         Text menuTitle;
         TextVerticalGradient menuTitleGrad;
@@ -238,7 +248,7 @@ namespace MusicGame.UI
             UiKit.ButtonRect(menuScreen, "btnTheme", "主题：" + Palette.Current.Name, new Vector2(-174f, 88f), new Vector2(320f, 56f), OnThemeClicked, UiKit.Theme.PanelBg, 24);
             UiKit.ButtonRect(menuScreen, "btnSkin", "皮肤：" + SkinManager.Current, new Vector2(174f, 88f), new Vector2(320f, 56f), OnSkinClicked, UiKit.Theme.PanelBg, 24);
 
-            var sub = UiKit.Label(menuScreen, "subtitle", "本地导入 · 自动谱面 · 四轨下落 / 太鼓咚咔", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
+            var sub = UiKit.Label(menuScreen, "subtitle", "本地导入 · 自动谱面 · 四轨下落 / 太鼓咚咔 / 缩圈点击", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(sub.rectTransform, new Vector2(0f, 0.505f), new Vector2(1f, 0.542f));
 
             // 主按钮列：开始（最大最亮，背后辉光脉动）→ 校准 → 帮助 → 退出
@@ -394,6 +404,7 @@ namespace MusicGame.UI
                 "【玩法】\n" +
                 "四轨模式：音符落到判定线时按对应键 D F J K，或鼠标点击轨道；长条按住直到尾端\n" +
                 "太鼓模式：F/J=咚(红)  D/K=咔(蓝)，也可按住鼠标左右半屏；气球连击条滚到鼓面后按住任意鼓充气，吹满爆掉得分\n" +
+                "缩圈模式：圆圈随机摆在场上，外圈收拢合体的瞬间点击它（鼠标点击 / Z X 键，越准评级越高）\n" +
                 "AUTO 观赏：难度选择页可开启，自动完美演奏整谱（成绩不计入纪录），随时 Esc 暂停\n\n" +
                 "【判定】\n" +
                 "Perfect ±40ms · Good ±80ms · Bad ±140ms · 超出为 Miss（只有 Miss 断连击）\n" +
@@ -490,19 +501,21 @@ namespace MusicGame.UI
             diffSongLabel = UiKit.Label(diffScreen, "song", "", 28, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
             UiKit.Stretch(diffSongLabel.rectTransform, new Vector2(0f, 0.735f), new Vector2(1f, 0.80f));
 
-            // 模式切换：通常（四轨下落）/ 太鼓（咚咔横卷）——锚点钉在画布高度百分比，
+            // 模式切换：通常（四轨下落）/ 太鼓（咚咔横卷）/ 缩圈（osu! 点击）——锚点钉在画布高度百分比，
             // 构建期量画布尺寸不可靠（CanvasScaler 的 scaleFactor 迟到，Start 时量到的是失真值）
-            var normalBtn = UiKit.ButtonRect(diffScreen, "modeNormal", "通 常 模 式", new Vector2(-250f, 0f), new Vector2(430f, 88f), () => SetTaikoMode(false), UiKit.Theme.Primary, 28);
-            var taikoBtn = UiKit.ButtonRect(diffScreen, "modeTaiko", "太 鼓 模 式", new Vector2(250f, 0f), new Vector2(430f, 88f), () => SetTaikoMode(true), UiKit.Theme.Secondary, 28);
-            PinFractionY((RectTransform)normalBtn.transform, -250f, 0.845f);
-            PinFractionY((RectTransform)taikoBtn.transform, 250f, 0.845f);
+            var normalBtn = UiKit.ButtonRect(diffScreen, "modeNormal", "通 常 模 式", new Vector2(-285f, 0f), new Vector2(260f, 88f), () => SetPlayMode(0), UiKit.Theme.Primary, 22);
+            var taikoBtn = UiKit.ButtonRect(diffScreen, "modeTaiko", "太 鼓 模 式", new Vector2(0f, 0f), new Vector2(260f, 88f), () => SetPlayMode(1), UiKit.Theme.Secondary, 22);
+            var osuBtn = UiKit.ButtonRect(diffScreen, "modeOsu", "缩 圈 模 式", new Vector2(285f, 0f), new Vector2(260f, 88f), () => SetPlayMode(2), UiKit.Theme.Secondary, 22);
+            PinFractionY((RectTransform)normalBtn.transform, -285f, 0.845f);
+            PinFractionY((RectTransform)taikoBtn.transform, 0f, 0.845f);
+            PinFractionY((RectTransform)osuBtn.transform, 285f, 0.845f);
             modeNormalImg = normalBtn.image;
             modeTaikoImg = taikoBtn.image;
+            modeOsuImg = osuBtn.image;
 
-            // AUTO 观赏开关：模式行下方居中（0.757 高度分数钉位，落在模式行与难度首钮之间的空档）
+            // AUTO 观赏开关：底部与返回按钮并排（曾钉在歌名文字带上遮字，已改底部行）
             var autoBtn = UiKit.ButtonRect(diffScreen, "btnAuto", "AUTO 观赏：关",
-                new Vector2(0f, 0f), new Vector2(380f, 58f), OnAutoToggleClicked, GhostBtn, 22);
-            PinFractionY((RectTransform)autoBtn.transform, 0f, 0.757f);
+                new Vector2(230f, -466f), new Vector2(340f, 64f), OnAutoToggleClicked, GhostBtn, 24);
             autoBtnImg = autoBtn.image;
             autoBtnText = autoBtn.GetComponentInChildren<Text>();
             RefreshAutoButton();
@@ -511,29 +524,38 @@ namespace MusicGame.UI
             var holderRt = UiKit.Node(diffScreen, "list");
             UiKit.Stretch(holderRt);
             diffListHolder = holderRt;
-            UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(0f, -466f), new Vector2(320f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 26);
+            UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(-230f, -466f), new Vector2(340f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 26);
             // 右侧本地最佳纪录面板（随模式/歌曲刷新）
             diffRecordText = UiKit.Label(diffScreen, "diffRecords", "", 24, TextAnchor.UpperLeft, UiKit.Theme.Dim, true);
             UiKit.Stretch(diffRecordText.rectTransform, new Vector2(0.60f, 0.12f), new Vector2(0.97f, 0.74f), new Vector2(18f, 0f), new Vector2(-12f, 0f));
-            SetTaikoMode(false);
+            SetPlayMode(0);
         }
 
-        /// <summary>切换游玩模式并刷新两个切换按钮的高亮。</summary>
-        void SetTaikoMode(bool taiko)
+        /// <summary>切换游玩模式（0 四轨 / 1 太鼓 / 2 缩圈）并刷新三个切换按钮的高亮。</summary>
+        void SetPlayMode(int mode)
         {
-            taikoMode = taiko;
-            if (modeNormalImg != null) modeNormalImg.color = taiko ? new Color(0.25f, 0.28f, 0.36f) : UiKit.Theme.Primary;
-            if (modeTaikoImg != null) modeTaikoImg.color = taiko ? new Color(0.95f, 0.45f, 0.25f) : new Color(0.25f, 0.28f, 0.36f);
+            taikoMode = mode == 1;
+            osuMode = mode == 2;
+            Color off = new Color(0.25f, 0.28f, 0.36f);
+            if (modeNormalImg != null) modeNormalImg.color = mode == 0 ? UiKit.Theme.Primary : off;
+            if (modeTaikoImg != null) modeTaikoImg.color = mode == 1 ? new Color(0.95f, 0.45f, 0.25f) : off;
+            if (modeOsuImg != null) modeOsuImg.color = mode == 2 ? new Color(0.62f, 0.44f, 0.95f) : off;
             UpdateDiffRecordPanel();
         }
 
-        /// <summary>切换 AUTO 观赏模式并刷新开关按钮（持久化，下一局生效）。</summary>
-        void OnAutoToggleClicked()
+        /// <summary>翻转/设置 AUTO 观赏模式并持久化，刷新难度页开关按钮（是否对运行中一局生效由调用方处理）。</summary>
+        void SetAutoModePref(bool on)
         {
-            autoMode = !autoMode;
-            PlayerPrefs.SetInt(AutoModePrefKey, autoMode ? 1 : 0);
+            autoMode = on;
+            PlayerPrefs.SetInt(AutoModePrefKey, on ? 1 : 0);
             PlayerPrefs.Save();
             RefreshAutoButton();
+        }
+
+        /// <summary>难度页 AUTO 开关（下一局生效）。</summary>
+        void OnAutoToggleClicked()
+        {
+            SetAutoModePref(!autoMode);
         }
 
         void RefreshAutoButton()
@@ -603,6 +625,26 @@ namespace MusicGame.UI
             UiKit.ButtonRect(pauseScreen, "btnResume", "继 续", new Vector2(0f, 90f), new Vector2(420f, 88f), () => SetPaused(false), UiKit.Theme.Primary, 36);
             UiKit.ButtonRect(pauseScreen, "btnRestart", "重新开始", new Vector2(0f, -40f), new Vector2(420f, 88f), OnPauseRestartClicked, UiKit.Theme.Secondary, 32);
             UiKit.ButtonRect(pauseScreen, "btnQuit", "返回选曲", new Vector2(0f, -170f), new Vector2(420f, 88f), OnPauseQuitClicked, UiKit.Theme.PanelBg, 32);
+            // AUTO 观赏热切换：运行中翻转立即生效（继续后手玩/接管无缝衔接），不必退回难度页
+            var autoBtn = UiKit.ButtonRect(pauseScreen, "btnPauseAuto", "AUTO 观赏：关",
+                new Vector2(0f, -290f), new Vector2(420f, 72f), OnPauseAutoClicked, GhostBtn, 26);
+            pauseAutoBtnText = autoBtn.GetComponentInChildren<Text>();
+            pauseAutoBtnImg = autoBtn.image;
+        }
+
+        /// <summary>暂停菜单 AUTO 开关：翻转并持久化，运行中的一局立即生效（Auto↔手动无缝交接）。</summary>
+        void OnPauseAutoClicked()
+        {
+            SetAutoModePref(!autoMode);
+            if (gameManager != null) gameManager.AutoMode = autoMode;
+            RefreshPauseAutoButton();
+            ApplyHudHint();
+        }
+
+        void RefreshPauseAutoButton()
+        {
+            if (pauseAutoBtnText != null) pauseAutoBtnText.text = autoMode ? "AUTO 观赏：开" : "AUTO 观赏：关";
+            if (pauseAutoBtnImg != null) pauseAutoBtnImg.color = autoMode ? UiKit.Theme.Accent : GhostBtn;
         }
 
         // ---------------------------------------------------------------- 流程导航
@@ -1067,11 +1109,11 @@ namespace MusicGame.UI
         {
             if (diffRecordText == null || currentEntry == null) return;
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("★ 最高纪录（" + (taikoMode ? "太鼓" : "四轨") + "）");
+            sb.AppendLine("★ 最高纪录（" + ModeName + "）");
             sb.AppendLine();
             foreach (var d in shownDifficulties)
             {
-                var rec = PlayRecords.Get(PlayRecords.Key(currentEntry.Dir, taikoMode, d));
+                var rec = PlayRecords.Get(PlayRecords.Key(currentEntry.Dir, ModeKey, d));
                 string name = UiKit.PrettyDifficulty(d);
                 if (rec == null || (rec.bestScore <= 0 && rec.bestCombo <= 0 && rec.bestAcc <= 0))
                     sb.AppendLine(name + "  ——");
@@ -1129,6 +1171,7 @@ namespace MusicGame.UI
             // 世界对象（音符/判定线/按键板）挂进去会被带出相机视野（诊断实测 viewport=(38,38)）
             gameManager = gameplayRoot.AddComponent<GameManager>();
             gameManager.TaikoMode = taikoMode;
+            gameManager.OsuMode = osuMode;
             gameManager.AutoMode = autoMode;
             try
             {
@@ -1149,7 +1192,11 @@ namespace MusicGame.UI
 
             // 订阅判定反馈：弹窗 + 误差条 + 连击打点（先退订旧局，避免重复）
             if (judgedHandler != null && gameManager != null) gameManager.OnJudgedWithDelta -= judgedHandler;
-            if (popupLayer != null) popupLayer.TaikoMode = gameManager != null && gameManager.TaikoMode;
+            if (popupLayer != null)
+            {
+                popupLayer.TaikoMode = gameManager != null && gameManager.TaikoMode;
+                popupLayer.OsuMode = gameManager != null && gameManager.OsuMode;
+            }
             judgedHandler = (j, lane, isTail, delta) =>
             {
                 if (popupLayer != null) popupLayer.Show(j, lane, isTail);
@@ -1161,12 +1208,8 @@ namespace MusicGame.UI
             isPaused = false;
             pauseScreen.gameObject.SetActive(false);
             hudSong.text = entry.Meta.Title + " · " + UiKit.PrettyDifficulty(diff)
-                + (taikoMode ? " · 太鼓" : "") + (autoMode ? " · AUTO" : "");
-            hudHint.text = autoMode
-                ? "AUTO 观赏模式 · 自动演奏中 · Esc 暂停"
-                : string.IsNullOrEmpty(entry.Meta.AudioPath)
-                    ? "无声测试模式 · D F J K / 鼠标点击 · Esc 暂停"
-                    : "D F J K / 鼠标点击轨道 · Esc 暂停";
+                + (taikoMode ? " · 太鼓" : "") + (osuMode ? " · 缩圈" : "") + (autoMode ? " · AUTO" : "");
+            ApplyHudHint();
             hudScore.text = "0";
             hudCombo.text = "";
             hudAcc.text = "--";
@@ -1176,6 +1219,20 @@ namespace MusicGame.UI
             comboVisualHandle = StartCoroutine(ComboVisualLoop());
             StartCoroutine(LyricKaraokeLoop());
             watchRoutineHandle = StartCoroutine(SongWatchRoutine(chartEnd, entry.Meta.DurationSeconds));
+        }
+
+        /// <summary>HUD 底部提示：随模式/AUTO 状态刷新（开局与暂停菜单热切换共用）。</summary>
+        void ApplyHudHint()
+        {
+            if (hudHint == null) return;
+            if (autoMode)
+                hudHint.text = "AUTO 观赏模式 · 自动演奏中 · Esc 暂停";
+            else if (osuMode)
+                hudHint.text = "点击缩圈圆圈（鼠标 / Z X 键） · Esc 暂停";
+            else
+                hudHint.text = currentEntry != null && string.IsNullOrEmpty(currentEntry.Meta.AudioPath)
+                    ? "无声测试模式 · D F J K / 鼠标点击 · Esc 暂停"
+                    : "D F J K / 鼠标点击轨道 · Esc 暂停";
         }
 
         /// <summary>歌词行切换：旧行整字消散（逐字错峰飘散+旋转+淡出，曲末更从容），新行 OutBack 弹出 + 下往上浮入场。</summary>
@@ -1514,7 +1571,7 @@ namespace MusicGame.UI
             }
             else if (ss != null && currentEntry != null && !string.IsNullOrEmpty(currentDifficulty))
             {
-                var key = PlayRecords.Key(currentEntry.Dir, taikoMode, currentDifficulty);
+                var key = PlayRecords.Key(currentEntry.Dir, ModeKey, currentDifficulty);
                 newRecord = PlayRecords.Submit(key, score, maxCombo, acc, out var prev);
                 if (newRecord)
                     recordLine = prev != null
@@ -1589,6 +1646,7 @@ namespace MusicGame.UI
             if (state != FlowState.Playing) return;
             isPaused = paused;
             if (pauseScreen != null) pauseScreen.gameObject.SetActive(paused);
+            if (paused) RefreshPauseAutoButton(); // 每次弹出按最新状态刷 AUTO 开关文案
             // GameManager.SetPaused(bool) 会同步冻结 Conductor 时钟与音频，并挂起判定与结束检测
             TryCallPauseApi(gameManager, paused);
         }

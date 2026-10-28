@@ -30,6 +30,11 @@ namespace MusicGame.UI
         /// <summary>太鼓模式下弹窗锚定鼓面上方（lane 0/1/2 是咚/咔/连击，不是四轨坐标）。</summary>
         public bool TaikoMode { get; set; }
 
+        /// <summary>缩圈模式下弹窗锚定命中圆圈处（OsuSpawner.AnchorWorld 在判定前置位）。</summary>
+        public bool OsuMode { get; set; }
+        /// <summary>缩圈模式弹窗锚点（世界坐标，命中/Miss 前由 OsuSpawner 写入）。</summary>
+        public static Vector3 OsuAnchorWorld { get; set; }
+
         private class Popup
         {
             public RectTransform Rt;
@@ -204,7 +209,9 @@ namespace MusicGame.UI
             if (cam == null) return new Vector2(0f, 0f);
 
             Vector3 world;
-            if (TaikoMode)
+            if (OsuMode)
+                world = OsuAnchorWorld + Vector3.up * 0.55f;
+            else if (TaikoMode)
                 world = new Vector3(Gameplay.Taiko.TaikoSpawner.HitX, Gameplay.Taiko.TaikoSpawner.NoteY + 1.7f, 0f);
             else if (lane >= 0)
                 world = new Vector3(Gameplay.NoteSpawner.LaneX(lane), Gameplay.NoteSpawner.JudgeLineY + 0.9f, 0f);

@@ -26,6 +26,7 @@ namespace MusicGame.EditorTools
         static GameManager.PlayResult result;
         static bool autoMode; // AutoRun 入口置位：开启 AutoMode，预期全部 Perfect
         static bool taikoMode; // AutoTaikoRun 入口置位：太鼓重映射轨道 + 气球连击条路径
+        static bool osuMode; // *OsuRun 入口置位：缩圈模式（点击/自动判定圆圈）
 
         // easy 谱共 44 音符含 3 hold → 判定总数 47；无输入时全部自动 Miss，判定事件应恰好走满
         const int ExpectedJudgements = 47;
@@ -35,6 +36,7 @@ namespace MusicGame.EditorTools
         {
             autoMode = false;
             taikoMode = false;
+            osuMode = false;
             StartPlay();
         }
 
@@ -43,6 +45,7 @@ namespace MusicGame.EditorTools
         {
             autoMode = true;
             taikoMode = false;
+            osuMode = false;
             StartPlay();
         }
 
@@ -51,6 +54,25 @@ namespace MusicGame.EditorTools
         {
             autoMode = true;
             taikoMode = true;
+            osuMode = false;
+            StartPlay();
+        }
+
+        /// <summary>缩圈模式冒烟（无输入）：预期全部自动 Miss，判定事件数仍走满（扫尾回收链路）。</summary>
+        public static void OsuRun()
+        {
+            autoMode = false;
+            taikoMode = false;
+            osuMode = true;
+            StartPlay();
+        }
+
+        /// <summary>缩圈 + Auto 观赏冒烟：圆圈自动命中（含 hold 头/尾两圈），预期全部 Perfect、零 Miss。</summary>
+        public static void AutoOsuRun()
+        {
+            autoMode = true;
+            taikoMode = false;
+            osuMode = true;
             StartPlay();
         }
 
@@ -89,6 +111,7 @@ namespace MusicGame.EditorTools
                 var go = new GameObject("SmokeRoot");
                 gm = go.AddComponent<GameManager>();
                 gm.TaikoMode = taikoMode;
+                gm.OsuMode = osuMode;
                 gm.AutoMode = autoMode;
                 gm.OnSongFinished += r => { finished = true; result = r; };
                 gm.OnJudged += (j, lane, isTail) => judgedTicks++;
@@ -97,7 +120,7 @@ namespace MusicGame.EditorTools
                 startedAt = Time.realtimeSinceStartup;
                 EditorApplication.update += Pump;
                 Debug.Log("[Smoke] Play 模式冒烟测试启动：sample easy，无声模式，"
-                    + (taikoMode ? "太鼓 " : "")
+                    + (taikoMode ? "太鼓 " : "") + (osuMode ? "缩圈 " : "")
                     + (autoMode ? "AUTO 观赏（预期全部 Perfect）" : "无输入（预期全部 Miss）"));
             }
             catch (Exception e)

@@ -84,9 +84,10 @@ namespace MusicGame.Core
             return isNew;
         }
 
-        public static string Key(string songDir, bool taiko, string difficulty)
+        /// <summary>纪录键：歌曲目录|模式(4K/TAIKO/OSU)|难度。</summary>
+        public static string Key(string songDir, string mode, string difficulty)
         {
-            return songDir + "|" + (taiko ? "TAIKO" : "4K") + "|" + difficulty;
+            return songDir + "|" + mode + "|" + difficulty;
         }
     }
 }
