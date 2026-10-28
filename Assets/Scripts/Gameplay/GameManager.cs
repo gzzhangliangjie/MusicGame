@@ -68,6 +68,7 @@ namespace MusicGame.Gameplay
         private SpectrumVisualizer visualizer;
         private Taiko.TaikoSpawner taikoSpawner;
         private Lyrics lyrics;
+        private MvBackdrop mvBackdrop;
         private GameObject runtimeRoot;
         private bool playing;
         private bool paused;
@@ -138,6 +139,11 @@ namespace MusicGame.Gameplay
             paused = pausedState;
             if (pausedState) conductor?.Pause();
             else conductor?.Resume();
+            if (mvBackdrop != null)
+            {
+                if (pausedState) mvBackdrop.Pause();
+                else mvBackdrop.Resume();
+            }
         }
 
         private IEnumerator PlaySongRoutine(SongMeta meta, string difficulty)
@@ -175,6 +181,7 @@ namespace MusicGame.Gameplay
             score = new ScoreSystem();
             score.Setup(totalJudgements);
             EnsureRuntimeObjects(chart);
+            mvBackdrop = CreateMvBackdrop(chartPath, meta); // 必须在 runtimeRoot 建好之后（内部挂靠其下）
 
             // 3) 音频：AudioPath 为空或加载失败 → 静音无声测试谱模式（生成静音 clip 驱动时钟）
             AudioClip clip = null;
@@ -203,6 +210,7 @@ namespace MusicGame.Gameplay
             paused = false;
             playing = true;
             conductor.Setup(chart.Bpm, chart.OffsetSeconds, audioSource); // Setup 在 source 带 clip 时会自行从头播放
+            if (mvBackdrop != null) mvBackdrop.Play(); // MV 与音乐同步开播
 
             // 5) 等待谱面结束（含尾部缓冲），期间 Update 处理输入与自动 Miss
             double endTime = chartEnd + EndTailSeconds;
@@ -542,6 +550,26 @@ namespace MusicGame.Gameplay
             return mapped;
         }
 
+        // MV 背景：歌曲目录 mv.mp4 存在时创建半透明打底视频；缺文件/缺相机静默跳过（零影响）
+        private MvBackdrop CreateMvBackdrop(string chartPath, SongMeta meta)
+        {
+            try
+            {
+                if (chartPath == null || runtimeRoot == null) return null;
+                string dir = Path.GetDirectoryName(chartPath);
+                if (string.IsNullOrEmpty(dir)) return null;
+                string mvPath = Path.Combine(dir, "mv.mp4");
+                if (!File.Exists(mvPath)) return null;
+                return MvBackdrop.Create(runtimeRoot.transform, mvPath, Camera.main,
+                    meta != null ? meta.MvStartSeconds : 0.0);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[GameManager] MV backdrop create failed: " + e.Message);
+                return null;
+            }
+        }
+
         private static Lyrics LoadLyrics(string chartPath, SongMeta meta)
         {
             try
@@ -609,6 +637,11 @@ namespace MusicGame.Gameplay
                 audioSource.clip = null;
             }
             ownsSilentClip = false;
+            if (mvBackdrop != null)
+            {
+                Destroy(mvBackdrop.gameObject);
+                mvBackdrop = null;
+            }
             if (spawner != null) spawner.ReleaseAll();
             if (runtimeRoot != null) Destroy(runtimeRoot);
             runtimeRoot = null;

@@ -33,6 +33,7 @@ namespace MusicGame.Pure.Model
         public string AudioPath;      // 原始音频路径；可为空
         public double DurationSeconds; // 音频时长（秒）
         public List<string> Difficulties = new List<string>();
+        public double MvStartSeconds; // MV 起播偏移：歌曲 t=0 对应的 MV 内时间（0=从头，旧 meta 缺省即 0）
     }
 
     /// <summary>onset 检测出的一个拍点。Band 取 low/mid/high 三频带之一。</summary>
