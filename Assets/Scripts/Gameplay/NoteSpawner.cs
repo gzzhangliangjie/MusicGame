@@ -40,14 +40,19 @@ namespace MusicGame.Gameplay
         private GameObject playfieldRoot;
         private SpriteRenderer judgeLine;
         private Vector3 judgeLineBaseScale;
+        private SpriteRenderer judgeGlow;
+        private float judgeKick;       // 命中冲击（Perfect 1 / Good 0.85 / Bad 0.55，5/s 衰减）
         private TextMesh[] keycaps;
         private SpriteRenderer[] lanePads;
+        private SpriteRenderer[] keyGlows;
+        private Vector3[] padBaseScale;
+        private Vector3[] padBasePos;
+        private Coroutine[] padPunchFx;
+        private float[] keyPressAge;
+        private bool[] keyWasHeld;
+        private float[] glowAlpha;
 
         private static readonly string[] LaneKeyNames = { "D", "F", "J", "K" };
-        private static readonly Color KeycapIdleColor = new Color(1f, 1f, 1f, 0.55f);
-        private static readonly Color KeycapPressedColor = new Color(0.85f, 1f, 1f, 1f);
-        private static readonly Color PadIdleColor = new Color(1f, 1f, 1f, 0.10f);
-        private static readonly Color PadPressedColor = new Color(0.20f, 0.85f, 0.95f, 0.38f);
 
         /// <summary>每轨主题色（当前主题的四轨色）：音符、轨道线、按键板同色系，视觉对应零歧义。</summary>
         public static Color[] LaneColors => Palette.Current.Lanes;
@@ -163,6 +168,93 @@ namespace MusicGame.Gameplay
             return judgeGlowSprite;
         }
 
+        private static Sprite radialGlowSprite;
+        private static readonly Dictionary<Color32, Sprite> keycapSprites = new Dictionary<Color32, Sprite>();
+
+        /// <summary>键帽贴图：轨道色描边 + 深底纵向渐变 + 轨道色内透 + 顶部高光（按轨道色缓存）。</summary>
+        internal static Sprite GetKeycapSprite(Color lane)
+        {
+            var key = (Color32)lane;
+            if (keycapSprites.TryGetValue(key, out Sprite cached)) return cached;
+            const int w = 128, h = 64;
+            var texture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Bilinear;
+            var pixels = new Color32[h * w];
+            float halfW = w * 0.5f, halfH = h * 0.5f;
+            const float radius = 13f;
+            float innerW = halfW - radius, innerH = halfH - radius;
+            Color32 lc = key;
+            for (int y = 0; y < h; y++)
+            {
+                float v = (y + 0.5f) / h;
+                for (int x = 0; x < w; x++)
+                {
+                    float px = x + 0.5f - halfW, py = y + 0.5f - halfH;
+                    float qx = Mathf.Max(Mathf.Abs(px) - innerW, 0f);
+                    float qy = Mathf.Max(Mathf.Abs(py) - innerH, 0f);
+                    float dist = Mathf.Sqrt(qx * qx + qy * qy) + Mathf.Min(Mathf.Max(Mathf.Abs(px) - innerW, Mathf.Abs(py) - innerH), 0f) - radius;
+                    float fill = Mathf.Clamp01(0.5f - dist);
+                    if (fill <= 0f)
+                    {
+                        pixels[y * w + x] = new Color32(0, 0, 0, 0);
+                        continue;
+                    }
+                    float edge = Mathf.Clamp01(-dist / 3f); // 0=描边 1=内部
+                    // 深底渐变（顶暗底亮微蓝）
+                    float r = Mathf.Lerp(22f, 34f, v), g = Mathf.Lerp(30f, 44f, v), b = Mathf.Lerp(48f, 66f, v);
+                    float a = Mathf.Lerp(175f, 215f, v);
+                    // 轨道色内透（底部更浓）
+                    float laneMix = Mathf.Lerp(0.16f, 0.40f, 1f - v);
+                    r = Mathf.Lerp(r, lc.r, laneMix);
+                    g = Mathf.Lerp(g, lc.g, laneMix);
+                    b = Mathf.Lerp(b, lc.b, laneMix);
+                    // 顶部高光（键帽反光面）
+                    float sheen = Mathf.Clamp01((v - 0.62f) / 0.38f);
+                    sheen *= sheen;
+                    r += (255f - r) * sheen * 0.45f;
+                    g += (255f - g) * sheen * 0.45f;
+                    b += (255f - b) * sheen * 0.45f;
+                    // 轨道色描边
+                    r = Mathf.Lerp(r, lc.r, 1f - edge);
+                    g = Mathf.Lerp(g, lc.g, 1f - edge);
+                    b = Mathf.Lerp(b, lc.b, 1f - edge);
+                    a = Mathf.Lerp(a, 255f, (1f - edge) * 0.9f);
+                    pixels[y * w + x] = new Color32((byte)r, (byte)g, (byte)b, (byte)(a * fill));
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            // PPU 128：原生 1x0.5 单位，与 CreateSprite 的 (1.92, 0.95) 缩放口径一致；
+            // 若按 64 会原生 2x1 再被缩放翻倍成 3.7 宽——四块键帽互相重叠连成一杠
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, w, h), new Vector2(0.5f, 0.5f), 128f);
+            keycapSprites[key] = sprite;
+            return sprite;
+        }
+
+        /// <summary>径向柔光（按键点亮辉光用，加法混合）。</summary>
+        internal static Sprite GetRadialGlowSprite()
+        {
+            if (radialGlowSprite != null) return radialGlowSprite;
+            const int size = 128;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Bilinear;
+            var pixels = new Color32[size * size];
+            float c = size * 0.5f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + 0.5f - c) / c, dy = (y + 0.5f - c) / c;
+                    float a = Mathf.Exp(-(dx * dx + dy * dy) * 5.5f) * 255f;
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)a);
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            radialGlowSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 128f);
+            return radialGlowSprite;
+        }
+
         /// <summary>场地底板：纵向渐变（底部微亮深蓝 → 顶部透明），给下落区纵深。</summary>
         internal static Sprite GetPanelSprite()
         {
@@ -260,11 +352,12 @@ namespace MusicGame.Gameplay
                 nextIndex++;
             }
             UpdateJudgeLinePulse(now);
+            judgeKick = Mathf.Max(0f, judgeKick - Time.deltaTime * 5f);
             UpdateKeycaps();
         }
 
         // 判定线随节拍呼吸脉冲（视觉设计受 Phira/Phigros 风格启发，自行实现）：
-        // 每个 beat 时刻强度最高，随后按三次方衰减；仅缩放横轴与调亮，不改判定逻辑
+        // 每个 beat 时刻强度最高，随后按三次方衰减；命中瞬间叠加冲击（纵鼓+闪白+微抖+辉光爆亮），不改判定逻辑
         private void UpdateJudgeLinePulse(double songTime)
         {
             if (judgeLine == null || chart.Bpm <= 0.0) return;
@@ -273,11 +366,19 @@ namespace MusicGame.Gameplay
             if (phase < 0) phase += period;
             float k = 1f - (float)(phase / period);
             k = k * k * k; // 衰减曲线
+            float kick = judgeKick;
             judgeLine.transform.localScale = new Vector3(
                 judgeLineBaseScale.x * (1f + 0.05f * k),
-                judgeLineBaseScale.y,
+                judgeLineBaseScale.y * (1f + 1.2f * kick),
                 1f);
-            judgeLine.color = new Color(1f, 1f, 1f, 0.85f + 0.15f * k);
+            judgeLine.color = new Color(1f, 1f, 1f, Mathf.Clamp01(0.85f + 0.15f * k + 0.5f * kick));
+            judgeLine.transform.localPosition = new Vector3(
+                Mathf.Sin(Time.time * 60f) * 0.05f * kick, JudgeLineY, 0f);
+            if (judgeGlow != null)
+            {
+                var gc = judgeGlow.color;
+                judgeGlow.color = new Color(gc.r, gc.g, gc.b, Mathf.Clamp01(0.55f + 0.45f * kick));
+            }
         }
 
         private void Spawn(NoteData data)
@@ -292,10 +393,13 @@ namespace MusicGame.Gameplay
             live[data] = controller;
         }
 
-        /// <summary>头判结果转发给对应音符控制器（表现）。</summary>
+        /// <summary>头判结果转发给对应音符控制器（表现）；命中同步触发判定线冲击反馈。</summary>
         public void NotifyJudged(NoteData note, Judgement judgement)
         {
             if (note != null && live.TryGetValue(note, out NoteController controller)) controller.OnHeadJudged(judgement);
+            if (judgement != Judgement.Miss)
+                judgeKick = Mathf.Max(judgeKick, judgement == Judgement.Perfect ? 1f
+                    : judgement == Judgement.Good ? 0.85f : 0.55f);
         }
 
         /// <summary>自动 Miss 转发给对应音符控制器（变灰继续下落出屏）。</summary>
@@ -352,6 +456,7 @@ namespace MusicGame.Gameplay
                 new Vector2(LaneWidth * LaneCount + 1.5f, 0.9f), new Color(0.65f, 0.85f, 1f, 0.55f), 1);
             glow.material = MakeAdditiveMaterial();
             glow.sprite = GetJudgeGlowSprite();
+            judgeGlow = glow;
 
             CreateSprite("JudgeLine", playfieldRoot.transform,
                 new Vector3(0f, JudgeLineY, 0f),
@@ -362,20 +467,43 @@ namespace MusicGame.Gameplay
             BuildKeycaps();
         }
 
-        // 判定区下方：每条轨道一个可点击的"按键板"（D/F/J/K），鼠标/触屏/键盘均可触发——
-        // 按住时整板亮青、字母弹大，按钮与轨道一一对应
+        // 判定区下方：每条轨道一枚"键帽"（轨道色描边板 + 重黑字母 + 按压辉光），
+        // 鼠标/触屏/键盘均可触发——按住时板提亮、辉光点亮轨道色、字母弹跳
         private void BuildKeycaps()
         {
             keycaps = new TextMesh[LaneCount];
             lanePads = new SpriteRenderer[LaneCount];
-            Font font = GetBuiltinFont();
+            keyGlows = new SpriteRenderer[LaneCount];
+            padBaseScale = new Vector3[LaneCount];
+            padBasePos = new Vector3[LaneCount];
+            padPunchFx = new Coroutine[LaneCount];
+            keyPressAge = new float[LaneCount];
+            keyWasHeld = new bool[LaneCount];
+            glowAlpha = new float[LaneCount];
+            Font font = GetKeycapFont();
             for (int lane = 0; lane < LaneCount; lane++)
             {
-                lanePads[lane] = CreateSprite("KeyPad" + lane, playfieldRoot.transform,
-                    new Vector3(LaneX(lane), JudgeLineY - 0.85f, 0f),
-                    new Vector2(LaneWidth * 0.96f, 0.95f), PadIdleColor, 2);
-                lanePads[lane].sprite = GetPadSprite();
+                Color laneC = LaneColors[lane];
 
+                // 按键辉光（加法混合，垫在键帽板下）：按住点亮轨道色
+                var glow = CreateSprite("KeyGlow" + lane, playfieldRoot.transform,
+                    new Vector3(LaneX(lane), JudgeLineY - 0.85f, 0f),
+                    new Vector2(LaneWidth * 1.8f, 1.7f), new Color(laneC.r, laneC.g, laneC.b, 0f), 1);
+                glow.material = MakeAdditiveMaterial();
+                glow.sprite = GetRadialGlowSprite();
+                keyGlows[lane] = glow;
+
+                // 键帽板：程序化轨道色贴图（优先皮肤包 pad.png）
+                var pad = CreateSprite("KeyPad" + lane, playfieldRoot.transform,
+                    new Vector3(LaneX(lane), JudgeLineY - 0.85f, 0f),
+                    new Vector2(LaneWidth * 0.96f, 0.95f), Color.white, 2);
+                Sprite skinned = SkinManager.Load("pad");
+                pad.sprite = skinned != null ? skinned : GetKeycapSprite(laneC);
+                lanePads[lane] = pad;
+                padBaseScale[lane] = pad.transform.localScale;
+                padBasePos[lane] = pad.transform.localPosition;
+
+                // 字母（重黑计分板字体）+ 黑投影子物体，渲染序压在键帽板之上
                 var go = new GameObject("Keycap" + lane);
                 go.transform.SetParent(playfieldRoot.transform, false);
                 go.transform.localPosition = new Vector3(LaneX(lane), JudgeLineY - 0.85f, 0f);
@@ -386,10 +514,41 @@ namespace MusicGame.Gameplay
                 tm.characterSize = 0.15f;
                 tm.anchor = TextAnchor.MiddleCenter;
                 tm.alignment = TextAlignment.Center;
-                tm.color = Color.Lerp(LaneColors[lane], Color.white, 0.45f);
-                go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+                tm.color = Color.Lerp(laneC, Color.white, 0.35f);
+                var letterRenderer = go.GetComponent<MeshRenderer>();
+                letterRenderer.sharedMaterial = font.material;
+                letterRenderer.sortingOrder = 4;
+
+                var shadowGo = new GameObject("KeycapShadow");
+                shadowGo.transform.SetParent(go.transform, false);
+                shadowGo.transform.localPosition = new Vector3(0.035f, -0.045f, 0f);
+                var shadow = shadowGo.AddComponent<TextMesh>();
+                shadow.text = LaneKeyNames[lane];
+                shadow.font = font;
+                shadow.fontSize = 64;
+                shadow.characterSize = 0.15f;
+                shadow.anchor = TextAnchor.MiddleCenter;
+                shadow.alignment = TextAlignment.Center;
+                shadow.color = new Color(0f, 0f, 0f, 0.55f);
+                var shadowRenderer = shadowGo.GetComponent<MeshRenderer>();
+                shadowRenderer.sharedMaterial = font.material;
+                shadowRenderer.sortingOrder = 3;
+
                 keycaps[lane] = tm;
+                keyPressAge[lane] = 99f;
             }
+        }
+
+        private static Font keycapFont;
+
+        /// <summary>键帽字母字体：Impact 计分板感（回退 Arial Black / Arial / 内置）。太鼓鼓垫键位标识共用。</summary>
+        internal static Font GetKeycapFont()
+        {
+            if (keycapFont != null) return keycapFont;
+            try { keycapFont = Font.CreateDynamicFontFromOSFont(new[] { "Impact", "Arial Black", "Arial" }, 48); }
+            catch (Exception) { }
+            if (keycapFont == null) keycapFont = GetBuiltinFont();
+            return keycapFont;
         }
 
         private static Font GetBuiltinFont()
@@ -398,20 +557,76 @@ namespace MusicGame.Gameplay
             catch (Exception) { return Resources.GetBuiltinResource<Font>("Arial.ttf"); }
         }
 
-        // 按住反馈：按键板亮轨色 + 字母提亮放大（IsLaneHeld 内部会刷新输入状态，与判定同源）
+        // 按住反馈：字母变白弹跳；键帽板在按下瞬间走 PunchDrum 同款敲扁回弹+震动+白闪（协程独占缩放/位置）
         private void UpdateKeycaps()
         {
             if (keycaps == null || lanePads == null || Game == null) return;
             for (int lane = 0; lane < keycaps.Length; lane++)
             {
                 bool held = Game.IsLaneHeld(lane);
-                keycaps[lane].color = held ? KeycapPressedColor : Color.Lerp(LaneColors[lane], Color.white, 0.45f);
-                keycaps[lane].transform.localScale = held ? new Vector3(1.18f, 1.18f, 1f) : Vector3.one;
-                Color pad = held
-                    ? new Color(LaneColors[lane].r * 0.8f, LaneColors[lane].g * 0.8f, LaneColors[lane].b * 0.8f, PadPressedColor.a)
-                    : new Color(LaneColors[lane].r, LaneColors[lane].g, LaneColors[lane].b, PadIdleColor.a * 1.6f);
-                lanePads[lane].color = pad;
+                if (held && !keyWasHeld[lane])
+                {
+                    keyPressAge[lane] = 0f; // 按下瞬间：字母弹跳 + 键帽板敲击反馈
+                    StartPadPunch(lane);
+                }
+                else keyPressAge[lane] += Time.deltaTime;
+                keyWasHeld[lane] = held;
+                float punch = Mathf.Exp(-keyPressAge[lane] * 9f);
+                Color laneC = LaneColors[lane];
+
+                // 字母：按住变白 + 敲击弹跳（投影为子物体跟随缩放）
+                keycaps[lane].color = held ? Color.white : Color.Lerp(laneC, Color.white, 0.35f);
+                float ls = (held ? 1.12f : 1f) + 0.12f * punch;
+                keycaps[lane].transform.localScale = new Vector3(ls, ls, 1f);
+
+                // 键帽板：常态色由这里管理；敲击瞬间的缩放/震动/白闪归 PadPunchRoutine
+                if (padPunchFx[lane] == null)
+                    lanePads[lane].color = held ? new Color(1.3f, 1.3f, 1.4f, 1f) : Color.white;
+
+                // 辉光：按住点亮轨道色，敲击瞬间更亮，松手平滑熄灭
+                float target = held ? 0.24f + 0.46f * punch : 0f;
+                glowAlpha[lane] = Mathf.MoveTowards(glowAlpha[lane], target, Time.deltaTime * 4f);
+                keyGlows[lane].color = new Color(laneC.r, laneC.g, laneC.b, glowAlpha[lane]);
             }
+        }
+
+        private void StartPadPunch(int lane)
+        {
+            if (padPunchFx == null || lanePads == null) return;
+            if (padPunchFx[lane] != null) StopCoroutine(padPunchFx[lane]);
+            padPunchFx[lane] = StartCoroutine(PadPunchRoutine(lane));
+        }
+
+        // 键帽板敲击反馈：敲扁回弹（横胀纵缩）+ 左右震动 + 白闪衰减，与 PunchDrum 同语言
+        private System.Collections.IEnumerator PadPunchRoutine(int lane)
+        {
+            var pad = lanePads[lane];
+            Vector3 baseScale = padBaseScale[lane];
+            Vector3 basePos = padBasePos[lane];
+            const float Dur = 0.2f;
+            float t = 0f;
+            while (t < Dur && pad != null)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / Dur);
+                float decay = 1f - k;
+                float wobble = Mathf.Cos(k * Mathf.PI * 3f) * decay;
+                pad.transform.localScale = new Vector3(
+                    baseScale.x * (1f + 0.09f * wobble),
+                    baseScale.y * (1f - 0.16f * wobble), 1f);
+                pad.transform.localPosition = new Vector3(
+                    basePos.x + Mathf.Sin(k * Mathf.PI * 6f) * 0.05f * decay, basePos.y, basePos.z);
+                float flash = 1f + 0.55f * decay;
+                pad.color = new Color(flash, flash, flash * 1.06f, 1f);
+                yield return null;
+            }
+            if (pad != null)
+            {
+                pad.transform.localScale = baseScale;
+                pad.transform.localPosition = basePos;
+                pad.color = Color.white;
+            }
+            if (padPunchFx != null) padPunchFx[lane] = null;
         }
 
         private static SpriteRenderer CreateSprite(string name, Transform parent, Vector3 localPosition, Vector2 size, Color color, int sortingOrder)

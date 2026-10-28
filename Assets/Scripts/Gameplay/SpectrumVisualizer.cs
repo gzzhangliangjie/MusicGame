@@ -13,7 +13,7 @@ namespace MusicGame.Gameplay
     public class SpectrumVisualizer : MonoBehaviour
     {
         private const int BarCount = 28;
-        private const int SpectrumSize = 64;          // GetSpectrumData 采样数（2 的幂）
+        private const int SpectrumSize = 2048;        // GetSpectrumData 采样数（2 的幂；64 的可用 bin 太少，28 根柱挤在同一批 bass bin 上）
         private const float FieldHalfWidth = 5f;      // 光柱排布总宽的一半（略宽于 4 轨区）
         private const float MaxBarHeight = 2.2f;      // 光柱最大高度（世界单位）
         private const float RiseSpeed = 24f;          // 攻：上升插值速度（快）
@@ -28,9 +28,11 @@ namespace MusicGame.Gameplay
         private Conductor conductor;
         private readonly float[] spectrum = new float[SpectrumSize];
         private readonly float[] smoothed = new float[BarCount];
+        private readonly float[] rawEnergy = new float[BarCount];
         private SpriteRenderer[] bars;
         private SpriteRenderer glow;
         private float glowSmoothed;
+        private float agcGain = 1f;
         private float lastAudibleTime = -10f;
         private Material additive;
 
@@ -86,7 +88,7 @@ namespace MusicGame.Gameplay
             {
                 source.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
                 float total = 0f;
-                for (int i = 1; i < SpectrumSize / 2; i++) total += spectrum[i];
+                for (int i = 2; i < 256; i++) total += spectrum[i]; // 覆盖 ~47Hz-6kHz 的可闻主体
                 audible = total > SilenceEpsilon;
             }
             if (audible) lastAudibleTime = Time.time;
@@ -95,14 +97,22 @@ namespace MusicGame.Gameplay
             float bass = 0f;
             if (!fallback)
             {
-                for (int i = 1; i <= 4; i++) bass += spectrum[i];
-                bass /= 4f;
-                bass = Mathf.Clamp01(Mathf.Sqrt(bass) * 8f);
+                for (int i = 2; i <= 6; i++) bass += spectrum[i];
+                bass /= 5f;
+                // 先取原始能量，再做 AGC 归一化：按本帧峰值动态调增益（快压慢放），
+                // 音乐再响也只有最高的柱接近满格——修复固定增益下整排同时顶格的"全满"
+                float frameMax = 0f;
                 for (int i = 0; i < BarCount; i++)
                 {
-                    float target = BarEnergy(i);
-                    UpdateBar(i, target, dt);
+                    rawEnergy[i] = BarEnergy(i);
+                    if (rawEnergy[i] > frameMax) frameMax = rawEnergy[i];
                 }
+                float targetGain = 0.88f / Mathf.Max(frameMax, 1e-4f);
+                agcGain = targetGain < agcGain
+                    ? Mathf.Lerp(agcGain, targetGain, Mathf.Clamp01(14f * dt))   // 峰值变响：增益快压
+                    : Mathf.Lerp(agcGain, targetGain, Mathf.Clamp01(1.5f * dt)); // 变安静：慢放，保持层次
+                for (int i = 0; i < BarCount; i++)
+                    UpdateBar(i, Mathf.Clamp01(rawEnergy[i] * agcGain), dt);
             }
             else
             {
@@ -145,18 +155,21 @@ namespace MusicGame.Gameplay
             bar.color = new Color(c.r, c.g, c.b, BarBaseAlpha * (0.35f + 0.65f * value));
         }
 
-        // 第 i 根光柱的能量：对数分桶（偏置低频，音乐能量集中区），平方根提升小值可见度
+        // 第 i 根光柱的原始能量：指数（对数感知）分桶——低频柱带宽窄、高频柱带宽宽且按频率抬一点权重。
+        // 不再内建固定增益（整排饱和的根源），动态范围交给 AGC 归一化
         private float BarEnergy(int i)
         {
-            float usable = SpectrumSize / 2f - 1f;
-            float t0 = i / (float)BarCount;
-            float t1 = (i + 1) / (float)BarCount;
-            int lo = Mathf.Clamp(Mathf.FloorToInt(Mathf.Lerp(1f, usable, t0 * t0)), 0, SpectrumSize / 2 - 1);
-            int hi = Mathf.Clamp(Mathf.CeilToInt(Mathf.Lerp(1f, usable, t1 * t1)), lo + 1, SpectrumSize / 2);
+            float t = (i + 0.5f) / BarCount;
+            const int minBin = 2, maxBin = 620; // bin≈23.4Hz@48k → 47Hz~14.5kHz，音乐能量主体区
+            int center = Mathf.Clamp(Mathf.RoundToInt(minBin * Mathf.Pow(maxBin / (float)minBin, t)), minBin, maxBin);
+            int width = Mathf.Max(2, Mathf.RoundToInt(Mathf.Lerp(2f, 30f, t)));
+            int lo = Mathf.Clamp(center - width / 2, minBin, Mathf.Max(minBin, maxBin - width));
+            int hi = lo + width;
             float sum = 0f;
             for (int b = lo; b < hi; b++) sum += spectrum[b];
-            float energy = sum / (hi - lo);
-            return Mathf.Clamp01(Mathf.Sqrt(energy) * 9f);
+            float energy = sum / width;
+            float tilt = Mathf.Lerp(1.0f, 2.0f, t);
+            return Mathf.Sqrt(energy) * tilt;
         }
     }
 }
