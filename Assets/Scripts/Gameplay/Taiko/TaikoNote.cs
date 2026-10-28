@@ -26,6 +26,7 @@ namespace MusicGame.Gameplay.Taiko
         private SpriteRenderer rollBodyRenderer;
         private GameObject counterGo;  // 气球进度计数（仅 Roll）
         private TextMesh counter;
+        private TextMesh counterShadow; // 数字黑投影层（键帽字母同款双层）
         private float rollLen;         // 连击条全长（世界单位）
         private float rollFill;
         private float speed;
@@ -55,7 +56,7 @@ namespace MusicGame.Gameplay.Taiko
             disc.transform.localScale = Vector3.one * (kind == Kind.Roll ? 0.34f : 0.5f);
             rollBody.SetActive(kind == Kind.Roll);
             counterGo.SetActive(kind == Kind.Roll);
-            if (kind == Kind.Roll) { counter.text = "0"; counterZone = 0; counterPunch = 0f; }
+            if (kind == Kind.Roll) { SetCounterText("0"); counterZone = 0; counterPunch = 0f; }
             if (kind == Kind.Roll)
             {
                 rollLen = (float)note.Duration * speed;
@@ -82,22 +83,39 @@ namespace MusicGame.Gameplay.Taiko
             rollBodyRenderer = body;
             rollBody = bodyGo;
 
-            // 气球进度计数（白字，仅 Roll 显示）
+            // 气球进度计数：Impact 计分板字体（键帽/鼓垫同款）+ 黑投影双层，白字太素、Arial 太软
             counterGo = new GameObject("RollCounter");
             counterGo.transform.SetParent(transform, false);
             counterGo.transform.localPosition = new Vector3(0f, 0.05f, 0f);
-            counter = counterGo.AddComponent<TextMesh>();
-            counter.font = TaikoSpawner.GetBuiltinFont();
-            counter.fontSize = 48;
-            counter.characterSize = 0.085f;
-            counter.anchor = TextAnchor.MiddleCenter;
-            counter.alignment = TextAlignment.Center;
+            counter = CreateCounterText("Counter", 11);
             counter.color = new Color(0.42f, 0.28f, 0.08f, 0.96f); // 深棕字：黄气球上比白字清晰
-            counter.text = "0";
-            var counterRenderer = counterGo.GetComponent<MeshRenderer>();
-            counterRenderer.sharedMaterial = counter.font.material;
-            counterRenderer.sortingOrder = 11;
+            counterShadow = CreateCounterText("CounterShadow", 10);
+            counterShadow.transform.localPosition = new Vector3(0.02f, -0.028f, 0f);
+            counterShadow.color = new Color(0f, 0f, 0f, 0.55f);
             counterGo.SetActive(false);
+        }
+
+        private TextMesh CreateCounterText(string name, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(counterGo.transform, false);
+            var tm = go.AddComponent<TextMesh>();
+            tm.font = NoteSpawner.GetKeycapFont();
+            tm.fontSize = 48;
+            tm.characterSize = 0.085f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            var renderer = go.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = tm.font.material;
+            renderer.sortingOrder = order;
+            return tm;
+        }
+
+        // 主字与投影同步设值（防两频闪不对称）
+        private void SetCounterText(string value)
+        {
+            if (counter.text != value) counter.text = value;
+            if (counterShadow.text != value) counterShadow.text = value;
         }
 
         private void Update()
@@ -188,6 +206,8 @@ namespace MusicGame.Gameplay.Taiko
                 {
                     var cc = counter.color;
                     counter.color = new Color(cc.r, cc.g, cc.b, 1f - k);
+                    var sc = counterShadow.color;
+                    counterShadow.color = new Color(sc.r, sc.g, sc.b, sc.a * (1f - k));
                 }
                 yield return null;
             }
@@ -212,6 +232,8 @@ namespace MusicGame.Gameplay.Taiko
                 {
                     var cc = counter.color;
                     counter.color = new Color(cc.r, cc.g, cc.b, 1f - k);
+                    var sc = counterShadow.color;
+                    counterShadow.color = new Color(sc.r, sc.g, sc.b, sc.a * (1f - k));
                 }
                 yield return null;
             }
@@ -231,7 +253,7 @@ namespace MusicGame.Gameplay.Taiko
             bool held = spawner.Game != null && spawner.Game.IsLaneHeld(2);
 
             string pctText = Mathf.RoundToInt(rollFill * 100f).ToString();
-            if (counter.text != pctText) counter.text = pctText;
+            SetCounterText(pctText);
 
             // 数字动态：跨 30/60/90 判档线 → 弹跳+白闪+气球本体鼓一下；按住时随打气节奏脉动
             int zone = rollFill >= 0.9f ? 3 : rollFill >= 0.6f ? 2 : rollFill >= 0.3f ? 1 : 0;
