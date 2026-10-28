@@ -59,7 +59,20 @@ namespace MusicGame.UI
         bool taikoMode;
         Image modeNormalImg, modeTaikoImg;
         Text menuTitle;
+        TextVerticalGradient menuTitleGrad;
+        Image titleGlow, menuUnderline, startGlow;
         UiBackdrop backdrop;
+
+        // 主菜单动效编排（入场淡入/上滑 + 待机呼吸/辉光脉动）
+        const byte FxAlpha = 0, FxSlide = 1, FxScale = 2;
+        static readonly Color GhostBtn = new Color(0.17f, 0.20f, 0.29f);
+        readonly List<CanvasGroup> menuFxGroups = new List<CanvasGroup>();
+        readonly List<RectTransform> menuFxRts = new List<RectTransform>();
+        readonly List<Vector2> menuFxTargets = new List<Vector2>();
+        readonly List<byte> menuFxKinds = new List<byte>();
+        readonly List<float> menuFxDelays = new List<float>();
+        Coroutine menuFxHandle, menuIdleHandle;
+        float menuFxEndTime;
 
         // 选曲/分析/难度/HUD 控件
         Transform songListContent;
@@ -70,7 +83,32 @@ namespace MusicGame.UI
         Transform diffListHolder;
         Text diffSongLabel;
         Text hudScore, hudCombo, hudAcc, hudSong, hudHint, hudLyric;
-        Coroutine lyricIntroHandle;
+        LyricKaraokeEffect lyricKaraoke;
+        LyricScatterEffect lyricScatter;
+        Coroutine lyricAnimHandle;
+
+        // 连击分阶段形态：档位阈值 / 颜色（500+ 为彩虹流彩，颜色运行时算）/ 基准字号倍率
+        private static readonly int[] ComboStageAt = { 0, 10, 50, 100, 200, 500 };
+        private static readonly Color[] ComboStageColor =
+        {
+            new Color(0.85f, 0.88f, 0.95f), new Color(0.42f, 0.78f, 1.00f), new Color(0.70f, 0.52f, 1.00f),
+            new Color(1.00f, 0.82f, 0.30f), new Color(1.00f, 0.55f, 0.25f), Color.white,
+        };
+        private static readonly float[] ComboStageScale = { 0.62f, 0.74f, 0.86f, 1.00f, 1.14f, 1.28f };
+        private int shownCombo = -1;
+        private Coroutine comboVisualHandle;
+        private int comboStage;
+        private Color comboStageColorRef = Color.white;
+        private float comboPunchAmp;
+        private float comboRotAmp;
+        private float comboTiltDir = 1f;
+        private float comboPunchAge = 99f;
+        private bool comboBreaking;
+        private Text comboCaption;
+        private string lyricTarget = "";
+        private RectTransform helpScreen;
+        private Text diffRecordText;
+        private readonly System.Collections.Generic.List<string> shownDifficulties = new System.Collections.Generic.List<string>();
 
         // ---------------------------------------------------------------- 基础
 
@@ -121,6 +159,8 @@ namespace MusicGame.UI
             pauseScreen = UiKit.Panel(canvas.transform, "PauseOverlay", new Color(0f, 0f, 0f, 0.78f)).rectTransform;
             BuildPauseOverlay();
             pauseScreen.gameObject.SetActive(false);
+            helpScreen = CreateScreen("Help");
+            BuildHelp();
         }
 
         RectTransform CreateScreen(string name, Color? bg = null)
@@ -147,6 +187,7 @@ namespace MusicGame.UI
         {
             var go = new GameObject("ResultsScreen", typeof(RectTransform));
             go.transform.SetParent(canvas.transform, false);
+            UiKit.Stretch(go.GetComponent<RectTransform>()); // 根节点默认是居中 100x100，不铺满的话面板内所有百分比布局全部塌缩（结算文字/背景一直没渲染出来的根因）
             results = go.AddComponent<ResultsScreen>();
             results.Setup();
             results.RetryRequested += OnResultsRetry;
@@ -156,21 +197,159 @@ namespace MusicGame.UI
 
         void BuildMainMenu()
         {
-            var title = UiKit.Label(menuScreen, "title", "MUSIC GAME", 96, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
-            UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.58f), new Vector2(1f, 0.88f));
+            // 标题背后一团主题色柔光，让大标题从背景里浮起来
+            titleGlow = UiKit.SoftGlow(menuScreen, "titleGlow", new Vector2(0f, 259f), 1150f, UiKit.Theme.Backdrop1, 0.14f);
+
+            // 主标题：计分板字体 + 白→主题色竖向渐变 + 双层描边 + 投影（判定艺术字同款语言）
+            var title = UiKit.Label(menuScreen, "title", "JJ MUSIC GAME", 104, TextAnchor.MiddleCenter, Color.white);
+            title.font = UiKit.DigitFont;
+            UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.62f), new Vector2(1f, 0.86f));
+            menuTitleGrad = title.gameObject.AddComponent<TextVerticalGradient>();
+            menuTitleGrad.SetColors(Color.white, UiKit.Theme.Accent);
+            var titleOutline1 = title.gameObject.AddComponent<Outline>();
+            titleOutline1.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            titleOutline1.effectDistance = new Vector2(3f, -3f);
+            var titleOutline2 = title.gameObject.AddComponent<Outline>();
+            titleOutline2.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            titleOutline2.effectDistance = new Vector2(1.5f, -1.5f);
+            var titleShadow = title.gameObject.AddComponent<Shadow>();
+            titleShadow.effectColor = new Color(0f, 0f, 0f, 0.55f);
+            titleShadow.effectDistance = new Vector2(0f, -5f);
             menuTitle = title;
-            var titleOutline = title.gameObject.AddComponent<Outline>();
-            titleOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
-            titleOutline.effectDistance = new Vector2(3f, -3f);
-            var sub = UiKit.Label(menuScreen, "subtitle", "本地导入 · 自动谱面 · 四轨下落 · D F J K", 28, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
-            UiKit.Stretch(sub.rectTransform, new Vector2(0f, 0.50f), new Vector2(1f, 0.58f));
-            UiKit.ButtonRect(menuScreen, "btnStart", "开 始 游 戏", new Vector2(0f, -40f), new Vector2(480f, 96f), OnStartClicked, UiKit.Theme.Primary, 36);
-            UiKit.ButtonRect(menuScreen, "btnCalibrate", "延 迟 校 准", new Vector2(0f, -160f), new Vector2(480f, 96f), OnCalibrateClicked, UiKit.Theme.Secondary, 36);
-            UiKit.ButtonRect(menuScreen, "btnQuit", "退 出", new Vector2(0f, -280f), new Vector2(480f, 80f), OnQuitClicked, UiKit.Theme.Quit, 30);
-            UiKit.ButtonRect(menuScreen, "btnTheme", "主题：" + Palette.Current.Name, new Vector2(-250f, -390f), new Vector2(430f, 64f), OnThemeClicked, UiKit.Theme.PanelBg, 24);
-            UiKit.ButtonRect(menuScreen, "btnSkin", "皮肤：" + SkinManager.Current, new Vector2(250f, -390f), new Vector2(430f, 64f), OnSkinClicked, UiKit.Theme.PanelBg, 24);
-            var help = UiKit.Label(menuScreen, "help", "导入 mp3 / ogg / wav → 自动分析生成四档谱面\nD F J K 或 鼠标点击轨道击打 · 游戏中 Esc 暂停", 22, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
-            UiKit.Stretch(help.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.07f));
+
+            // 标题下主题色装饰条
+            var underlineRt = UiKit.Node(menuScreen, "underline");
+            underlineRt.anchorMin = new Vector2(0.5f, 0.5f);
+            underlineRt.anchorMax = new Vector2(0.5f, 0.5f);
+            underlineRt.anchoredPosition = new Vector2(0f, 150f);
+            underlineRt.sizeDelta = new Vector2(430f, 6f);
+            menuUnderline = underlineRt.gameObject.AddComponent<Image>();
+            menuUnderline.sprite = UiKit.RoundedSprite;
+            menuUnderline.type = Image.Type.Sliced;
+            menuUnderline.color = UiKit.Theme.Accent;
+            menuUnderline.raycastTarget = false;
+
+            // 主题 / 皮肤：紧贴标题下方并排
+            UiKit.ButtonRect(menuScreen, "btnTheme", "主题：" + Palette.Current.Name, new Vector2(-174f, 88f), new Vector2(320f, 56f), OnThemeClicked, UiKit.Theme.PanelBg, 24);
+            UiKit.ButtonRect(menuScreen, "btnSkin", "皮肤：" + SkinManager.Current, new Vector2(174f, 88f), new Vector2(320f, 56f), OnSkinClicked, UiKit.Theme.PanelBg, 24);
+
+            var sub = UiKit.Label(menuScreen, "subtitle", "本地导入 · 自动谱面 · 四轨下落 / 太鼓咚咔", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
+            UiKit.Stretch(sub.rectTransform, new Vector2(0f, 0.505f), new Vector2(1f, 0.542f));
+
+            // 主按钮列：开始（最大最亮，背后辉光脉动）→ 校准 → 帮助 → 退出
+            startGlow = UiKit.SoftGlow(menuScreen, "startGlow", new Vector2(0f, -85f), 820f, UiKit.Theme.Accent, 0.20f);
+            UiKit.ButtonRect(menuScreen, "btnStart", "开 始 游 戏", new Vector2(0f, -85f), new Vector2(520f, 104f), OnStartClicked, UiKit.Theme.Primary, 38);
+            UiKit.ButtonRect(menuScreen, "btnCalibrate", "延 迟 校 准", new Vector2(0f, -205f), new Vector2(520f, 90f), OnCalibrateClicked, UiKit.Theme.Secondary, 32);
+            UiKit.ButtonRect(menuScreen, "btnHelp", "帮 助", new Vector2(0f, -310f), new Vector2(520f, 80f), OnHelpClicked, GhostBtn, 28);
+            UiKit.ButtonRect(menuScreen, "btnQuit", "退 出", new Vector2(0f, -402f), new Vector2(520f, 72f), OnQuitClicked, UiKit.Theme.Quit, 26);
+
+            var help = UiKit.Label(menuScreen, "help", "导入 mp3 / ogg / wav 自动生成谱面 · D F J K 或鼠标点击 · 游戏中 Esc 暂停", 20, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
+            UiKit.Stretch(help.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.06f));
+
+            // 入场编排：标题/辉光先到，装饰条、主题/皮肤、标语、四个按钮依次上滑
+            AddMenuFx(titleGlow.gameObject, FxAlpha, 0.00f);
+            AddMenuFx(title.gameObject, FxScale, 0.00f);
+            AddMenuFx(underlineRt.gameObject, FxAlpha, 0.10f);
+            AddMenuFx(menuScreen.Find("btnTheme").gameObject, FxSlide, 0.14f);
+            AddMenuFx(menuScreen.Find("btnSkin").gameObject, FxSlide, 0.18f);
+            AddMenuFx(sub.gameObject, FxSlide, 0.24f);
+            AddMenuFx(startGlow.gameObject, FxAlpha, 0.30f);
+            AddMenuFx(menuScreen.Find("btnStart").gameObject, FxSlide, 0.30f);
+            AddMenuFx(menuScreen.Find("btnCalibrate").gameObject, FxSlide, 0.37f);
+            AddMenuFx(menuScreen.Find("btnHelp").gameObject, FxSlide, 0.44f);
+            AddMenuFx(menuScreen.Find("btnQuit").gameObject, FxSlide, 0.51f);
+            AddMenuFx(help.gameObject, FxAlpha, 0.60f);
+        }
+
+        /// <summary>重启主菜单入场+待机动效（重复调用安全：先停旧协程，入场首帧重置初态）。</summary>
+        void RestartMenuFx()
+        {
+            if (menuFxGroups.Count == 0) return;
+            if (menuFxHandle != null) StopCoroutine(menuFxHandle);
+            if (menuIdleHandle != null) StopCoroutine(menuIdleHandle);
+            menuFxHandle = StartCoroutine(MenuEnterFx());
+            menuIdleHandle = StartCoroutine(MenuIdleFx());
+        }
+
+        void AddMenuFx(GameObject go, byte kind, float delay)
+        {
+            var cg = go.GetComponent<CanvasGroup>();
+            if (cg == null) cg = go.AddComponent<CanvasGroup>(); // Unity 假 null 不能用 ?? 判空
+            menuFxGroups.Add(cg);
+            var rt = (RectTransform)go.transform;
+            menuFxRts.Add(rt);
+            menuFxTargets.Add(rt.anchoredPosition);
+            menuFxKinds.Add(kind);
+            menuFxDelays.Add(delay);
+            cg.blocksRaycasts = true;
+        }
+
+        /// <summary>主菜单入场：淡入 + 按钮自下方上滑 + 标题 OutBack 弹出，元素错峰；期间挡射线避免误点透明按钮。</summary>
+        IEnumerator MenuEnterFx()
+        {
+            for (int i = 0; i < menuFxGroups.Count; i++)
+            {
+                var cg = menuFxGroups[i];
+                cg.alpha = 0f;
+                cg.blocksRaycasts = false;
+                if (menuFxKinds[i] == FxSlide) menuFxRts[i].anchoredPosition = menuFxTargets[i] + new Vector2(0f, -34f);
+                else if (menuFxKinds[i] == FxScale) menuFxRts[i].localScale = Vector3.one * 0.92f;
+            }
+            float start = Time.unscaledTime;
+            float total = 0f;
+            for (int i = 0; i < menuFxDelays.Count; i++) total = Mathf.Max(total, menuFxDelays[i]);
+            total += 0.34f;
+            menuFxEndTime = start + total;
+
+            while (Time.unscaledTime - start < total)
+            {
+                float now = Time.unscaledTime - start;
+                for (int i = 0; i < menuFxGroups.Count; i++)
+                {
+                    float k = Mathf.Clamp01((now - menuFxDelays[i]) / 0.32f);
+                    if (k <= 0f) continue;
+                    float e = OutCubic(k);
+                    menuFxGroups[i].alpha = e;
+                    if (menuFxKinds[i] == FxSlide)
+                        menuFxRts[i].anchoredPosition = menuFxTargets[i] + new Vector2(0f, -34f * (1f - e));
+                    else if (menuFxKinds[i] == FxScale)
+                    {
+                        float s = Mathf.Lerp(0.92f, 1f, OutBack(k));
+                        menuFxRts[i].localScale = new Vector3(s, s, 1f);
+                    }
+                    if (k >= 1f) menuFxGroups[i].blocksRaycasts = true;
+                }
+                yield return null;
+            }
+            for (int i = 0; i < menuFxGroups.Count; i++)
+            {
+                menuFxGroups[i].alpha = 1f;
+                menuFxGroups[i].blocksRaycasts = true;
+                if (menuFxKinds[i] == FxSlide) menuFxRts[i].anchoredPosition = menuFxTargets[i];
+                else if (menuFxKinds[i] == FxScale) menuFxRts[i].localScale = Vector3.one;
+            }
+        }
+
+        /// <summary>主菜单待机：标题缓慢呼吸，开始按钮辉光脉动；入场结束后才接管，避免打架。</summary>
+        IEnumerator MenuIdleFx()
+        {
+            while (state == FlowState.MainMenu)
+            {
+                float t = Time.unscaledTime;
+                if (t < menuFxEndTime) { yield return null; continue; }
+                if (menuTitle != null)
+                {
+                    float s = 1f + Mathf.Sin(t * 1.4f) * 0.006f;
+                    menuTitle.rectTransform.localScale = new Vector3(s, s, 1f);
+                }
+                if (startGlow != null)
+                {
+                    var c = UiKit.Theme.Accent;
+                    float a = 0.14f + 0.10f * (0.5f + 0.5f * Mathf.Sin(t * 2.1f));
+                    startGlow.color = new Color(c.r, c.g, c.b, a);
+                }
+                yield return null;
+            }
         }
 
         void OnThemeClicked()
@@ -178,7 +357,14 @@ namespace MusicGame.UI
             string name = Palette.Cycle();
             var btn = menuScreen.Find("btnTheme")?.GetComponentInChildren<Text>();
             if (btn != null) btn.text = "主题：" + name;
-            if (menuTitle != null) menuTitle.color = UiKit.Theme.Accent;
+            // 标题渐变 / 装饰条 / 标题辉光跟随新主题重染
+            if (menuTitleGrad != null) menuTitleGrad.SetColors(Color.white, UiKit.Theme.Accent);
+            if (menuUnderline != null) menuUnderline.color = UiKit.Theme.Accent;
+            if (titleGlow != null)
+            {
+                var c = UiKit.Theme.Backdrop1;
+                titleGlow.color = new Color(c.r, c.g, c.b, titleGlow.color.a);
+            }
             if (backdrop != null) backdrop.ApplyPalette();
         }
 
@@ -189,9 +375,38 @@ namespace MusicGame.UI
             if (btn != null) btn.text = "皮肤：" + name; // 新皮肤下一局生效
         }
 
+        void OnHelpClicked()
+        {
+            ShowOnly(helpScreen);
+        }
+
+        void BuildHelp()
+        {
+            var title = UiKit.Label(helpScreen, "title", "帮 助", 46, TextAnchor.MiddleCenter, Color.white);
+            title.font = UiKit.HeavyFont;
+            UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.88f), new Vector2(1f, 0.97f));
+            var body = UiKit.Label(helpScreen, "body",
+                "【玩法】\n" +
+                "四轨模式：音符落到判定线时按对应键 D F J K，或鼠标点击轨道；长条按住直到尾端\n" +
+                "太鼓模式：F/J=咚(红)  D/K=咔(蓝)，也可按住鼠标左右半屏；气球连击条滚到鼓面后按住任意鼓充气，吹满爆掉得分\n\n" +
+                "【判定】\n" +
+                "Perfect ±40ms · Good ±80ms · Bad ±140ms · 超出为 Miss（只有 Miss 断连击）\n" +
+                "气球按充气比例判尾：≥90% Perfect / ≥60% Good / ≥30% Bad\n\n" +
+                "【记录】\n" +
+                "每首歌 x 模式 x 难度自动保存本地最佳（得分/连击/准确率），难度选择页右侧可查看；\n" +
+                "超越历史纪录时结算界面会有 NEW RECORD 庆祝\n\n" +
+                "【个性化】\n" +
+                "主菜单可切换主题配色与皮肤（Skins 文件夹放贴图即成皮肤，兼容 osu! 皮肤文件名）；\n" +
+                "感觉打击时机不准？主菜单「延迟校准」",
+                26, TextAnchor.UpperLeft, new Color(0.92f, 0.94f, 1f), true);
+            UiKit.Stretch(body.rectTransform, new Vector2(0.08f, 0.13f), new Vector2(0.92f, 0.86f), new Vector2(20f, 0f), new Vector2(-20f, 0f));
+            UiKit.ButtonRect(helpScreen, "btnHelpBack", "返 回", new Vector2(0f, -466f), new Vector2(320f, 72f), ShowMain, UiKit.Theme.PanelBg, 30);
+        }
+
         void BuildSongSelect()
         {
             var title = UiKit.Label(selectScreen, "title", "选 曲", 46, TextAnchor.MiddleCenter, Color.white);
+            title.font = UiKit.HeavyFont;
             UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.90f), new Vector2(1f, 0.99f));
             browseButton = UiKit.ButtonRect(selectScreen, "btnBrowse", "导入本地音频 (mp3 / ogg / wav)…",
                 new Vector2(0f, 402f), new Vector2(640f, 84f), OnBrowseClicked, UiKit.Theme.Primary, 30);
@@ -261,21 +476,31 @@ namespace MusicGame.UI
 
         void BuildDiffScreen()
         {
+            // 顶部三行（标题/模式行/歌名）全部按画布高度百分比定位：
+            // 固定像素与百分比混用在非 16:9 窗口会相对漂移相撞（歌名曾被模式按钮盖住）
             var title = UiKit.Label(diffScreen, "title", "选择难度", 46, TextAnchor.MiddleCenter, Color.white);
-            UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.88f), new Vector2(1f, 0.99f));
+            title.font = UiKit.HeavyFont;
+            UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.90f), new Vector2(1f, 0.995f));
             diffSongLabel = UiKit.Label(diffScreen, "song", "", 28, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
-            UiKit.Stretch(diffSongLabel.rectTransform, new Vector2(0f, 0.80f), new Vector2(1f, 0.88f));
+            UiKit.Stretch(diffSongLabel.rectTransform, new Vector2(0f, 0.735f), new Vector2(1f, 0.80f));
 
-            // 模式切换：通常（四轨下落）/ 太鼓（咚咔横卷）
-            var normalBtn = UiKit.ButtonRect(diffScreen, "modeNormal", "通 常 模 式", new Vector2(-250f, 430f), new Vector2(430f, 88f), () => SetTaikoMode(false), UiKit.Theme.Primary, 28);
-            var taikoBtn = UiKit.ButtonRect(diffScreen, "modeTaiko", "太 鼓 模 式", new Vector2(250f, 430f), new Vector2(430f, 88f), () => SetTaikoMode(true), UiKit.Theme.Secondary, 28);
+            // 模式切换：通常（四轨下落）/ 太鼓（咚咔横卷）——锚点钉在画布高度百分比，
+            // 构建期量画布尺寸不可靠（CanvasScaler 的 scaleFactor 迟到，Start 时量到的是失真值）
+            var normalBtn = UiKit.ButtonRect(diffScreen, "modeNormal", "通 常 模 式", new Vector2(-250f, 0f), new Vector2(430f, 88f), () => SetTaikoMode(false), UiKit.Theme.Primary, 28);
+            var taikoBtn = UiKit.ButtonRect(diffScreen, "modeTaiko", "太 鼓 模 式", new Vector2(250f, 0f), new Vector2(430f, 88f), () => SetTaikoMode(true), UiKit.Theme.Secondary, 28);
+            PinFractionY((RectTransform)normalBtn.transform, -250f, 0.845f);
+            PinFractionY((RectTransform)taikoBtn.transform, 250f, 0.845f);
             modeNormalImg = normalBtn.image;
             modeTaikoImg = taikoBtn.image;
 
+            // 难度列容器全屏拉伸（无底图），子按钮用画布高度分数钉位
             var holderRt = UiKit.Node(diffScreen, "list");
-            UiKit.Stretch(holderRt, new Vector2(0f, 0.06f), new Vector2(1f, 0.76f));
+            UiKit.Stretch(holderRt);
             diffListHolder = holderRt;
             UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(0f, -466f), new Vector2(320f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 26);
+            // 右侧本地最佳纪录面板（随模式/歌曲刷新）
+            diffRecordText = UiKit.Label(diffScreen, "diffRecords", "", 24, TextAnchor.UpperLeft, UiKit.Theme.Dim, true);
+            UiKit.Stretch(diffRecordText.rectTransform, new Vector2(0.60f, 0.12f), new Vector2(0.97f, 0.74f), new Vector2(18f, 0f), new Vector2(-12f, 0f));
             SetTaikoMode(false);
         }
 
@@ -285,6 +510,7 @@ namespace MusicGame.UI
             taikoMode = taiko;
             if (modeNormalImg != null) modeNormalImg.color = taiko ? new Color(0.25f, 0.28f, 0.36f) : UiKit.Theme.Primary;
             if (modeTaikoImg != null) modeTaikoImg.color = taiko ? new Color(0.95f, 0.45f, 0.25f) : new Color(0.25f, 0.28f, 0.36f);
+            UpdateDiffRecordPanel();
         }
 
         void BuildHud()
@@ -295,23 +521,37 @@ namespace MusicGame.UI
             UiKit.Stretch(hudAcc.rectTransform, new Vector2(0.01f, 0.88f), new Vector2(0.30f, 0.985f), new Vector2(24f, 0f), new Vector2(0f, 0f));
             hudScore = UiKit.Label(hudScreen, "score", "0", 44, TextAnchor.MiddleRight, Color.white);
             UiKit.Stretch(hudScore.rectTransform, new Vector2(0.70f, 0.88f), new Vector2(0.99f, 0.985f), new Vector2(0f, 0f), new Vector2(-24f, 0f));
-            hudCombo = UiKit.Label(hudScreen, "combo", "", 60, TextAnchor.MiddleCenter, UiKit.Theme.Accent);
-            UiKit.Stretch(hudCombo.rectTransform, new Vector2(0.30f, 0.86f), new Vector2(0.70f, 0.985f));
+            // 连击：大数字（Impact 计分板字体）+ 上方小字 COMBO；阶段形态由 ComboVisualLoop 逐帧驱动
+            hudCombo = UiKit.Label(hudScreen, "combo", "", 88, TextAnchor.MiddleCenter, Color.white);
+            hudCombo.font = UiKit.DigitFont;
+            UiKit.Stretch(hudCombo.rectTransform, new Vector2(0.30f, 0.86f), new Vector2(0.70f, 0.955f));
+            hudCombo.gameObject.AddComponent<CanvasGroup>();
+            comboCaption = UiKit.Label(hudScreen, "comboCaption", "C O M B O", 18, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.75f));
+            UiKit.Stretch(comboCaption.rectTransform, new Vector2(0.38f, 0.955f), new Vector2(0.62f, 0.985f));
+            comboCaption.raycastTarget = false;
             hudSong = UiKit.Label(hudScreen, "song", "", 24, TextAnchor.MiddleLeft, UiKit.Theme.Dim, true);
             UiKit.Stretch(hudSong.rectTransform, new Vector2(0.01f, 0.01f), new Vector2(0.55f, 0.07f), new Vector2(24f, 0f), new Vector2(0f, 0f));
             hudHint = UiKit.Label(hudScreen, "hint", "D F J K / 鼠标点击轨道 · Esc 暂停", 24, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(hudHint.rectTransform, new Vector2(0.25f, 0.01f), new Vector2(0.75f, 0.07f));
 
-            // 歌词行：屏幕中部大号显示（Phigros 风格：大白字 + 黑描边 + 投影）
-            hudLyric = UiKit.Label(hudScreen, "lyric", "", 52, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.95f), true);
-            UiKit.Stretch(hudLyric.rectTransform, new Vector2(0.05f, 0.46f), new Vector2(0.95f, 0.64f));
+            // 歌词行：屏幕上部大号显示——思源黑体 Heavy（字重已够，不再叠合成加粗以免发糊）+ 白→金竖向渐变 + 双层描边 + 投影
+            hudLyric = UiKit.Label(hudScreen, "lyric", "", 56, TextAnchor.MiddleCenter, Color.white, true);
+            hudLyric.font = UiKit.HeavyFont;
+            UiKit.Stretch(hudLyric.rectTransform, new Vector2(0.05f, 0.74f), new Vector2(0.95f, 0.86f));
             hudLyric.raycastTarget = false;
-            var lyricOutline = hudLyric.gameObject.AddComponent<Outline>();
-            lyricOutline.effectColor = new Color(0f, 0f, 0f, 0.8f);
-            lyricOutline.effectDistance = new Vector2(2.6f, -2.6f);
+            lyricKaraoke = hudLyric.gameObject.AddComponent<LyricKaraokeEffect>(); // 须最先执行：后续修饰会展开/复制顶点流
+            hudLyric.gameObject.AddComponent<TextVerticalGradient>();
+            var lyricOutline1 = hudLyric.gameObject.AddComponent<Outline>();
+            lyricOutline1.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            lyricOutline1.effectDistance = new Vector2(3.2f, -3.2f);
+            var lyricOutline2 = hudLyric.gameObject.AddComponent<Outline>();
+            lyricOutline2.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            lyricOutline2.effectDistance = new Vector2(1.6f, -1.6f);
+            // 消散效果：必须挂在 Shadow 之前（投影跟随消散后的字形一起走），Karaoke 之后字符分组才对
+            lyricScatter = hudLyric.gameObject.AddComponent<LyricScatterEffect>();
             var lyricShadow = hudLyric.gameObject.AddComponent<Shadow>();
-            lyricShadow.effectColor = new Color(0f, 0f, 0f, 0.55f);
-            lyricShadow.effectDistance = new Vector2(0f, -3.5f);
+            lyricShadow.effectColor = new Color(0f, 0f, 0f, 0.6f);
+            lyricShadow.effectDistance = new Vector2(0f, -4.5f);
 
             // 判定反馈层：弹窗 + hit-error 误差条（不挡射线）
             var popupGo = new GameObject("JudgementPopups", typeof(RectTransform));
@@ -327,6 +567,7 @@ namespace MusicGame.UI
         void BuildPauseOverlay()
         {
             var title = UiKit.Label(pauseScreen, "title", "暂 停", 64, TextAnchor.MiddleCenter, Color.white);
+            title.font = UiKit.HeavyFont;
             UiKit.Stretch(title.rectTransform, new Vector2(0f, 0.55f), new Vector2(1f, 0.82f));
             var note = UiKit.Label(pauseScreen, "note", "（乐曲与判定已同步暂停）", 22, TextAnchor.MiddleCenter, UiKit.Theme.Dim);
             UiKit.Stretch(note.rectTransform, new Vector2(0f, 0.48f), new Vector2(1f, 0.55f));
@@ -351,6 +592,7 @@ namespace MusicGame.UI
             if (pauseScreen != null) pauseScreen.gameObject.SetActive(false);
             AudioListener.pause = false;
             ShowOnly(menuScreen);
+            RestartMenuFx();
         }
 
         void OnStartClicked()
@@ -376,6 +618,7 @@ namespace MusicGame.UI
             if (calibration != null) Destroy(calibration.gameObject);
             var go = new GameObject("CalibrationScreen", typeof(RectTransform));
             go.transform.SetParent(canvas.transform, false);
+            UiKit.Stretch(go.GetComponent<RectTransform>()); // 同结算屏：根节点不铺满会导致百分比布局全部塌缩
             calibration = go.AddComponent<CalibrationScreen>();
             calibration.Setup(OnCalibrationExit);
         }
@@ -571,8 +814,9 @@ namespace MusicGame.UI
                 ? (cached ? "已缓存 · " + diffs.Count + " 个难度" : diffs.Count + " 个难度")
                 : "尚未生成谱面";
             string dur = entry.Meta.DurationSeconds > 0.0 ? " · " + FormatDuration(entry.Meta.DurationSeconds) : "";
+            bool hasMv = File.Exists(Path.Combine(entry.Dir, "mv.mp4"));
             bool silent = string.IsNullOrEmpty(entry.Meta.AudioPath);
-            return left + dur + (silent ? " · 无声测试" : "");
+            return left + dur + (hasMv ? " · MV" : "") + (silent ? " · 无声测试" : "");
         }
 
         static string FormatDuration(double seconds)
@@ -689,6 +933,20 @@ namespace MusicGame.UI
 
         static readonly string[] DifficultyOrder = { "easy", "normal", "hard", "expert" };
 
+        /// <summary>难度列横位置：画布窄于 1920（非 16:9 游戏视图）时按比例左移（上限 360），给右侧纪录面板让位。</summary>
+        static float DifficultyListX(float canvasWidth)
+        {
+            return canvasWidth < 1920f ? -Mathf.Min(360f, (1920f - canvasWidth) * 0.5f) : 0f;
+        }
+
+        /// <summary>把控件钉在父容器高度的分数处（锚点定位，任何窗口比例自适应）。
+        /// 教训：构建期量 canvas.rect 是失真的——Start 时 CanvasScaler 的 scaleFactor 可能尚未生效。</summary>
+        static void PinFractionY(RectTransform rt, float x, float yFraction)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, yFraction);
+            rt.anchoredPosition = new Vector2(x, 0f);
+        }
+
         /// <summary>探测歌曲目录下已有的谱面文件（优先契约键，回退 meta.Difficulties）。</summary>
         static List<string> ProbeDifficulties(SongEntry entry)
         {
@@ -745,18 +1003,55 @@ namespace MusicGame.UI
             }
             else
             {
-                float y = 250f;
+                float cw = ((RectTransform)canvas.transform).rect.width;
+                float listX = DifficultyListX(cw);
+                int idx = 0;
                 foreach (var d in diffs)
                 {
                     var captured = d;
                     int count = NoteCountOf(entry, captured);
                     string label = UiKit.PrettyDifficulty(captured) + (count >= 0 ? "\n" + count + " notes" : "");
-                    UiKit.ButtonRect(diffListHolder, "diff_" + captured, label, new Vector2(0f, y), new Vector2(420f, 118f),
+                    var btn = UiKit.ButtonRect(diffListHolder, "diff_" + captured, label, Vector2.zero, new Vector2(420f, 118f),
                         () => StartCoroutine(StartGameRoutine(entry, captured)), DiffColor(captured), 32);
-                    y -= 148f;
+                    PinFractionY((RectTransform)btn.transform, listX, 0.655f - idx * 0.135f); // 高度分数钉位：间距随窗口等比缩放
+                    idx++;
+                }
+                // 纪录面板左缘动态贴住难度列右缘 +32px：窄窗口（非 16:9 视图）下按钮不再盖住纪录文字
+                if (diffRecordText != null)
+                {
+                    var rr = diffRecordText.rectTransform;
+                    float minX = Mathf.Clamp01((cw * 0.5f + listX + 242f) / cw);
+                    rr.anchorMin = new Vector2(minX, 0.12f);
+                    rr.anchorMax = new Vector2(0.97f, 0.74f);
+                    rr.offsetMin = new Vector2(18f, 0f);
+                    rr.offsetMax = new Vector2(-12f, 0f);
                 }
             }
+            shownDifficulties.Clear();
+            shownDifficulties.AddRange(diffs);
+            UpdateDiffRecordPanel();
             ShowOnly(diffScreen);
+        }
+
+        /// <summary>刷新难度页右侧的本地最佳纪录面板（当前歌曲 + 当前模式）。</summary>
+        void UpdateDiffRecordPanel()
+        {
+            if (diffRecordText == null || currentEntry == null) return;
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("★ 最高纪录（" + (taikoMode ? "太鼓" : "四轨") + "）");
+            sb.AppendLine();
+            foreach (var d in shownDifficulties)
+            {
+                var rec = PlayRecords.Get(PlayRecords.Key(currentEntry.Dir, taikoMode, d));
+                string name = UiKit.PrettyDifficulty(d);
+                if (rec == null || (rec.bestScore <= 0 && rec.bestCombo <= 0 && rec.bestAcc <= 0))
+                    sb.AppendLine(name + "  ——");
+                else
+                    sb.AppendLine(string.Format("{0}  {1:F2}% · {2} combo · {3:N0}", name, rec.bestAcc, rec.bestCombo, rec.bestScore));
+            }
+            sb.AppendLine();
+            sb.AppendLine("超越纪录结算时会提醒");
+            diffRecordText.text = sb.ToString();
         }
 
         // ---------------------------------------------------------------- 游戏进行
@@ -769,6 +1064,8 @@ namespace MusicGame.UI
             // 停掉上一局的 HUD/结束监视协程（避免旧监视在重开的一局里误触发结算）
             if (hudRoutineHandle != null) { StopCoroutine(hudRoutineHandle); hudRoutineHandle = null; }
             if (watchRoutineHandle != null) { StopCoroutine(watchRoutineHandle); watchRoutineHandle = null; }
+            if (comboVisualHandle != null) { StopCoroutine(comboVisualHandle); comboVisualHandle = null; }
+            lyricTarget = "";
             if (gameplayRoot != null)
             {
                 Destroy(gameplayRoot);
@@ -827,7 +1124,6 @@ namespace MusicGame.UI
             {
                 if (popupLayer != null) popupLayer.Show(j, lane, isTail);
                 if (!isTail && errorBar != null) errorBar.AddTick(j, delta);
-                if (!isTail && j != Judgement.Miss && hudCombo != null) StartCoroutine(ComboPunch());
             };
             gameManager.OnJudgedWithDelta += judgedHandler;
 
@@ -841,44 +1137,204 @@ namespace MusicGame.UI
             hudScore.text = "0";
             hudCombo.text = "";
             hudAcc.text = "--";
+            shownCombo = -1;
             ShowOnly(hudScreen);
             hudRoutineHandle = StartCoroutine(HudRoutine());
+            comboVisualHandle = StartCoroutine(ComboVisualLoop());
+            StartCoroutine(LyricKaraokeLoop());
             watchRoutineHandle = StartCoroutine(SongWatchRoutine(chartEnd, entry.Meta.DurationSeconds));
         }
 
-        /// <summary>歌词行入场：淡入 + 轻微缩放回落（0.2s）。</summary>
-        IEnumerator LyricIntro()
+        /// <summary>歌词行切换：旧行整字消散（逐字错峰飘散+旋转+淡出，曲末更从容），新行 OutBack 弹出 + 下往上浮入场。</summary>
+        IEnumerator LyricSwap(string newLine)
         {
             var cg = hudLyric.GetComponent<CanvasGroup>();
             if (cg == null) cg = hudLyric.gameObject.AddComponent<CanvasGroup>(); // Unity 假 null 不能用 ?? 判空
             var rt = hudLyric.rectTransform;
-            float t = 0f;
-            while (t < 0.2f)
+
+            if (hudLyric.text.Length > 0)
             {
-                t += Time.unscaledDeltaTime;
-                float k = Mathf.Clamp01(t / 0.2f);
+                float dur = newLine.Length == 0 ? 0.5f : 0.34f; // 曲末换行更从容
+                if (lyricScatter != null)
+                {
+                    // 整字消散：逐字沿各自方向飘散+微旋转+淡出（消散期间整体保持不透明，淡出由逐字顶点做）
+                    if (cg != null) cg.alpha = 1f;
+                    float t = 0f;
+                    while (t < dur)
+                    {
+                        t += Time.unscaledDeltaTime;
+                        lyricScatter.Progress = t / dur;
+                        yield return null;
+                    }
+                    lyricScatter.Progress = 0f;
+                }
+                else
+                {
+                    // 回退：上飘淡出
+                    float t = 0f;
+                    while (t < dur)
+                    {
+                        t += Time.unscaledDeltaTime;
+                        float k = Mathf.Clamp01(t / dur);
+                        cg.alpha = 1f - k;
+                        rt.anchoredPosition = new Vector2(0f, 26f * k);
+                        yield return null;
+                    }
+                }
+            }
+
+            rt.anchoredPosition = Vector2.zero;
+            rt.localScale = Vector3.one;
+            if (newLine.Length == 0)
+            {
+                hudLyric.text = "";
+                cg.alpha = 0f;
+                yield break;
+            }
+
+            if (lyricKaraoke != null) lyricKaraoke.Progress = 0f; // 新行从全暗起步，逐字扫亮
+            hudLyric.text = newLine;
+            const float Dur = 0.28f;
+            float ti = 0f;
+            while (ti < Dur)
+            {
+                ti += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(ti / Dur);
                 cg.alpha = k;
-                float s = Mathf.Lerp(1.05f, 1f, k);
+                float s = Mathf.Lerp(0.78f, 1f, OutBack(k));
                 rt.localScale = new Vector3(s, s, 1f);
+                rt.anchoredPosition = new Vector2(0f, -26f * (1f - OutCubic(k)));
                 yield return null;
             }
             cg.alpha = 1f;
             rt.localScale = Vector3.one;
+            rt.anchoredPosition = Vector2.zero;
         }
 
-        /// <summary>连击数字打点：1.25 → 1 快速回落（打击感的最低成本实现）。</summary>
-        IEnumerator ComboPunch()
+        private static float OutBack(float t)
+        {
+            const float c1 = 1.70158f;
+            float k = t - 1f;
+            return 1f + (c1 + 1f) * k * k * k + c1 * k * k;
+        }
+
+        private static float OutCubic(float t) { float k = 1f - t; return 1f - k * k * k; }
+
+        /// <summary>连击视觉循环（每帧）：跳动/白闪/彩虹流彩全由字段驱动的连续动画，轮询只改字段不重启动画，无撕裂。</summary>
+        IEnumerator ComboVisualLoop()
         {
             var rt = hudCombo.rectTransform;
-            rt.localScale = new Vector3(1.25f, 1.25f, 1f);
-            float t = 0f;
-            while (t < 0.12f)
+            while (state == FlowState.Playing && hudCombo != null)
             {
-                t += Time.unscaledDeltaTime;
-                float s = Mathf.Lerp(1.25f, 1f, Mathf.Clamp01(t / 0.12f));
+                if (comboBreaking) { yield return null; continue; }
+                comboPunchAge += Time.unscaledDeltaTime;
+                float decay = Mathf.Exp(-comboPunchAge * 7f);
+                float wobble = comboPunchAge < 2f ? Mathf.Cos(comboPunchAge * 18f) * decay : 0f;
+                float s = ComboStageScale[comboStage] * (1f + comboPunchAmp * wobble);
                 rt.localScale = new Vector3(s, s, 1f);
+                rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(comboPunchAge * 22f) * comboRotAmp * decay * comboTiltDir);
+                if (comboPunchAge < 0.22f)
+                    hudCombo.color = Color.Lerp(Color.white, comboStageColorRef, comboPunchAge / 0.22f);
+                else if (comboStage == ComboStageColor.Length - 1)
+                    hudCombo.color = Color.HSVToRGB((Time.unscaledTime * 0.35f) % 1f, 0.65f, 1f); // 500+ 彩虹流彩
+                else
+                    hudCombo.color = comboStageColorRef;
                 yield return null;
             }
+        }
+
+        /// <summary>连击变化应用：更新数字/阶段形态；命中给弹性跳动，升阶爆发冲击环，断连播放消散。</summary>
+        void ApplyComboStage(int combo, bool increased, int prevStage)
+        {
+            if (combo < 2)
+            {
+                if (hudCombo.text.Length > 0) { comboBreaking = true; StartCoroutine(ComboBreakAnim()); }
+                return;
+            }
+            comboStage = ComboStageOf(combo);
+            bool milestone = increased && comboStage > prevStage;
+            comboStageColorRef = comboStage == ComboStageColor.Length - 1
+                ? Color.HSVToRGB((Time.unscaledTime * 0.35f) % 1f, 0.65f, 1f)
+                : ComboStageColor[comboStage];
+            hudCombo.text = combo.ToString();
+            if (comboCaption != null)
+                comboCaption.color = new Color(comboStageColorRef.r, comboStageColorRef.g, comboStageColorRef.b, 0.75f);
+            comboPunchAmp = milestone ? 0.5f : 0.3f;
+            comboRotAmp = milestone ? 4.5f : 1.8f;
+            comboTiltDir = -comboTiltDir;
+            comboPunchAge = 0f;
+            if (milestone) SpawnComboRing(comboStageColorRef);
+        }
+
+        /// <summary>断连：变红 + 水平抖动 + 淡出消散后清空（期间暂停视觉循环写入）。</summary>
+        IEnumerator ComboBreakAnim()
+        {
+            var cg = hudCombo.GetComponent<CanvasGroup>();
+            if (cg == null) cg = hudCombo.gameObject.AddComponent<CanvasGroup>();
+            var rt = hudCombo.rectTransform;
+            var c0 = hudCombo.color;
+            Vector2 basePos = rt.anchoredPosition;
+            float t = 0f;
+            while (t < 0.3f)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / 0.3f);
+                rt.anchoredPosition = basePos + new Vector2(Mathf.Sin(t * 70f) * 7f * (1f - k), 0f);
+                rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * 55f) * 3f * (1f - k));
+                hudCombo.color = Color.Lerp(c0, new Color(1f, 0.25f, 0.25f), k);
+                cg.alpha = 1f - k;
+                yield return null;
+            }
+            hudCombo.text = "";
+            hudCombo.color = c0;
+            rt.anchoredPosition = basePos;
+            rt.localRotation = Quaternion.identity;
+            cg.alpha = 1f;
+            comboBreaking = false;
+        }
+
+        private static int ComboStageOf(int combo)
+        {
+            int s = 0;
+            for (int i = 0; i < ComboStageAt.Length; i++)
+                if (combo >= ComboStageAt[i]) s = i;
+            return s;
+        }
+
+        /// <summary>升阶冲击环：数字背后扩散一圈同色光环后销毁。</summary>
+        void SpawnComboRing(Color color)
+        {
+            var go = new GameObject("ComboRing", typeof(RectTransform));
+            go.transform.SetParent(hudCombo.transform.parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, (0.92f - 0.5f) * 1080f);
+            rt.sizeDelta = new Vector2(300f, 300f);
+            var img = go.AddComponent<Image>();
+            img.sprite = UiKit.RingSprite;
+            img.color = new Color(color.r, color.g, color.b, 0.85f);
+            img.raycastTarget = false;
+            go.transform.SetSiblingIndex(hudCombo.transform.GetSiblingIndex()); // 数字之下
+
+            var host = go;
+            StartCoroutine(RingRoutine(img, host));
+        }
+
+        IEnumerator RingRoutine(Image img, GameObject host)
+        {
+            float t = 0f;
+            while (t < 0.45f && img != null)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / 0.45f);
+                float s = Mathf.Lerp(0.45f, 1.6f, OutCubic(k));
+                img.rectTransform.localScale = new Vector3(s, s, 1f);
+                var c = img.color;
+                img.color = new Color(c.r, c.g, c.b, 0.85f * (1f - k));
+                yield return null;
+            }
+            if (host != null) Destroy(host);
         }
 
         /// <summary>每 0.1s 轮询成绩（ScoreSystem 经反射解析）刷新 HUD，并同步当前歌词行。</summary>
@@ -891,23 +1347,53 @@ namespace MusicGame.UI
                 if (scoreSystem != null)
                 {
                     hudScore.text = ((long)scoreSystem.Score).ToString("N0");
-                    hudCombo.text = scoreSystem.Combo >= 2 ? scoreSystem.Combo + " combo" : "";
                     hudAcc.text = FormatAccuracy(AccuracyToPercent(scoreSystem.Accuracy));
+                    int combo = scoreSystem.Combo;
+                    if (combo != shownCombo)
+                    {
+                        int prevStage = ComboStageOf(Mathf.Max(0, shownCombo));
+                        bool increased = combo > shownCombo;
+                        shownCombo = combo;
+                        ApplyComboStage(combo, increased, prevStage);
+                    }
                 }
                 if (gameManager != null && gameManager.Lyrics != null && gameManager.Conductor != null)
                 {
                     string line = gameManager.Lyrics.TryGetLine(gameManager.Conductor.SongTimeSeconds, out string lyric)
                         ? lyric : "";
-                    if (hudLyric.text != line)
+                    // 用目标行字段做变更检测：动画期间控件文本仍是旧行，读控件会每 0.1s 重启动画导致狂闪
+                    if (lyricTarget != line)
                     {
-                        hudLyric.text = line;
-                        if (lyricIntroHandle != null) StopCoroutine(lyricIntroHandle);
-                        lyricIntroHandle = StartCoroutine(LyricIntro());
+                        lyricTarget = line;
+                        if (lyricAnimHandle != null) StopCoroutine(lyricAnimHandle);
+                        lyricAnimHandle = StartCoroutine(LyricSwap(line));
                     }
                 }
                 yield return wait;
             }
-            if (hudLyric != null) hudLyric.text = "";
+            if (hudLyric != null && hudLyric.text.Length > 0)
+            {
+                if (lyricAnimHandle != null) StopCoroutine(lyricAnimHandle);
+                lyricTarget = "";
+                lyricAnimHandle = StartCoroutine(LyricSwap("")); // 曲末歌词从容退场
+            }
+        }
+
+        /// <summary>卡拉OK逐字渐亮：每帧把本行时间窗（行戳→下一行戳）内的唱到比例喂给 LyricKaraokeEffect。</summary>
+        IEnumerator LyricKaraokeLoop()
+        {
+            while (state == FlowState.Playing)
+            {
+                if (lyricKaraoke != null && gameManager != null && gameManager.Lyrics != null && gameManager.Conductor != null)
+                {
+                    double now = gameManager.Conductor.SongTimeSeconds;
+                    if (gameManager.Lyrics.TryGetLineSpan(now, out _, out double start, out double end) && end > start)
+                        lyricKaraoke.Progress = Mathf.Clamp01((float)((now - start) / (end - start)));
+                    else
+                        lyricKaraoke.Progress = 1f; // 首句前 / 零宽窗口：满亮兜底
+                }
+                yield return null;
+            }
         }
 
         /// <summary>
@@ -985,18 +1471,38 @@ namespace MusicGame.UI
             int total = lastTotalNotes;
             StopGameplayObjects();
             ShowOnly(null);
+
+            // 提交本地最佳成绩，生成结算对比文案
+            string recordLine = "";
+            bool newRecord = false;
+            if (ss != null && currentEntry != null && !string.IsNullOrEmpty(currentDifficulty))
+            {
+                var key = PlayRecords.Key(currentEntry.Dir, taikoMode, currentDifficulty);
+                newRecord = PlayRecords.Submit(key, score, maxCombo, acc, out var prev);
+                if (newRecord)
+                    recordLine = prev != null
+                        ? string.Format("超越纪录！  得分 {0:N0} → {1:N0}", prev.bestScore, score)
+                        : "首次游玩，成绩已记入本地最佳";
+                else if (prev != null)
+                    recordLine = string.Format("历史最佳  得分 {0:N0} · 连击 {1} · {2:F2}%", prev.bestScore, prev.bestCombo, prev.bestAcc);
+            }
             if (results != null)
-                results.Show(title, UiKit.PrettyDifficulty(currentDifficulty), acc, maxCombo, score, total);
+                results.Show(title, UiKit.PrettyDifficulty(currentDifficulty), acc, maxCombo, score, total,
+                    ss != null ? ss.PerfectCount : 0, ss != null ? ss.GoodCount : 0,
+                    ss != null ? ss.BadCount : 0, ss != null ? ss.MissCount : 0,
+                    recordLine, newRecord);
         }
 
         void OnResultsRetry()
         {
+            if (results != null) results.Hide(); // 结算面板不在 screens 列表，必须显式隐藏，否则残留盖住下一局
             if (currentEntry != null && !string.IsNullOrEmpty(currentDifficulty))
                 StartCoroutine(StartGameRoutine(currentEntry, currentDifficulty));
         }
 
         void OnResultsSongSelect()
         {
+            if (results != null) results.Hide();
             StopAllGameplay();
             state = FlowState.SongSelect;
             SetSelectStatus("");
