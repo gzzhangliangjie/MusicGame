@@ -1703,12 +1703,15 @@ namespace MusicGame.UI
             if (state != FlowState.Playing) return;
             if (countdownHandle != null)
             {
-                // 倒计时进行中：继续键忽略；Esc=取消倒计时回到暂停菜单
+                // 倒计时进行中：继续键忽略；Esc=取消倒计时回暂停菜单。
+                // 开局倒计时期间游戏时钟在走（负时间预备区），必须真正冻结，
+                // 否则暂停菜单里热切换 AUTO 会在背后立刻自动打完整首谱面。
                 if (paused)
                 {
                     CancelCountdown();
                     isPaused = true;
                     if (pauseScreen != null) pauseScreen.gameObject.SetActive(true);
+                    TryCallPauseApi(gameManager, true);
                 }
                 return;
             }

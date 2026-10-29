@@ -191,8 +191,197 @@ namespace MusicGame.EditorTools
             StartFlow();
         }
 
-        private static int menuTicks;
+        // ---------------- AUTO 热切换回归验收（倒计时中暂停 -> 开 AUTO -> 背后不偷跑 -> 继续后接管） ----------------
 
+        private static int autoStep;
+        private static int autoTicks;
+        private static double autoFrozenTime;
+
+        /// <summary>复现用户路径：开局倒计时中暂停 → 暂停菜单开 AUTO → 校验游戏真的被冻结 → 继续后 AUTO 接管。</summary>
+        public static void CaptureAutoSwitchFlow()
+        {
+            flowTaiko = false;
+            flowOsu = false;
+            flowCountdown = false;
+            autoStep = 0;
+            autoTicks = 0;
+            PlayerPrefs.SetInt("MusicGame.AutoMode", 0); // 先强制手动模式
+            PlayerPrefs.Save();
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+            Screen.SetResolution(1280, 720, false);
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += AutoSwitchPump;
+            Debug.Log("[VisCap] AUTO 热切换回归验收启动");
+        }
+
+        private static void AutoLog(string msg) { Debug.Log("[VisCap][AutoSwitch] " + msg); }
+
+        private static void AutoFail(string msg)
+        {
+            Debug.LogError("[VisCap][AutoSwitch] 失败：" + msg);
+            EditorApplication.Exit(1);
+        }
+
+        private static void AutoSwitchPump()
+        {
+            if (!EditorApplication.isPlaying) return;
+            autoTicks++;
+            try
+            {
+                var gf = UnityEngine.Object.FindFirstObjectByType<MusicGame.UI.GameFlow>();
+                if (gf == null) return;
+                var gm = UnityEngine.Object.FindFirstObjectByType<MusicGame.Gameplay.GameManager>();
+                var cond = UnityEngine.Object.FindFirstObjectByType<MusicGame.Core.Conductor>();
+                var comboGo = GameObject.Find("combo");
+                var comboT = comboGo != null ? comboGo.GetComponent<UnityEngine.UI.Text>() : null;
+
+                switch (autoStep)
+                {
+                    case 0: // 等主菜单就绪 -> 开始游戏
+                        if (GameObject.Find("btnStart") != null)
+                        {
+                            ClickButton("btnStart");
+                            AutoLog("已点开始游戏");
+                            autoStep = 1; autoTicks = 0;
+                        }
+                        else if (autoTicks > 2000) AutoFail("等主菜单超时");
+                        break;
+
+                    case 1: // 等选曲列表 -> 点第一项（sample 无声谱，加载快、确定性强）
+                        {
+                            var item = GameObject.Find("songItem");
+                            if (item != null)
+                            {
+                                item.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+                                AutoLog("已选曲 sample");
+                                autoStep = 2; autoTicks = 0;
+                            }
+                            else if (autoTicks > 2000) AutoFail("等选曲列表超时");
+                        }
+                        break;
+
+                    case 2: // 等难度页 -> easy
+                        if (GameObject.Find("diff_easy") != null)
+                        {
+                            ClickButton("diff_easy");
+                            AutoLog("已选 easy，等开局倒计时");
+                            autoStep = 3; autoTicks = 0;
+                        }
+                        else if (autoTicks > 2000) AutoFail("等难度页超时");
+                        break;
+
+                    case 3: // 等 Conductor 建好并进入倒计时数字阶段（时钟 -3..-1）
+                        if (cond != null && cond.SongTimeSeconds > -3.0 && cond.SongTimeSeconds < -1.0)
+                        {
+                            AutoLog("倒计时中 @songTime=" + cond.SongTimeSeconds.ToString("F2") + "，SetPaused(true)");
+                            InvokeSetPaused(gf, true);
+                            autoStep = 4; autoTicks = 0;
+                        }
+                        else if (autoTicks > 4000) AutoFail("等倒计时超时（cond=" + (cond != null) + " time=" + (cond != null ? cond.SongTimeSeconds.ToString("F2") : "-") + "）");
+                        break;
+
+                    case 4: // 校验暂停菜单弹出
+                        if (GameObject.Find("btnResume") != null)
+                        {
+                            autoFrozenTime = cond.SongTimeSeconds;
+                            AutoLog("暂停菜单已弹出 @songTime=" + autoFrozenTime.ToString("F2"));
+                            autoStep = 5; autoTicks = 0;
+                        }
+                        else if (autoTicks > 300) AutoFail("暂停菜单未弹出");
+                        break;
+
+                    case 5: // 停 30 帧确认时钟冻结
+                        if (autoTicks == 30)
+                        {
+                            if (System.Math.Abs(cond.SongTimeSeconds - autoFrozenTime) > 1e-6)
+                                AutoFail("暂停菜单打开但时钟仍在走（" + autoFrozenTime.ToString("F2") + " -> " + cond.SongTimeSeconds.ToString("F2") + "）");
+                            AutoLog("时钟已冻结");
+                            autoStep = 6; autoTicks = 0;
+                        }
+                        break;
+
+                    case 6: // AUTO 开
+                        ClickButton("btnPauseAuto");
+                        if (gm == null || !gm.AutoMode) AutoFail("开 AUTO 失败（gm.AutoMode=false）");
+                        AutoLog("AUTO 已开（来回切 1/2）");
+                        autoStep = 7; autoTicks = 0;
+                        break;
+
+                    case 7: // 停 40 帧：AUTO 开着也不得偷跑
+                        if (autoTicks == 40)
+                        {
+                            if (System.Math.Abs(cond.SongTimeSeconds - autoFrozenTime) > 1e-6)
+                                AutoFail("开 AUTO 后时钟偷跑");
+                            if (comboT != null && !string.IsNullOrEmpty(comboT.text))
+                                AutoFail("暂停期间 COMBO 在涨（背后偷打）：combo=" + comboT.text);
+                            autoStep = 8; autoTicks = 0;
+                        }
+                        break;
+
+                    case 8: // AUTO 关（来回切 2/2）
+                        ClickButton("btnPauseAuto");
+                        if (gm == null || gm.AutoMode) AutoFail("关 AUTO 失败（gm.AutoMode=true）");
+                        AutoLog("AUTO 已关（来回切 2/2）");
+                        autoStep = 9; autoTicks = 0;
+                        break;
+
+                    case 9: // 再开回来，以 AUTO 状态继续
+                        ClickButton("btnPauseAuto");
+                        if (gm == null || !gm.AutoMode) AutoFail("再开 AUTO 失败");
+                        AutoLog("AUTO 再次开启，点继续");
+                        ClickButton("btnResume");
+                        autoStep = 10; autoTicks = 0;
+                        break;
+
+                    case 10: // 等恢复倒计时走完、时钟推进
+                        if (cond.SongTimeSeconds > autoFrozenTime + 0.2)
+                        {
+                            AutoLog("已恢复推进 @songTime=" + cond.SongTimeSeconds.ToString("F2"));
+                            autoStep = 11; autoTicks = 0;
+                        }
+                        else if (autoTicks > 4000) AutoFail("点继续后时钟未推进");
+                        break;
+
+                    case 11: // AUTO 应开始打键：COMBO 涨起来即接管成功
+                        if (comboT != null && int.TryParse(comboT.text, out int cv) && cv > 0)
+                        {
+                            AutoLog("AUTO 已接管，combo=" + cv + "，截图存证");
+                            ScreenCapture.CaptureScreenshot("E:/MusicGame/vis_autoswitch.png");
+                            autoStep = 12; autoTicks = 0;
+                        }
+                        else if (autoTicks > 20000) AutoFail("恢复后 AUTO 未接管（combo 一直为 0）");
+                        break;
+
+                    case 12:
+                        if (autoTicks > 40)
+                        {
+                            PlayerPrefs.SetInt("MusicGame.AutoMode", 0); // 恢复为进场时强制的手动档
+                            PlayerPrefs.Save();
+                            AutoLog("回归验收通过（含 AUTO 来回切换）");
+                            EditorApplication.Exit(0);
+                        }
+                        break;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VisCap][AutoSwitch] 异常 @step" + autoStep + ": " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static void InvokeSetPaused(MusicGame.UI.GameFlow gf, bool paused)
+        {
+            var m = gf.GetType().GetMethod("SetPaused",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
+                null, new[] { typeof(bool) }, null);
+            if (m == null) AutoFail("反射找不到 GameFlow.SetPaused");
+            else m.Invoke(gf, new object[] { paused });
+        }
+
+        private static int menuTicks;
         /// <summary>主菜单截图验收：Main.unity 进 Play，等入场动效播完截一帧后退出。</summary>
         public static void CaptureMenu()
         {

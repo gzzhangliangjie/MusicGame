@@ -130,6 +130,7 @@ note: { "t": 秒, "lane": 0-3, "type": "tap"|"hold", "dur": 秒(hold) }
 - [x] 缩圈命中反馈/数字字体对齐太鼓（0.18s 敲扁回弹+大爆淡出 Perfect 2.1x；Impact 键帽字体+黑投影双层白字，2026-10-29）
 - [x] 连击 HUD 加强存在感（数字 88→100 号+双层黑描边+投影，COMBO 小字换 Impact 26 号+描边+提亮；缩圈截图验收工具 CaptureOsuFlow 等 COMBO≥5 自动拍 vis_osu.png，2026-10-29）
 - [x] 开局/暂停继续 3-2-1 倒计时（美术字数字+合成音效）：Conductor 增负时间预备区（leadIn，0 点才出声，冒烟测试直连 PlaySong 默认 0 不受影响），开局按乐曲时间对齐 3/2/1/GO（实测 -2.99/-1.99/-0.99/+0.01），恢复用挂钟 3s 倒数后真正解除暂停；Esc 在倒计时中=取消回暂停菜单；CaptureCountdownFlow 截图验收（vis_countdown.png，2026-10-29）
+- [x] 修复 AUTO 热切换回归（倒计时中 Esc 只弹菜单未冻结游戏，热切 AUTO 会在背后偷跑整首谱面）：取消倒计时时同步 TryCallPauseApi(true)；CaptureAutoSwitchFlow 全链路回归（倒计时中暂停→时钟冻结断言→AUTO 开/关/开来回切→无偷跑→继续后接管 combo=2，vis_autoswitch.png，2026-10-29）；syntax_check.sh 补齐 Editor 程序集检查（SafeMode 事故：批量 sed 改 case 编号引入 CS0152 重复标签，运行时检查覆盖不到 Assets/Editor）
 - [x] AUTO 观赏模式（三模式通用，暂停菜单热切换，成绩不计纪录，2026-10-28/29）
 - [x] 下落速度五档设置（慢速 1.6s → 疾风 0.5s，缩圈合拢时间跟随，2026-10-29）
 - [ ] 变速曲支持（分段 BPM）
