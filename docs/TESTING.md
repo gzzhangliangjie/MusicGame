@@ -62,6 +62,8 @@ echo $?   # 0=PASS 1=FAIL
 | `AutoTaikoRun` | 太鼓 + AUTO | 覆盖轨道重映射、气球连击条（hold→lane2）充气尾判 |
 | `OsuRun` | 缩圈，无输入 | 全 Miss，扫尾回收链路走满 |
 | `AutoOsuRun` | 缩圈 + AUTO | 圆圈自动命中（含 hold 头/尾两圈）全 Perfect |
+| `MuseRun` | 跑酷，无输入 | 全 Miss；判定总数按 `RemapChartForMuse` 去重后动态计算（Bootstrap 里重算，非固定 47） |
+| `AutoMuseRun` | 跑酷 + AUTO | 地/空两轨自动命中 + 长条充气尾判，全 Perfect 零 Miss |
 
 batchmode 要点：每帧手动 `EditorApplication.QueuePlayerLoopUpdate()` 推进播放循环
 （协程/时间依赖它）；进 Play 前设 `DisableDomainReload`；测试对象（Camera、
@@ -89,6 +91,7 @@ GameManager）必须**进 Play 之后**创建——场景重载会销毁编辑�
 | `CaptureCountdownFlow` | 开局 3-2-1 倒计时，`vis_countdown.png` |
 | `CaptureTaikoFlow` | 太鼓模式全流程（含 Skin 预置 OpenTaiko） |
 | `CaptureOsuFlow` | 缩圈 + 临时开 AUTO 等 COMBO≥5 再拍，结束**恢复用户 AUTO 设置** |
+| `CaptureMuseFlow` | 跑酷模式 + 临时开 AUTO 等 COMBO≥5 再拍（地/空双锚点弹窗、长条充气条、角色跳斩），`vis_muse.png` + MuseRunner 视口诊断，结束恢复 AUTO 设置 |
 | `CaptureAutoSwitchFlow` | 回归：倒计时中暂停→AUTO 来回切两次→断言时钟冻结/COMBO 不偷跑→继续后 AUTO 接管 |
 | `CaptureMenu` | 主菜单入场动效后截图 |
 | `CaptureDiffPage` | 窄窗 832x907 复现竖长 Game 视图，难度页布局诊断 |
@@ -185,6 +188,29 @@ powershell -File tools/win_input.ps1 -cmd shot   -out full.png              # �
     重编译会失败，之后旧程序集带着坏 EventSystem 状态继续跑（所有按钮不响应，
     必须重启编辑器）。改代码要一批完整提交，别让编辑器在半成品上刷新；
     批量重构（sed 改 switch case 等）前先停掉可能自动刷新的编辑器实例。
+18. **跨程序集 `internal` 不可见报的是 CS0117 不是 CS0122**（跑酷模式撞上）：
+    `Assembly-CSharp-Editor`（冒烟/截图工具）引用 `Assembly-CSharp`，运行时类里
+    `internal static` 成员在 Editor 侧报"类型未包含成员定义"。Editor 测试要调的
+    运行时 API（如 `GameManager.RemapChartForMuse`）必须 `public`。
+    另外 `syntax_check.sh` 的 Editor 程序集引用的是 `Library/ScriptAssemblies/` 里的
+    **旧 DLL**——刚改完运行时代码还没让 Unity 重编过时，Editor 段会报假 CS0117；
+    此时以运行时段结果为准，跑一次 batchmode 冒烟（顺带重编 DLL）后再复查。
+19. **"创建即赋值"字段漏赋 → 判定数莫名少 N**（MuseNote.EnsureVisuals 创建了
+    headGo 却忘写 `head = headGo.transform`）：每次租用 NRE 只炸视觉装配，
+    判定/计分链路与 Spawner 解耦照常走——长条怪永远进不了 Holding，尾判丢失，
+    表现为"47 判定只走了 44"且零异常日志级别报错。冒烟测试对判定总数的
+    精确断言正是抓这类 bug 的关键，别放宽成"≥某数"。
+20. **重映射会改变判定总数**（跑酷去重）：`GameFlow` 结算总数与冒烟测试期望值
+    都必须按**重映射后**的谱面统计，否则 FULL COMBO 判定失真、冒烟假失败。
+    把重映射做成运行时类的 `public static` 纯函数，两端共用同一份实现。
+21. **离线预览渲染必须对齐 Unity 的行序约定**（跑酷 CHR 预览踩坑）：`SetPixels` 的
+    颜色数组行 0 = 贴图**底部**，而 PIL/常见图像库行 0 = 顶部——预览工具直接按数组序
+    画会整体上下颠倒，误判成"游戏贴图翻转"。绘制时按 `(h-1-y)` 翻转。同类坑：
+    TextMesh 的 MiddleCenter 按**行盒**居中（含降部空间），Impact 字形实测偏低
+    ~0.1 单位，需经验偏移补偿；改文本位置先截图实测再调，别按想象猜方向。
+22. **Git Bash 双引号内 `$_` 会被 bash 展开**（PowerShell 单行 `ForEach-Object {
+    Stop-Process -Id $_ }` 直接报废）：批处理管道用 `Get-Process Unity | Stop-Process
+    -Force` 这类免 `$_` 的写法，或整个命令用单引号包裹。
 
 ## 7. 新增验收场景怎么做
 

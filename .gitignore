@@ -51,5 +51,8 @@ Thumbs.db
 # 参考仓库（本地阅读用，不入库）
 references/
 
+# 跑酷模式原版图块数据（本地 Rom/CHR，不入库：与 PixelGame 同约定，仓库零版权资产；缺文件时自动回退自绘贴图）
+/Rom/
+
 # 视觉验收临时截图
 vis_capture_*.png

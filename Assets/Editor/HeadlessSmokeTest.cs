@@ -27,6 +27,8 @@ namespace MusicGame.EditorTools
         static bool autoMode; // AutoRun 入口置位：开启 AutoMode，预期全部 Perfect
         static bool taikoMode; // AutoTaikoRun 入口置位：太鼓重映射轨道 + 气球连击条路径
         static bool osuMode; // *OsuRun 入口置位：缩圈模式（点击/自动判定圆圈）
+        static bool museMode; // *MuseRun 入口置位：跑酷模式（重映射去重后判定数动态计算）
+        static int expectedJudgements = ExpectedJudgements; // 跑酷入口按重映射后谱面重算
 
         // easy 谱共 44 音符含 3 hold → 判定总数 47；无输入时全部自动 Miss，判定事件应恰好走满
         const int ExpectedJudgements = 47;
@@ -37,6 +39,7 @@ namespace MusicGame.EditorTools
             autoMode = false;
             taikoMode = false;
             osuMode = false;
+            museMode = false;
             StartPlay();
         }
 
@@ -46,6 +49,7 @@ namespace MusicGame.EditorTools
             autoMode = true;
             taikoMode = false;
             osuMode = false;
+            museMode = false;
             StartPlay();
         }
 
@@ -55,6 +59,7 @@ namespace MusicGame.EditorTools
             autoMode = true;
             taikoMode = true;
             osuMode = false;
+            museMode = false;
             StartPlay();
         }
 
@@ -64,6 +69,7 @@ namespace MusicGame.EditorTools
             autoMode = false;
             taikoMode = false;
             osuMode = true;
+            museMode = false;
             StartPlay();
         }
 
@@ -73,6 +79,27 @@ namespace MusicGame.EditorTools
             autoMode = true;
             taikoMode = false;
             osuMode = true;
+            museMode = false;
+            StartPlay();
+        }
+
+        /// <summary>跑酷模式冒烟（无输入）：预期全部自动 Miss，判定数按重映射去重后的谱面口径。</summary>
+        public static void MuseRun()
+        {
+            autoMode = false;
+            taikoMode = false;
+            osuMode = false;
+            museMode = true;
+            StartPlay();
+        }
+
+        /// <summary>跑酷 + Auto 观赏冒烟：地面/空中两轨自动命中（含长条充气尾判），预期全部 Perfect、零 Miss。</summary>
+        public static void AutoMuseRun()
+        {
+            autoMode = true;
+            taikoMode = false;
+            osuMode = false;
+            museMode = true;
             StartPlay();
         }
 
@@ -108,10 +135,24 @@ namespace MusicGame.EditorTools
                 SongMeta meta = JsonUtility.FromJson<SongMeta>(File.ReadAllText(metaPath));
                 if (meta == null || string.IsNullOrEmpty(meta.Id)) { Fail("meta.json 解析失败"); return; }
 
+                // 跑酷模式：判定总数按重映射后口径（同刻同轨去重会减少音符）
+                if (museMode)
+                {
+                    string chartPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Songs", "sample", "chart_easy.json");
+                    ChartData raw = MusicGame.Core.ChartIO.Load(chartPath);
+                    ChartData remapped = GameManager.RemapChartForMuse(raw);
+                    int total = 0;
+                    foreach (NoteData n in remapped.Notes)
+                        total += (n.Type == "hold" && n.Duration > 0.0) ? 2 : 1;
+                    expectedJudgements = total;
+                    Debug.Log("[Smoke] 跑酷重映射后判定总数 " + expectedJudgements + "（原始 47）");
+                }
+
                 var go = new GameObject("SmokeRoot");
                 gm = go.AddComponent<GameManager>();
                 gm.TaikoMode = taikoMode;
                 gm.OsuMode = osuMode;
+                gm.MuseMode = museMode;
                 gm.AutoMode = autoMode;
                 gm.OnSongFinished += r => { finished = true; result = r; };
                 gm.OnJudged += (j, lane, isTail) => judgedTicks++;
@@ -120,7 +161,7 @@ namespace MusicGame.EditorTools
                 startedAt = Time.realtimeSinceStartup;
                 EditorApplication.update += Pump;
                 Debug.Log("[Smoke] Play 模式冒烟测试启动：sample easy，无声模式，"
-                    + (taikoMode ? "太鼓 " : "") + (osuMode ? "缩圈 " : "")
+                    + (taikoMode ? "太鼓 " : "") + (osuMode ? "缩圈 " : "") + (museMode ? "跑酷 " : "")
                     + (autoMode ? "AUTO 观赏（预期全部 Perfect）" : "无输入（预期全部 Miss）"));
             }
             catch (Exception e)
@@ -147,10 +188,10 @@ namespace MusicGame.EditorTools
                 if (finished)
                 {
                     bool pass = result != null && result.Completed
-                        && judgedTicks >= ExpectedJudgements
+                        && judgedTicks >= expectedJudgements
                         && maxSongTime > 30.0
-                        && (!autoMode || (result.MissCount == 0 && result.PerfectCount >= ExpectedJudgements));
-                    string summary = "[Smoke] 判定事件 " + judgedTicks + "/" + ExpectedJudgements
+                        && (!autoMode || (result.MissCount == 0 && result.PerfectCount >= expectedJudgements));
+                    string summary = "[Smoke] 判定事件 " + judgedTicks + "/" + expectedJudgements
                         + "，时钟推进至 " + maxSongTime.ToString("F1") + "s"
                         + "，结算 Completed=" + (result != null && result.Completed)
                         + "，Perfect=" + (result != null ? result.PerfectCount : -1)

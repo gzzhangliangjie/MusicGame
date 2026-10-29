@@ -35,6 +35,9 @@ namespace MusicGame.UI
         /// <summary>缩圈模式弹窗锚点（世界坐标，命中/Miss 前由 OsuSpawner 写入）。</summary>
         public static Vector3 OsuAnchorWorld { get; set; }
 
+        /// <summary>跑酷模式下弹窗锚定角色处（lane 0=地面线上方 / lane 1=空中线上方）。</summary>
+        public bool MuseMode { get; set; }
+
         private class Popup
         {
             public RectTransform Rt;
@@ -213,6 +216,9 @@ namespace MusicGame.UI
                 world = OsuAnchorWorld + Vector3.up * 1.35f; // 抬到圈顶上方：弹窗不再盖住圈内数字
             else if (TaikoMode)
                 world = new Vector3(Gameplay.Taiko.TaikoSpawner.HitX, Gameplay.Taiko.TaikoSpawner.NoteY + 1.7f, 0f);
+            else if (MuseMode)
+                world = new Vector3(Gameplay.Muse.MuseSpawner.CharacterX,
+                    (lane == 1 ? Gameplay.Muse.MuseSpawner.AirY : Gameplay.Muse.MuseSpawner.GroundY) + 1.25f, 0f);
             else if (lane >= 0)
                 world = new Vector3(Gameplay.NoteSpawner.LaneX(lane), Gameplay.NoteSpawner.JudgeLineY + 0.9f, 0f);
             else

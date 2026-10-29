@@ -17,10 +17,14 @@ namespace MusicGame.Core
         private double _frozenSongTime;      // 非播放状态下冻结的乐曲时间
         private bool _playing;               // 时钟是否推进
         private bool _sawSourcePlaying;      // 是否见过音源真正出声（用于识别自然播完）
+        private bool _scheduledPending;      // Pause 时计划播放尚未到点（被 Stop 取消），Resume 时需重排
+        private int _silentFrames;           // isPlaying 瞬时抖动（编辑器卡顿/切窗）防抖计数
         private double _leadInSeconds;       // 预备倒计时秒数：0 点才出声，之前时钟走负时间（开局 3-2-1 用）
         // 出声调度提前量：Play() 要到下一个音频缓冲才真正出声，会让时钟系统性早于声音（约 20ms+）。
         // 改为按调度起点播放对齐两者；预备期内 SongTimeSeconds 为负值，不影响任何判定逻辑。
         private const double ScheduleAheadSeconds = 0.1;
+        // 连续无声帧数达到该值才判"自然播完"——isPlaying 单帧抖动不冻结时钟（否则时钟瞬跳 clip.length，歌词跳尾）
+        private const int SilentFramesForNaturalEnd = 20;
 
         /// <summary>本局预备倒计时秒数（Setup 传入；0=无预备）。</summary>
         public double LeadInSeconds
@@ -69,6 +73,8 @@ namespace MusicGame.Core
             _startDspTime = AudioSettings.dspTime + ScheduleAheadSeconds + _leadInSeconds; // 时钟 0 点 = 计划出声时刻
             _frozenSongTime = -_leadInSeconds;
             _sawSourcePlaying = false;
+            _silentFrames = 0;
+            _scheduledPending = false;
             _playing = true;
 
             if (_source != null && _source.clip != null)
@@ -78,13 +84,24 @@ namespace MusicGame.Core
             }
         }
 
-        /// <summary>暂停时钟与音频（附加接口，非契约成员）。</summary>
+        /// <summary>暂停时钟与音频（附加接口，非契约成员）。
+        /// 计划播放尚未到点（预备倒计时/暂停中重排）时取消调度并记账，Resume 时按新起点重排。</summary>
         public void Pause()
         {
             if (!_playing) return;
             _frozenSongTime = AudioSettings.dspTime - _startDspTime;
             _playing = false;
-            if (_source != null && _source.isPlaying) _source.Pause();
+            if (_source != null && _source.clip != null)
+            {
+                if (_source.isPlaying) _source.Pause();
+                else
+                {
+                    // PlayScheduled 还没到出声点：Pause 管不住调度，必须 Stop 取消，恢复时重排
+                    _source.Stop();
+                    _scheduledPending = true;
+                }
+            }
+            Debug.Log("[Clock] Pause @songTime=" + _frozenSongTime.ToString("F2") + (_scheduledPending ? "（取消未到点计划播放）" : ""));
         }
 
         /// <summary>恢复时钟与音频（附加接口，非契约成员）。</summary>
@@ -94,7 +111,17 @@ namespace MusicGame.Core
             _startDspTime = AudioSettings.dspTime - _frozenSongTime;
             _playing = true;
             _sawSourcePlaying = false;
-            if (_source != null && !_source.isPlaying) _source.UnPause();
+            _silentFrames = 0;
+            if (_source != null && _source.clip != null)
+            {
+                if (_scheduledPending)
+                {
+                    _scheduledPending = false;
+                    _source.PlayScheduled(_startDspTime); // 按恢复后的新起点重排出声
+                }
+                else if (!_source.isPlaying) _source.UnPause();
+            }
+            Debug.Log("[Clock] Resume @songTime=" + _frozenSongTime.ToString("F2"));
         }
 
         /// <summary>停止时钟与音频，SongTimeSeconds 冻结在停止时刻（附加接口，非契约成员）。</summary>
@@ -105,19 +132,31 @@ namespace MusicGame.Core
                 _frozenSongTime = AudioSettings.dspTime - _startDspTime;
                 _playing = false;
             }
+            _scheduledPending = false;
             if (_source != null && _source.isPlaying) _source.Stop();
         }
 
         private void Update()
         {
-            // 音频自然播完 → 冻结时钟并置 IsPlaying=false，外部据此得知曲目结束
+            // 音频自然播完 → 冻结时钟并置 IsPlaying=false，外部据此得知曲目结束。
+            // isPlaying 有单帧瞬时抖动（编辑器卡顿/切窗/音频设备切换），必须连续多帧无声才判播完，
+            // 否则时钟瞬间跳到 clip.length——歌词直接跳尾、结算提前触发。
             if (_playing && _source != null && _source.clip != null)
             {
-                if (_source.isPlaying) _sawSourcePlaying = true;
+                if (_source.isPlaying)
+                {
+                    _sawSourcePlaying = true;
+                    _silentFrames = 0;
+                }
                 else if (_sawSourcePlaying)
                 {
-                    _frozenSongTime = _source.clip.length;
-                    _playing = false;
+                    _silentFrames++;
+                    if (_silentFrames >= SilentFramesForNaturalEnd)
+                    {
+                        _frozenSongTime = _source.clip.length;
+                        _playing = false;
+                        Debug.Log("[Clock] 音频自然播完 @clip 末尾（连续无声 " + _silentFrames + " 帧）");
+                    }
                 }
             }
         }

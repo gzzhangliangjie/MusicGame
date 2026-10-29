@@ -34,6 +34,7 @@ namespace MusicGame.Gameplay
         /// <summary>太鼓模式：PlaySong 前置位。音符横向卷动，咚/咔/连击条，复用同一判定计分。</summary>
         public bool TaikoMode;
         private bool autoModeRunning;
+        private bool pendingPause; // playing 置位前（音频加载/预备期）收到的暂停请求：先记账，开局时生效
         /// <summary>Auto 观赏模式：PlaySong 前置位；运行中翻转也立即生效（下一帧起切换自动/手动判定，
         /// 并清理 Auto 登记的进行中 hold，防止切回手动后幽灵按住）。</summary>
         public bool AutoMode
@@ -43,6 +44,8 @@ namespace MusicGame.Gameplay
         }
         /// <summary>osu! 缩圈模式：PlaySong 前置位。点击场上缩圈圆圈判定（鼠标定位 / Z X 交替）。</summary>
         public bool OsuMode;
+        /// <summary>跑酷模式（Muse Dash 式）：PlaySong 前置位。敌人横向滚来分地面/空中两轨，F/J=地面 D/K=空中。</summary>
+        public bool MuseMode;
         /// <summary>开局预备倒计时秒数（>0 时时钟从 -N 走到 0 才出声，GameFlow 据此画 3-2-1；默认 0 关闭，直连 PlaySong 的测试不受影响）。</summary>
         public float StartCountdownSeconds = 0f;
 
@@ -81,6 +84,7 @@ namespace MusicGame.Gameplay
         private SpectrumVisualizer visualizer;
         private Taiko.TaikoSpawner taikoSpawner;
         private Osu.OsuSpawner osuSpawner;
+        private Muse.MuseSpawner museSpawner;
         private Lyrics lyrics;
         private MvBackdrop mvBackdrop;
         private GameObject runtimeRoot;
@@ -149,8 +153,16 @@ namespace MusicGame.Gameplay
         /// </summary>
         public void SetPaused(bool pausedState)
         {
-            if (!playing) return;
+            if (!playing)
+            {
+                // 开局预备期（音频加载/预备倒计时）收到暂停：此时时钟未启动，先记账，
+                // PlaySongRoutine 开局时生效——否则暂停被静默丢弃，游戏会在暂停页底下继续跑
+                pendingPause = pausedState;
+                Debug.Log("[Pause] SetPaused 在开局预备期收到 " + pausedState + "，已记账待开局生效");
+                return;
+            }
             paused = pausedState;
+            Debug.Log("[Pause] GameManager.SetPaused(" + pausedState + ") 生效");
             if (pausedState) conductor?.Pause();
             else conductor?.Resume();
             if (mvBackdrop != null)
@@ -173,11 +185,14 @@ namespace MusicGame.Gameplay
                 catch (Exception e) { Debug.LogException(e); }
             }
             if (chart != null && TaikoMode) chart = RemapChartForTaiko(chart);
+            if (chart != null && MuseMode) chart = RemapChartForMuse(chart); // 跑酷重映射含同刻同轨去重，判定总数按重映射后口径
             if (chart == null || chart.Notes == null || chart.Notes.Count == 0)
             {
                 FinishPlay(false, "chart not found or empty: Songs/" + lastSongId + "/chart_" + lastDifficulty + ".json");
                 yield break;
             }
+            Debug.Log("[Play] 载谱完成：" + chart.Notes.Count + " 音符（" + lastSongId + " " + lastDifficulty
+                + (TaikoMode ? " 太鼓" : "") + (OsuMode ? " 缩圈" : "") + (MuseMode ? " 跑酷" : "") + "），加载音频中");
             lyrics = LoadLyrics(chartPath, meta);
 
             // 2) 组装判定/计分（hold = 头+尾两次判定）
@@ -219,12 +234,20 @@ namespace MusicGame.Gameplay
             }
             if (clip != null) audioSource.clip = clip;
 
-            // 4) 短暂准备时间后启动时钟
+            // 4) 短暂准备时间后启动时钟；预备期收到的暂停请求在此承接（时钟启动即处于暂停，Resume 时再出声）
             yield return new WaitForSecondsRealtime(GetReadySeconds);
-            paused = false;
+            paused = pendingPause;
+            pendingPause = false;
             playing = true;
             conductor.Setup(chart.Bpm, chart.OffsetSeconds, audioSource, StartCountdownSeconds); // Setup 在 source 带 clip 时会自行从头播放
+            if (paused)
+            {
+                conductor.Pause(); // 暂停中开局：取消计划播放，Resume 时重排（Conductor.Pause 支持未到点的 PlayScheduled）
+                Debug.Log("[Pause] 预备期暂停请求生效：时钟已建但保持冻结");
+            }
             if (mvBackdrop != null) mvBackdrop.Play(); // MV 与音乐同步开播
+            Debug.Log("[Play] 时钟启动 bpm=" + chart.Bpm.ToString("F1") + " leadIn=" + StartCountdownSeconds.ToString("F1")
+                + (clip != null ? " 有声" : " 无声模式"));
 
             // 5) 等待谱面结束（含尾部缓冲），期间 Update 处理输入与自动 Miss
             double endTime = chartEnd + EndTailSeconds;
@@ -257,13 +280,16 @@ namespace MusicGame.Gameplay
                 UpdateOsu();
                 return;
             }
-            if (!TaikoMode && (spawner == null || hitEffects == null)) return;
+            if (!TaikoMode && !MuseMode && (spawner == null || hitEffects == null)) return;
             if (TaikoMode && taikoSpawner == null) return;
+            if (MuseMode && museSpawner == null) return;
             PollInput();
             double now = JudgedTime;
 
-            // 头判：太鼓=咚(0)/咔(1)/连击(2 任一鼓)，四轨=lane 0..3；Auto 观赏逐帧清空到点队列（恒 Perfect）
-            for (int lane = 0; lane < (TaikoMode ? 3 : lanePressed.Length); lane++)
+            // 头判：太鼓=咚(0)/咔(1)/连击(2 任一鼓)，跑酷=地面(0)/空中(1)，四轨=lane 0..3；
+            // Auto 观赏逐帧清空到点队列（恒 Perfect）
+            int laneCount = TaikoMode ? 3 : MuseMode ? 2 : lanePressed.Length;
+            for (int lane = 0; lane < laneCount; lane++)
             {
                 if (AutoMode)
                 {
@@ -281,6 +307,7 @@ namespace MusicGame.Gameplay
             {
                 score.Register(Judgement.Miss, false);
                 if (TaikoMode) taikoSpawner.NotifyMissed(missed);
+                else if (MuseMode) museSpawner.NotifyMissed(missed);
                 else
                 {
                     spawner.NotifyMissed(missed);
@@ -298,6 +325,7 @@ namespace MusicGame.Gameplay
             score.Register(judgement, false);
             if (TaikoMode) taikoSpawner.NotifyJudged(note, judgement);
             else if (OsuMode) osuSpawner.NotifyJudged(note, judgement);
+            else if (MuseMode) museSpawner.NotifyJudged(note, judgement);
             else
             {
                 spawner.NotifyJudged(note, judgement);
@@ -408,7 +436,7 @@ namespace MusicGame.Gameplay
             double target = note.Time + (isTail ? note.Duration : 0.0);
             double delta = JudgedTime - target;
             OnJudgedWithDelta?.Invoke(judgement, note.Lane, isTail, delta);
-            if (judgement != Judgement.Miss && !TaikoMode) hitEffects.Spawn(note.Lane, judgement, isTail, false);
+            if (judgement != Judgement.Miss && !TaikoMode && !MuseMode) hitEffects.Spawn(note.Lane, judgement, isTail, false);
         }
 
         private void PollInput()
@@ -421,6 +449,7 @@ namespace MusicGame.Gameplay
 
             if (AutoMode) { AutoPollInput(); return; } // 观赏模式不采样任何输入设备
             if (TaikoMode) { PollTaikoInput(); return; }
+            if (MuseMode) { PollMuseInput(); return; }
 
 #if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current;
@@ -558,6 +587,64 @@ namespace MusicGame.Gameplay
             return false; // 太鼓模式 HUD 无交互元素，点击总是视为打鼓
         }
 
+        // 跑酷输入：F/J=地面(0)，D/K=空中(1)（与太鼓 lane0/1 键位一致）；鼠标/触屏按屏幕上/下半区分地面空中
+        private void PollMuseInput()
+        {
+#if ENABLE_INPUT_SYSTEM
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                lanePressed[0] |= keyboard.fKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame;
+                laneHeld[0] |= keyboard.fKey.isPressed || keyboard.jKey.isPressed;
+                lanePressed[1] |= keyboard.dKey.wasPressedThisFrame || keyboard.kKey.wasPressedThisFrame;
+                laneHeld[1] |= keyboard.dKey.isPressed || keyboard.kKey.isPressed;
+            }
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse != null)
+            {
+                int lane = mouse.position.ReadValue().y < Screen.height * 0.5f ? 0 : 1;
+                lanePressed[lane] |= mouse.leftButton.wasPressedThisFrame;
+                laneHeld[lane] |= mouse.leftButton.isPressed;
+            }
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null)
+            {
+                foreach (TouchControl touch in touchscreen.touches)
+                {
+                    UnityEngine.InputSystem.TouchPhase phase = touch.phase.ReadValue();
+                    if (phase != UnityEngine.InputSystem.TouchPhase.Began &&
+                        phase != UnityEngine.InputSystem.TouchPhase.Moved &&
+                        phase != UnityEngine.InputSystem.TouchPhase.Stationary) continue;
+                    int lane = touch.position.ReadValue().y < Screen.height * 0.5f ? 0 : 1;
+                    laneHeld[lane] = true;
+                    if (phase == UnityEngine.InputSystem.TouchPhase.Began) lanePressed[lane] = true;
+                }
+            }
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            lanePressed[0] = Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.J);
+            laneHeld[0] = Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.J);
+            lanePressed[1] = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.K);
+            laneHeld[1] = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.K);
+            // 鼠标：点击/按住哪半屏就判定哪条轨
+            if (Input.GetMouseButton(0))
+            {
+                int lane = Input.mousePosition.y < Screen.height * 0.5f ? 0 : 1;
+                lanePressed[lane] |= Input.GetMouseButtonDown(0);
+                laneHeld[lane] = true;
+            }
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                Touch touch = Input.GetTouch(i);
+                if (touch.phase == TouchPhase.Began || touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
+                {
+                    int lane = touch.position.y < Screen.height * 0.5f ? 0 : 1;
+                    laneHeld[lane] = true;
+                    if (touch.phase == TouchPhase.Began) lanePressed[lane] = true;
+                }
+            }
+#endif
+        }
+
         // 屏幕横坐标 → 轨道号（0..3，越界返回 -1）
         private int ScreenXToLane(float screenX)
         {
@@ -576,7 +663,7 @@ namespace MusicGame.Gameplay
 
             conductor = runtimeRoot.AddComponent<Conductor>();
 
-            GameObject prefab = OsuMode ? BuildOsuPrefab() : BuildNotePrefab(TaikoMode);
+            GameObject prefab = OsuMode ? BuildOsuPrefab() : MuseMode ? BuildMusePrefab() : BuildNotePrefab(TaikoMode);
             prefab.transform.SetParent(runtimeRoot.transform, false); // 挂到 runtimeRoot 下随 Cleanup 统一销毁，避免每局泄漏一个游离模板
             pool = new GameObject("NotePool").AddComponent<NotePool>();
             pool.transform.SetParent(runtimeRoot.transform, false);
@@ -597,6 +684,14 @@ namespace MusicGame.Gameplay
                 osuSpawner.Game = this;
                 osuSpawner.ApproachSeconds = noteTravelTimeSeconds; // 缩圈节奏跟随下落速度档
                 osuSpawner.Setup(chart, conductor, pool, lastSongId + "|" + lastDifficulty);
+            }
+            else if (MuseMode)
+            {
+                museSpawner = new GameObject("MuseSpawner").AddComponent<Muse.MuseSpawner>();
+                museSpawner.transform.SetParent(runtimeRoot.transform, false);
+                museSpawner.Score = score;
+                museSpawner.Game = this;
+                museSpawner.Setup(chart, conductor, pool, noteTravelTimeSeconds);
             }
             else
             {
@@ -640,6 +735,16 @@ namespace MusicGame.Gameplay
             var prefab = new GameObject("OsuCirclePrefab");
             prefab.AddComponent<SpriteRenderer>();
             prefab.AddComponent<Osu.OsuCircle>();
+            prefab.SetActive(false);
+            return prefab;
+        }
+
+        // 跑酷敌人预制体（MuseNote.Initialize 补齐外观）
+        private static GameObject BuildMusePrefab()
+        {
+            var prefab = new GameObject("MuseNotePrefab");
+            prefab.AddComponent<SpriteRenderer>();
+            prefab.AddComponent<Muse.MuseNote>();
             prefab.SetActive(false);
             return prefab;
         }
@@ -698,6 +803,68 @@ namespace MusicGame.Gameplay
                     Duration = note.Duration
                 });
             }
+            return mapped;
+        }
+
+        // 跑酷轨道重映射（public static：GameFlow 结算总数与无头冒烟测试（Editor 程序集）按重映射后口径统计判定数）：
+        // lane 0/1 → 0(地面)，lane 2/3 → 1(空中)，hold 保持所在轨；同时刻同轨去重（tap 优先），
+        // 同轨 hold 区间内的后续音符丢弃（按键被长条占用，无法再判）。其余字段原样复制。
+        public static ChartData RemapChartForMuse(ChartData source)
+        {
+            var items = new List<NoteData>();
+            foreach (NoteData note in source.Notes)
+            {
+                if (note == null || note.Lane < 0 || note.Lane > 3) continue;
+                bool hold = string.Equals(note.Type, "hold", StringComparison.OrdinalIgnoreCase) && note.Duration > 0.0;
+                items.Add(new NoteData
+                {
+                    Time = note.Time,
+                    Lane = note.Lane <= 1 ? 0 : 1,
+                    Type = hold ? "hold" : "tap",
+                    Duration = hold ? note.Duration : 0.0
+                });
+            }
+            items.Sort((a, b) => a.Time.CompareTo(b.Time));
+
+            // 同刻同轨合并为一个音符（tap 优先：长条占轨面更大）
+            var byKey = new Dictionary<(double Time, int Lane), NoteData>();
+            var order = new List<(double Time, int Lane)>();
+            foreach (NoteData note in items)
+            {
+                var key = (note.Time, note.Lane);
+                if (!byKey.TryGetValue(key, out NoteData existing))
+                {
+                    byKey[key] = note;
+                    order.Add(key);
+                }
+                else if (existing.Type == "hold" && note.Type == "tap")
+                {
+                    byKey[key] = note;
+                }
+            }
+
+            var mapped = new ChartData
+            {
+                SongId = source.SongId,
+                Difficulty = source.Difficulty,
+                Bpm = source.Bpm,
+                OffsetSeconds = source.OffsetSeconds,
+                Notes = new List<NoteData>(order.Count)
+            };
+            var holdEnd = new double[2];
+            int dropped = 0;
+            foreach (var key in order)
+            {
+                NoteData note = byKey[key];
+                if (note.Time < holdEnd[note.Lane] - 1e-9)
+                {
+                    dropped++;
+                    continue;
+                }
+                if (note.Type == "hold") holdEnd[note.Lane] = note.Time + note.Duration;
+                mapped.Notes.Add(note);
+            }
+            if (dropped > 0) Debug.Log("[Muse] 重映射丢弃同轨长条区间内冲突音符 " + dropped + " 个");
             return mapped;
         }
 
@@ -804,7 +971,9 @@ namespace MusicGame.Gameplay
             visualizer = null;
             taikoSpawner = null;
             osuSpawner = null;
+            museSpawner = null;
             autoActiveHolds.Clear();
+            pendingPause = false;
             lyrics = null;
             // score 保留，供结算后查询
         }

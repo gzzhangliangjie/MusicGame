@@ -57,7 +57,8 @@ namespace MusicGame.UI
         HitErrorBar errorBar;
         Action<Judgement, int, bool, double> judgedHandler;
         bool taikoMode;
-        bool osuMode; // osu! 缩圈模式（与四轨/太鼓三选一）
+        bool osuMode; // osu! 缩圈模式（与四轨/太鼓/跑酷四选一）
+        bool museMode; // 跑酷模式（Muse Dash 式：地面/空中两轨）
         bool autoMode; // AUTO 观赏模式（难度选择页切换，PlayerPrefs 持久化）
         const string AutoModePrefKey = "MusicGame.AutoMode";
         Text autoBtnText;
@@ -79,15 +80,15 @@ namespace MusicGame.UI
             get { return TravelSpeedSeconds[Mathf.Clamp(travelSpeedIndex, 0, TravelSpeedSeconds.Length - 1)]; }
         }
 
-        /// <summary>本地纪录键的模式段（四轨 4K / 太鼓 TAIKO / 缩圈 OSU）。</summary>
-        string ModeKey => osuMode ? "OSU" : taikoMode ? "TAIKO" : "4K";
+        /// <summary>本地纪录键的模式段（四轨 4K / 太鼓 TAIKO / 缩圈 OSU / 跑酷 MUSE）。</summary>
+        string ModeKey => osuMode ? "OSU" : taikoMode ? "TAIKO" : museMode ? "MUSE" : "4K";
 
         /// <summary>纪录面板/结算里显示的模式名。</summary>
-        string ModeName => osuMode ? "缩圈" : taikoMode ? "太鼓" : "四轨";
+        string ModeName => osuMode ? "缩圈" : taikoMode ? "太鼓" : museMode ? "跑酷" : "四轨";
         Image modeNormalImg, modeTaikoImg;
         Text menuTitle;
         TextVerticalGradient menuTitleGrad;
-        Image titleGlow, menuUnderline, startGlow;
+        Image titleGlow, menuUnderline, startGlow, modeMuseImg;
         UiBackdrop backdrop;
 
         // 主菜单动效编排（入场淡入/上滑 + 待机呼吸/辉光脉动）
@@ -430,6 +431,7 @@ namespace MusicGame.UI
                 "【玩法】\n" +
                 "四轨模式：音符落到判定线时按对应键 D F J K，或鼠标点击轨道；长条按住直到尾端\n" +
                 "太鼓模式：F/J=咚(红)  D/K=咔(蓝)，也可按住鼠标左右半屏；气球连击条滚到鼓面后按住任意鼓充气，吹满爆掉得分\n" +
+                "跑酷模式：角色自动奔跑，F/J=地面攻击 D/K=空中攻击（鼠标上/下半屏同样可打）；长条怪按住充气，金框=跨轨双押\n" +
                 "缩圈模式：圆圈随机摆在场上，外圈收拢合体的瞬间点击它（鼠标点击 / Z X 键，越准评级越高）\n" +
                 "AUTO 观赏：难度选择页可开启，自动完美演奏整谱（成绩不计入纪录），随时 Esc 暂停\n\n" +
                 "【判定】\n" +
@@ -527,17 +529,20 @@ namespace MusicGame.UI
             diffSongLabel = UiKit.Label(diffScreen, "song", "", 28, TextAnchor.MiddleCenter, UiKit.Theme.Accent, true);
             UiKit.Stretch(diffSongLabel.rectTransform, new Vector2(0f, 0.735f), new Vector2(1f, 0.80f));
 
-            // 模式切换：通常（四轨下落）/ 太鼓（咚咔横卷）/ 缩圈（osu! 点击）——锚点钉在画布高度百分比，
-            // 构建期量画布尺寸不可靠（CanvasScaler 的 scaleFactor 迟到，Start 时量到的是失真值）
-            var normalBtn = UiKit.ButtonRect(diffScreen, "modeNormal", "通 常 模 式", new Vector2(-285f, 0f), new Vector2(260f, 88f), () => SetPlayMode(0), UiKit.Theme.Primary, 22);
-            var taikoBtn = UiKit.ButtonRect(diffScreen, "modeTaiko", "太 鼓 模 式", new Vector2(0f, 0f), new Vector2(260f, 88f), () => SetPlayMode(1), UiKit.Theme.Secondary, 22);
-            var osuBtn = UiKit.ButtonRect(diffScreen, "modeOsu", "缩 圈 模 式", new Vector2(285f, 0f), new Vector2(260f, 88f), () => SetPlayMode(2), UiKit.Theme.Secondary, 22);
-            PinFractionY((RectTransform)normalBtn.transform, -285f, 0.845f);
-            PinFractionY((RectTransform)taikoBtn.transform, 0f, 0.845f);
-            PinFractionY((RectTransform)osuBtn.transform, 285f, 0.845f);
+            // 模式切换：通常（四轨下落）/ 太鼓（咚咔横卷）/ 缩圈（osu! 点击）/ 跑酷（Muse Dash 两轨）——
+            // 锚点钉在画布高度百分比，构建期量画布尺寸不可靠（CanvasScaler 的 scaleFactor 迟到，Start 时量到的是失真值）
+            var normalBtn = UiKit.ButtonRect(diffScreen, "modeNormal", "通 常 模 式", new Vector2(-435f, 0f), new Vector2(260f, 88f), () => SetPlayMode(0), UiKit.Theme.Primary, 22);
+            var taikoBtn = UiKit.ButtonRect(diffScreen, "modeTaiko", "太 鼓 模 式", new Vector2(-145f, 0f), new Vector2(260f, 88f), () => SetPlayMode(1), UiKit.Theme.Secondary, 22);
+            var osuBtn = UiKit.ButtonRect(diffScreen, "modeOsu", "缩 圈 模 式", new Vector2(145f, 0f), new Vector2(260f, 88f), () => SetPlayMode(2), UiKit.Theme.Secondary, 22);
+            var museBtn = UiKit.ButtonRect(diffScreen, "modeMuse", "跑 酷 模 式", new Vector2(435f, 0f), new Vector2(260f, 88f), () => SetPlayMode(3), UiKit.Theme.Secondary, 22);
+            PinFractionY((RectTransform)normalBtn.transform, -435f, 0.845f);
+            PinFractionY((RectTransform)taikoBtn.transform, -145f, 0.845f);
+            PinFractionY((RectTransform)osuBtn.transform, 145f, 0.845f);
+            PinFractionY((RectTransform)museBtn.transform, 435f, 0.845f);
             modeNormalImg = normalBtn.image;
             modeTaikoImg = taikoBtn.image;
             modeOsuImg = osuBtn.image;
+            modeMuseImg = museBtn.image;
 
             // 底行三键：返回选曲 / 下落速度（五档循环）/ AUTO 观赏
             // Y 钉画布高度分数：固定像素偏移在窄窗下会向上漂进纪录面板矩形（曾挡住 AUTO 键点击）
@@ -565,15 +570,17 @@ namespace MusicGame.UI
             SetPlayMode(0);
         }
 
-        /// <summary>切换游玩模式（0 四轨 / 1 太鼓 / 2 缩圈）并刷新三个切换按钮的高亮。</summary>
+        /// <summary>切换游玩模式（0 四轨 / 1 太鼓 / 2 缩圈 / 3 跑酷）并刷新切换按钮的高亮。</summary>
         void SetPlayMode(int mode)
         {
             taikoMode = mode == 1;
             osuMode = mode == 2;
+            museMode = mode == 3;
             Color off = new Color(0.25f, 0.28f, 0.36f);
             if (modeNormalImg != null) modeNormalImg.color = mode == 0 ? UiKit.Theme.Primary : off;
             if (modeTaikoImg != null) modeTaikoImg.color = mode == 1 ? new Color(0.95f, 0.45f, 0.25f) : off;
             if (modeOsuImg != null) modeOsuImg.color = mode == 2 ? new Color(0.62f, 0.44f, 0.95f) : off;
+            if (modeMuseImg != null) modeMuseImg.color = mode == 3 ? new Color(0.95f, 0.42f, 0.62f) : off;
             UpdateDiffRecordPanel();
         }
 
@@ -1191,6 +1198,9 @@ namespace MusicGame.UI
 
         IEnumerator StartGameRoutine(SongEntry entry, string diff)
         {
+            Debug.Log("[Flow] StartGameRoutine 开局：" + entry.Meta.Title + " / " + diff
+                + (taikoMode ? " 太鼓" : "") + (osuMode ? " 缩圈" : "") + (museMode ? " 跑酷" : "")
+                + (autoMode ? " AUTO" : ""));
             currentEntry = entry;
             currentDifficulty = diff;
             ForceResumeAudio();
@@ -1209,10 +1219,12 @@ namespace MusicGame.UI
             scoreSystem = null;
             conductor = null;
 
-            // 预读谱面：结算总数与结束检测要用
+            // 预读谱面：结算总数与结束检测要用（跑酷模式先重映射：同刻同轨去重会减少判定数，口径须一致）
             ChartData chart = null;
             try { chart = ChartIO.Load(Path.Combine(entry.Dir, "chart_" + diff + ".json")); }
             catch (Exception) { }
+            if (chart != null && chart.Notes != null && museMode)
+                chart = GameManager.RemapChartForMuse(chart);
             double chartEnd = 0.0;
             int total = 0;
             if (chart != null && chart.Notes != null)
@@ -1235,6 +1247,7 @@ namespace MusicGame.UI
             gameManager = gameplayRoot.AddComponent<GameManager>();
             gameManager.TaikoMode = taikoMode;
             gameManager.OsuMode = osuMode;
+            gameManager.MuseMode = museMode;
             gameManager.AutoMode = autoMode;
             gameManager.StartCountdownSeconds = 3f; // 开局 3-2-1 倒计时（Conductor 负时间预备区，0 点出声）
             gameManager.noteTravelTimeSeconds = TravelSeconds;
@@ -1261,6 +1274,7 @@ namespace MusicGame.UI
             {
                 popupLayer.TaikoMode = gameManager != null && gameManager.TaikoMode;
                 popupLayer.OsuMode = gameManager != null && gameManager.OsuMode;
+                popupLayer.MuseMode = gameManager != null && gameManager.MuseMode;
             }
             judgedHandler = (j, lane, isTail, delta) =>
             {
@@ -1273,7 +1287,8 @@ namespace MusicGame.UI
             isPaused = false;
             pauseScreen.gameObject.SetActive(false);
             hudSong.text = entry.Meta.Title + " · " + UiKit.PrettyDifficulty(diff)
-                + (taikoMode ? " · 太鼓" : "") + (osuMode ? " · 缩圈" : "") + (autoMode ? " · AUTO" : "");
+                + (taikoMode ? " · 太鼓" : "") + (osuMode ? " · 缩圈" : "") + (museMode ? " · 跑酷" : "")
+                + (autoMode ? " · AUTO" : "");
             ApplyHudHint();
             hudScore.text = "0";
             hudCombo.text = "";
@@ -1297,6 +1312,8 @@ namespace MusicGame.UI
                 hudHint.text = "AUTO 观赏模式 · 自动演奏中 · Esc 暂停";
             else if (osuMode)
                 hudHint.text = "点击缩圈圆圈（鼠标 / Z X 键） · Esc 暂停";
+            else if (museMode)
+                hudHint.text = "F/J=地面攻击 D/K=空中攻击（鼠标上/下半屏） · Esc 暂停";
             else
                 hudHint.text = currentEntry != null && string.IsNullOrEmpty(currentEntry.Meta.AudioPath)
                     ? "无声测试模式 · D F J K / 鼠标点击 · Esc 暂停"
@@ -1721,6 +1738,7 @@ namespace MusicGame.UI
                 // 否则暂停菜单里热切换 AUTO 会在背后立刻自动打完整首谱面。
                 if (paused)
                 {
+                    Debug.Log("[Pause] Esc/失焦暂停（倒计时中→取消倒计时）");
                     CancelCountdown();
                     isPaused = true;
                     if (pauseScreen != null) pauseScreen.gameObject.SetActive(true);
@@ -1731,6 +1749,7 @@ namespace MusicGame.UI
             if (!paused)
             {
                 // 恢复前先来一轮 3-2-1（带音效），倒数完才真正解除暂停
+                Debug.Log("[Pause] 请求恢复 → 3-2-1 后解除");
                 isPaused = true; // 保持暂停语义，倒计时结束才解除（期间 Esc 可取消回菜单）
                 if (pauseScreen != null) pauseScreen.gameObject.SetActive(false);
                 countdownHandle = StartCoroutine(ResumeCountdownRoutine());
@@ -1739,6 +1758,7 @@ namespace MusicGame.UI
             isPaused = paused;
             if (pauseScreen != null) pauseScreen.gameObject.SetActive(paused);
             if (paused) RefreshPauseAutoButton(); // 每次弹出按最新状态刷 AUTO 开关文案
+            Debug.Log("[Pause] Esc/失焦暂停（对局中，gm=" + (gameManager != null ? "在" : "已销毁!") + "）");
             // GameManager.SetPaused(bool) 会同步冻结 Conductor 时钟与音频，并挂起判定与结束检测
             TryCallPauseApi(gameManager, paused);
         }
@@ -1932,10 +1952,15 @@ namespace MusicGame.UI
             return null;
         }
 
-        /// <summary>尝试调用对端暂停 API（命名启发式；契约未约定）。</summary>
+        /// <summary>尝试调用对端暂停 API（命名启发式；契约未约定）。匹配与失败都留痕——
+        /// 暂停页弹出但游戏没冻结时，这里的表现是第一诊断现场。</summary>
         static void TryCallPauseApi(GameManager gm, bool pause)
         {
-            if (gm == null) return;
+            if (gm == null)
+            {
+                Debug.LogWarning("[Pause] TryCallPauseApi 跳过：gameManager 引用为空（旧局已销毁/尚未创建）");
+                return;
+            }
             try
             {
                 var type = gm.GetType();
@@ -1945,14 +1970,20 @@ namespace MusicGame.UI
                     var ps = m.GetParameters();
                     var name = m.Name.ToLowerInvariant();
                     if (ps.Length == 1 && ps[0].ParameterType == typeof(bool) && name.Contains("pause"))
+                    {
                         m.Invoke(gm, new object[] { pause });
+                        Debug.Log("[Pause] TryCallPauseApi -> " + m.Name + "(" + pause + ")");
+                    }
                     else if (ps.Length == 0 && pause && (name == "pause" || name == "pausegame" || name == "pausesong"))
                         m.Invoke(gm, null);
                     else if (ps.Length == 0 && !pause && (name == "resume" || name == "unpause" || name == "resumegame" || name == "continuesong"))
                         m.Invoke(gm, null);
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                Debug.LogError("[Pause] TryCallPauseApi 调用异常（暂停未生效）：" + ex);
+            }
         }
 
         // ---------------------------------------------------------------- 工具

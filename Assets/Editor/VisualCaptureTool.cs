@@ -144,6 +144,7 @@ namespace MusicGame.EditorTools
         private static int flowTicks;
         private static bool flowTaiko;
         private static bool flowOsu;
+        private static bool flowMuse;
         private static bool flowCountdown;
         private static bool countdownSeen;
         private static int countdownShotAt;
@@ -184,6 +185,20 @@ namespace MusicGame.EditorTools
         {
             flowTaiko = false;
             flowOsu = true;
+            flowMuse = false;
+            flowCountdown = false;
+            flowAutoPrefRestore = PlayerPrefs.GetInt("MusicGame.AutoMode", 0);
+            osuComboReady = false;
+            osuShotAt = 0;
+            StartFlow();
+        }
+
+        /// <summary>同上，切跑酷模式 + 临时开 AUTO（地面/空中两轨敌人、角色、跑步带均走真实路径），截图后恢复 AUTO 设置。</summary>
+        public static void CaptureMuseFlow()
+        {
+            flowTaiko = false;
+            flowOsu = false;
+            flowMuse = true;
             flowCountdown = false;
             flowAutoPrefRestore = PlayerPrefs.GetInt("MusicGame.AutoMode", 0);
             osuComboReady = false;
@@ -627,9 +642,9 @@ namespace MusicGame.EditorTools
 
         private static void StartFlow()
         {
-            if (flowOsu)
+            if (flowOsu || flowMuse)
             {
-                // 缩圈截图需要 Auto 命中把 COMBO 顶起来（结束后在收尾步骤恢复原值）
+                // 缩圈/跑酷截图需要 Auto 命中把 COMBO 顶起来（结束后在收尾步骤恢复原值）
                 PlayerPrefs.SetInt("MusicGame.AutoMode", 1);
                 PlayerPrefs.Save();
             }
@@ -682,7 +697,7 @@ namespace MusicGame.EditorTools
                             Advance("选曲 -> song_73d9b60f15");
                         }
                         break;
-                    case 2: // 难度选 easy（太鼓/缩圈流程先切模式）
+                    case 2: // 难度选 easy（太鼓/缩圈/跑酷流程先切模式）
                         if (flowTicks > 40)
                         {
                             if (flowTaiko)
@@ -695,9 +710,15 @@ namespace MusicGame.EditorTools
                                 ClickButton("modeOsu");
                                 Debug.Log("[VisCap] 切换 -> 缩圈模式");
                             }
+                            if (flowMuse)
+                            {
+                                ClickButton("modeMuse");
+                                Debug.Log("[VisCap] 切换 -> 跑酷模式");
+                            }
                             ClickButton("diff_easy");
                             Advance(flowTaiko ? "难度 -> easy（太鼓）"
-                                : flowOsu ? "难度 -> easy（缩圈）" : "难度 -> easy");
+                                : flowOsu ? "难度 -> easy（缩圈）"
+                                : flowMuse ? "难度 -> easy（跑酷）" : "难度 -> easy");
                         }
                         break;
                     case 3: // 等音符入场，弹窗展示 + 诊断 + 截图
@@ -733,9 +754,9 @@ namespace MusicGame.EditorTools
                             }
                             break;
                         }
-                        if (flowOsu)
+                        if (flowOsu || flowMuse)
                         {
-                            // 缩圈：等 Auto 命中把 COMBO 顶到 ≥5 再拍（不同歌前奏长短不一，超时 30s 兜底）
+                            // 缩圈/跑酷：等 Auto 命中把 COMBO 顶到 ≥5 再拍（不同歌前奏长短不一，超时 30s 兜底）
                             if (!osuComboReady)
                             {
                                 if (flowTicks >= 1800) { osuComboReady = true; osuShotAt = flowTicks + 12; }
@@ -755,14 +776,18 @@ namespace MusicGame.EditorTools
                             if (flowTicks == osuShotAt)
                             {
                                 var pl = UnityEngine.Object.FindFirstObjectByType<JudgementPopupLayer>();
-                                if (pl != null) pl.Show(Judgement.Perfect, 0, false);
+                                if (pl != null)
+                                {
+                                    pl.Show(Judgement.Perfect, 0, false);
+                                    if (flowMuse) pl.Show(Judgement.Good, 1, false); // 跑酷：地/空两条锚点都验
+                                }
                             }
                             if (flowTicks >= osuShotAt + 1)
                             {
                                 DumpDiagnostics();
-                                ScreenCapture.CaptureScreenshot("E:/MusicGame/vis_osu.png");
+                                ScreenCapture.CaptureScreenshot(flowMuse ? "E:/MusicGame/vis_muse.png" : "E:/MusicGame/vis_osu.png");
                                 flowStep = 4; flowTicks = 0;
-                                Debug.Log("[VisCap] 缩圈路径截图已请求（combo=" +
+                                Debug.Log("[VisCap] " + (flowMuse ? "跑酷" : "缩圈") + "路径截图已请求（combo=" +
                                     (GameObject.Find("combo") != null
                                         ? GameObject.Find("combo").GetComponent<UnityEngine.UI.Text>().text
                                         : "?") + "）");
@@ -856,6 +881,15 @@ namespace MusicGame.EditorTools
                     : "不存在";
                 Debug.Log("[VisCap] lane" + lane + " 键帽[" + capInfo + "] 按键板[" + padInfo + "]");
             }
+
+            // 跑酷模式诊断：角色视口位置 + 存活敌人数（别的模式自然为 null/0）
+            var runner = UnityEngine.Object.FindFirstObjectByType<MusicGame.Gameplay.Muse.MuseRunner>();
+            Debug.Log("[VisCap] MuseRunner: " + (runner != null
+                ? "pos=" + runner.transform.position + " viewport=" + cam.WorldToViewportPoint(runner.transform.position)
+                : "null"));
+            var enemies = UnityEngine.Object.FindObjectsByType<MusicGame.Gameplay.Muse.MuseNote>(
+                UnityEngine.FindObjectsSortMode.None);
+            Debug.Log("[VisCap] MuseNote 存活数: " + enemies.Length);
         }
     }
 }
