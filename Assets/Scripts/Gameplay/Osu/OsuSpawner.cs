@@ -19,8 +19,8 @@ namespace MusicGame.Gameplay.Osu
         public const float CircleRadius = 0.9f;
         /// <summary>点击有效半径（略大于视觉圈，判定宽松）。</summary>
         public const float HitRadius = 1.2f;
-        /// <summary>缩圈环初始倍率（3x 收到 1x 时正好到判定点）。</summary>
-        public const float ApproachScale = 3.0f;
+        /// <summary>缩圈环初始倍率（2x 收到 1x）：3x 时粗环会整个罩住相邻圈（"叠一块"主因），2x 只轻轻擦过。</summary>
+        public const float ApproachScale = 2.0f;
 
         /// <summary>连击组四色（红/金/绿/蓝，色相全分离）：按组号给圈体染色，独立于主题四轨色，一眼可分。</summary>
         public static readonly Color[] GroupColors =
@@ -40,13 +40,14 @@ namespace MusicGame.Gameplay.Osu
         internal GameManager Game { get; set; }
         internal NotePool Pool { get; set; }
 
-        /// <summary>单个圆圈条目：判定时刻 + 合成 NoteData（tail 为新建对象，供事件/判定流复用）。</summary>
+        /// <summary>单个圆圈条目：判定时刻 + 场上位置 + 合成 NoteData（tail 为新建对象，供事件/判定流复用）。</summary>
         private class Entry
         {
             public double Time;
+            public Vector2 Pos;     // 圈心位置（确定性走位算出，Spawn 时落到圈上）
             public NoteData Note;
             public int Number;      // 圈上数字（1..4 循环，osu! combo 组风格）
-            public int ColorIndex;  // 连击组颜色（LaneColors 循环）
+            public int ColorIndex;  // 连击组颜色（GroupColors 循环）
             public OsuCircle View;  // 已生成时的视觉实例；命中/Miss 后置空
         }
 
@@ -72,6 +73,7 @@ namespace MusicGame.Gameplay.Osu
             // 位置游走：随机数种子=歌+难度，摆位可复现（osu! 同图同摆）
             var rng = new System.Random(StableHash(seedKey ?? ""));
             Vector2 prev = new Vector2(0f, -0.6f);
+            Vector2 prev2 = Vector2.zero;
             double prevTime = 0.0;
             int number = 1;
             int colorIndex = 0;
@@ -80,11 +82,11 @@ namespace MusicGame.Gameplay.Osu
                 if (note == null || note.Lane < 0 || note.Lane > 3) continue;
                 bool hold = string.Equals(note.Type, "hold", System.StringComparison.OrdinalIgnoreCase) && note.Duration > 0.0;
 
-                PlaceEntry(note.Time, note, number, colorIndex, ref prev, ref prevTime, rng);
+                PlaceEntry(note.Time, note, number, colorIndex, ref prev, ref prev2, ref prevTime, rng);
                 if (hold)
                 {
                     var tail = new NoteData { Time = note.Time + note.Duration, Lane = note.Lane, Type = "tail", Duration = 0.0 };
-                    PlaceEntry(tail.Time, tail, number, colorIndex, ref prev, ref prevTime, rng);
+                    PlaceEntry(tail.Time, tail, number, colorIndex, ref prev, ref prev2, ref prevTime, rng);
                 }
                 number = number % 4 + 1;
                 colorIndex = (colorIndex + 1) % 4;
@@ -96,26 +98,31 @@ namespace MusicGame.Gameplay.Osu
 
         // 摆一个条目：从上一圈按 Δt 走一步（头尾都算步进），并更新 prev/prevTime
         private void PlaceEntry(double time, NoteData note, int number, int colorIndex,
-            ref Vector2 prev, ref double prevTime, System.Random rng)
+            ref Vector2 prev, ref Vector2 prev2, ref double prevTime, System.Random rng)
         {
             float dt = Mathf.Max(0f, (float)(time - prevTime));
             float dist = Mathf.Clamp(dt * JumpSpeed, MinJump, MaxJump);
-            Vector2 pos = Walk(prev, dist, rng);
-            var entry = new Entry { Time = time, Note = note, Number = number, ColorIndex = colorIndex };
+            Vector2 pos = Walk(prev, prev2, dist, rng);
+            var entry = new Entry { Time = time, Pos = pos, Note = note, Number = number, ColorIndex = colorIndex };
             entries.Add(entry);
             noteToEntry[note] = entry;
+            prev2 = prev;
             prev = pos;
             prevTime = time;
         }
 
-        // 从 from 出发走 dist：随机方向最多试 10 次取在场内的；全越界则朝场心压线收边（角落兜底）
-        private static Vector2 Walk(Vector2 from, float dist, System.Random rng)
+        // 从 from 出发走 dist：随机方向试 25 次取"在场内且离前前圈够远"的；候选向场心收 15%（防扎角落）；
+        // 全失败则朝场心压线收边（角落兜底）
+        private static Vector2 Walk(Vector2 from, Vector2 prev2, float dist, System.Random rng)
         {
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 25; i++)
             {
                 float ang = (float)(rng.NextDouble() * Mathf.PI * 2.0);
                 Vector2 next = from + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * dist;
-                if (Mathf.Abs(next.x) <= PlayHalfX && Mathf.Abs(next.y) <= PlayHalfY) return next;
+                if (Mathf.Abs(next.x) > PlayHalfX || Mathf.Abs(next.y) > PlayHalfY) continue;
+                if (prev2 != Vector2.zero && (next - prev2).sqrMagnitude < 1.4f * 1.4f) continue;
+                next += (-next) * 0.15f;
+                return next;
             }
             Vector2 fallback = from + (-from).normalized * dist;
             fallback.x = Mathf.Clamp(fallback.x, -PlayHalfX, PlayHalfX);
@@ -183,8 +190,13 @@ namespace MusicGame.Gameplay.Osu
             GameObject go = Pool.Rent();
             var circle = go != null ? go.GetComponent<OsuCircle>() : null;
             if (circle == null) { if (go != null) Destroy(go); return; }
+            circle.transform.position = new Vector3(entry.Pos.x, entry.Pos.y, 0f); // 落到确定性走位算出的圈心（此前缺失：所有圈同点生成）
             entry.View = circle;
             circle.Initialize(entry.Time, entry.Number, entry.ColorIndex, this);
+            // 新圈出现：所有更早的在场旧圈数字开始渐隐（圈体保留，判定不受影响）
+            foreach (Entry e in entries)
+                if (e.View != null && !e.View.Consumed && e != entry)
+                    e.View.FadeOutNumber();
         }
 
         // 生成条目的当前摆位（View 生成时记录；未生成的用不到）

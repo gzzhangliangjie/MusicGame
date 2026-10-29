@@ -21,6 +21,7 @@ namespace MusicGame.Gameplay.Osu
         private TextMesh number, numberShadow;
         private State state;
         private bool consumed;
+        private float numberFadeAge = -1f; // ≥0：数字渐隐中（更新的圈出现后，旧圈数字逐渐变透明）
 
         /// <summary>是否已被判定消费（命中或 Miss，供 TryHit/TryMiss 跳过）。</summary>
         internal bool Consumed
@@ -29,6 +30,12 @@ namespace MusicGame.Gameplay.Osu
         }
 
         internal void Consume() { consumed = true; }
+
+    /// <summary>更新的圈已出现：本圈数字从现在起渐隐（时长≈缩圈时长的一半），圈体保留。</summary>
+    internal void FadeOutNumber()
+    {
+        if (numberFadeAge < 0f) numberFadeAge = 0f;
+    }
 
         internal void Initialize(double hitTime, int numberValue, int colorIndex, OsuSpawner owner)
         {
@@ -168,7 +175,7 @@ namespace MusicGame.Gameplay.Osu
             float fadeIn = Mathf.Clamp01(age / 0.35f);
             float alpha = fadeIn * fadeIn * (3f - 2f * fadeIn); // smoothstep
             body.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
-            ring.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+            ring.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha * 0.6f); // 环降透明度：跨过邻圈时不抢主体
             number.color = new Color(1f, 1f, 1f, alpha);
             numberShadow.color = new Color(0f, 0f, 0f, 0.55f * alpha);
 
