@@ -45,7 +45,7 @@ namespace MusicGame.Gameplay.Osu
             consumed = false;
 
             EnsureVisuals();
-            baseColor = OsuSpawner.GroupColors[Mathf.Clamp(colorIndex, 0, 3)];
+            baseColor = NoteSpawner.LaneColors[Mathf.Clamp(colorIndex, 0, 3)]; // 回归主题四轨色：圈已按走位散开，无需高区分度专用色
             body.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
             ring.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
             number.text = numberValue.ToString();
