@@ -43,6 +43,8 @@ namespace MusicGame.Gameplay
         }
         /// <summary>osu! 缩圈模式：PlaySong 前置位。点击场上缩圈圆圈判定（鼠标定位 / Z X 交替）。</summary>
         public bool OsuMode;
+        /// <summary>开局预备倒计时秒数（>0 时时钟从 -N 走到 0 才出声，GameFlow 据此画 3-2-1；默认 0 关闭，直连 PlaySong 的测试不受影响）。</summary>
+        public float StartCountdownSeconds = 0f;
 
         /// <summary>谱面结束/出错/停止回调，携带有结算数据。</summary>
         public event Action<PlayResult> OnSongFinished;
@@ -221,7 +223,7 @@ namespace MusicGame.Gameplay
             yield return new WaitForSecondsRealtime(GetReadySeconds);
             paused = false;
             playing = true;
-            conductor.Setup(chart.Bpm, chart.OffsetSeconds, audioSource); // Setup 在 source 带 clip 时会自行从头播放
+            conductor.Setup(chart.Bpm, chart.OffsetSeconds, audioSource, StartCountdownSeconds); // Setup 在 source 带 clip 时会自行从头播放
             if (mvBackdrop != null) mvBackdrop.Play(); // MV 与音乐同步开播
 
             // 5) 等待谱面结束（含尾部缓冲），期间 Update 处理输入与自动 Miss

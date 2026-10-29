@@ -438,12 +438,6 @@ namespace MusicGame.Gameplay.Taiko
             renderer.transform.localScale = new Vector3(size.x * k, size.y * k, 1f);
         }
 
-        internal static Font GetBuiltinFont()
-        {
-            try { return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
-            catch { return Resources.GetBuiltinResource<Font>("Arial.ttf"); }
-        }
-
         private static SpriteRenderer CreateSprite(string name, Transform parent, Vector3 localPosition, Vector2 size, Color color, int sortingOrder)
         {
             var go = new GameObject(name);

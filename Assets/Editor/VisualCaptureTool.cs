@@ -143,11 +143,30 @@ namespace MusicGame.EditorTools
         private static int flowStep;
         private static int flowTicks;
         private static bool flowTaiko;
+        private static bool flowOsu;
+        private static bool flowCountdown;
+        private static bool countdownSeen;
+        private static int countdownShotAt;
+        private static int flowAutoPrefRestore = -1;
+        private static bool osuComboReady;
+        private static int osuShotAt;
 
         /// <summary>完全复刻用户路径：Main.unity 进 Play → 自动点 开始游戏→sample→easy → 截图。</summary>
         public static void CaptureFlow()
         {
             flowTaiko = false;
+            flowCountdown = false;
+            StartFlow();
+        }
+
+        /// <summary>开局 3-2-1 倒计时截图验收：四轨流程，播到倒计时中段拍一帧，再等到 GO 日志齐了退出。</summary>
+        public static void CaptureCountdownFlow()
+        {
+            flowTaiko = false;
+            flowOsu = false;
+            flowCountdown = true;
+            countdownSeen = false;
+            countdownShotAt = 0;
             StartFlow();
         }
 
@@ -155,6 +174,20 @@ namespace MusicGame.EditorTools
         public static void CaptureTaikoFlow()
         {
             flowTaiko = true;
+            flowOsu = false;
+            flowCountdown = false;
+            StartFlow();
+        }
+
+        /// <summary>同上，切缩圈模式 + 临时开 AUTO（有命中才有 COMBO 可拍），截图后恢复用户原 AUTO 设置。</summary>
+        public static void CaptureOsuFlow()
+        {
+            flowTaiko = false;
+            flowOsu = true;
+            flowCountdown = false;
+            flowAutoPrefRestore = PlayerPrefs.GetInt("MusicGame.AutoMode", 0);
+            osuComboReady = false;
+            osuShotAt = 0;
             StartFlow();
         }
 
@@ -405,6 +438,12 @@ namespace MusicGame.EditorTools
 
         private static void StartFlow()
         {
+            if (flowOsu)
+            {
+                // 缩圈截图需要 Auto 命中把 COMBO 顶起来（结束后在收尾步骤恢复原值）
+                PlayerPrefs.SetInt("MusicGame.AutoMode", 1);
+                PlayerPrefs.Save();
+            }
             if (flowTaiko)
             {
                 // 确定性选中太鼓皮肤（btnSkin 是循环切换，皮肤已在 OpenTaiko 时会切走）
@@ -454,7 +493,7 @@ namespace MusicGame.EditorTools
                             Advance("选曲 -> song_73d9b60f15");
                         }
                         break;
-                    case 2: // 难度选 easy（太鼓流程先切模式）
+                    case 2: // 难度选 easy（太鼓/缩圈流程先切模式）
                         if (flowTicks > 40)
                         {
                             if (flowTaiko)
@@ -462,16 +501,90 @@ namespace MusicGame.EditorTools
                                 ClickButton("modeTaiko");
                                 Debug.Log("[VisCap] 切换 -> 太鼓模式");
                             }
+                            if (flowOsu)
+                            {
+                                ClickButton("modeOsu");
+                                Debug.Log("[VisCap] 切换 -> 缩圈模式");
+                            }
                             ClickButton("diff_easy");
-                            Advance(flowTaiko ? "难度 -> easy（太鼓）" : "难度 -> easy");
+                            Advance(flowTaiko ? "难度 -> easy（太鼓）"
+                                : flowOsu ? "难度 -> easy（缩圈）" : "难度 -> easy");
                         }
                         break;
-                    case 3: // 等 4 秒让音符下落，弹窗展示 + 诊断 + 截图
+                    case 3: // 等音符入场，弹窗展示 + 诊断 + 截图
+                        if (flowCountdown)
+                        {
+                            // 编辑器窗口失焦可能误触 Esc 弹暂停：检测到就点继续（顺带走一遍恢复倒计时）
+                            var resumeBtn = GameObject.Find("btnResume");
+                            if (resumeBtn != null && resumeBtn.activeInHierarchy)
+                            {
+                                Debug.Log("[VisCap] 检测到暂停菜单，点继续（验证恢复倒计时）");
+                                resumeBtn.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+                            }
+                            // 等倒计时数字真正出现（大音频文件加载耗时不定，40s 超时兜底），出现后 40 帧拍在数字弹缩中段
+                            if (!countdownSeen)
+                            {
+                                var cdGo = GameObject.Find("countdown");
+                                var cdText = cdGo != null ? cdGo.GetComponent<UnityEngine.UI.Text>() : null;
+                                if (cdText != null && cdGo.activeInHierarchy && cdText.text.Length > 0)
+                                {
+                                    countdownSeen = true;
+                                    countdownShotAt = flowTicks + 40;
+                                    Debug.Log("[VisCap] 倒计时数字已出现：" + cdText.text);
+                                }
+                                else if (flowTicks > 2400) { countdownSeen = true; countdownShotAt = flowTicks + 1; }
+                                else break;
+                            }
+                            if (flowTicks >= countdownShotAt)
+                            {
+                                DumpDiagnostics();
+                                ScreenCapture.CaptureScreenshot("E:/MusicGame/vis_countdown.png");
+                                flowStep = 4; flowTicks = 0;
+                                Debug.Log("[VisCap] 倒计时截图已请求");
+                            }
+                            break;
+                        }
+                        if (flowOsu)
+                        {
+                            // 缩圈：等 Auto 命中把 COMBO 顶到 ≥5 再拍（不同歌前奏长短不一，超时 30s 兜底）
+                            if (!osuComboReady)
+                            {
+                                if (flowTicks >= 1800) { osuComboReady = true; osuShotAt = flowTicks + 12; }
+                                else
+                                {
+                                    var comboGo = GameObject.Find("combo");
+                                    var comboT = comboGo != null ? comboGo.GetComponent<UnityEngine.UI.Text>() : null;
+                                    int cv;
+                                    if (comboT != null && int.TryParse(comboT.text, out cv) && cv >= 5)
+                                    {
+                                        osuComboReady = true;
+                                        osuShotAt = flowTicks + 12; // 12 帧后拍，跳动动画中段
+                                    }
+                                    else break;
+                                }
+                            }
+                            if (flowTicks == osuShotAt)
+                            {
+                                var pl = UnityEngine.Object.FindFirstObjectByType<JudgementPopupLayer>();
+                                if (pl != null) pl.Show(Judgement.Perfect, 0, false);
+                            }
+                            if (flowTicks >= osuShotAt + 1)
+                            {
+                                DumpDiagnostics();
+                                ScreenCapture.CaptureScreenshot("E:/MusicGame/vis_osu.png");
+                                flowStep = 4; flowTicks = 0;
+                                Debug.Log("[VisCap] 缩圈路径截图已请求（combo=" +
+                                    (GameObject.Find("combo") != null
+                                        ? GameObject.Find("combo").GetComponent<UnityEngine.UI.Text>().text
+                                        : "?") + "）");
+                            }
+                            break;
+                        }
                         if (flowTicks == 228)
                         {
                             // 判定艺术字展示：截图前 12 帧触发，拍在弹出动画中段
-                            var pl = UnityEngine.Object.FindFirstObjectByType<JudgementPopupLayer>();
-                            if (pl != null) pl.Show(Judgement.Perfect, 0, false);
+                            var pl2 = UnityEngine.Object.FindFirstObjectByType<JudgementPopupLayer>();
+                            if (pl2 != null) pl2.Show(Judgement.Perfect, 0, false);
                             else Debug.LogError("[VisCap] 找不到 JudgementPopupLayer");
                         }
                         if (flowTicks > 240)
@@ -483,6 +596,23 @@ namespace MusicGame.EditorTools
                         }
                         break;
                     case 4:
+                        if (flowOsu && flowAutoPrefRestore >= 0)
+                        {
+                            PlayerPrefs.SetInt("MusicGame.AutoMode", flowAutoPrefRestore); // 恢复用户 AUTO 设置
+                            PlayerPrefs.Save();
+                            flowAutoPrefRestore = -1;
+                        }
+                        if (flowCountdown)
+                        {
+                            // 编辑器帧率无上限，帧数等待不可靠：等乐曲时间过 0.6s（GO 已打出、音乐已出声）再退
+                            var cond = UnityEngine.Object.FindFirstObjectByType<Conductor>();
+                            if (cond != null && cond.SongTimeSeconds > 0.6)
+                            {
+                                Debug.Log("[VisCap] 倒计时验收完成，退出");
+                                EditorApplication.Exit(0);
+                            }
+                            break;
+                        }
                         if (flowTicks > 30)
                         {
                             Debug.Log("[VisCap] 真实路径复现完成，退出");

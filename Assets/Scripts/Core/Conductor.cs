@@ -17,9 +17,16 @@ namespace MusicGame.Core
         private double _frozenSongTime;      // 非播放状态下冻结的乐曲时间
         private bool _playing;               // 时钟是否推进
         private bool _sawSourcePlaying;      // 是否见过音源真正出声（用于识别自然播完）
+        private double _leadInSeconds;       // 预备倒计时秒数：0 点才出声，之前时钟走负时间（开局 3-2-1 用）
         // 出声调度提前量：Play() 要到下一个音频缓冲才真正出声，会让时钟系统性早于声音（约 20ms+）。
-        // 改为按调度起点播放对齐两者；预备期内 SongTimeSeconds 为 -0.1..0 的微小负值，不影响任何判定逻辑。
+        // 改为按调度起点播放对齐两者；预备期内 SongTimeSeconds 为负值，不影响任何判定逻辑。
         private const double ScheduleAheadSeconds = 0.1;
+
+        /// <summary>本局预备倒计时秒数（Setup 传入；0=无预备）。</summary>
+        public double LeadInSeconds
+        {
+            get { return _leadInSeconds; }
+        }
 
         /// <summary>当前乐曲时间（秒）；播放中由 dspTime 换算，暂停/停止/播完时冻结。</summary>
         public double SongTimeSeconds
@@ -50,15 +57,17 @@ namespace MusicGame.Core
         /// <summary>
         /// 初始化并启动时钟：记录 dspTime 起点（此刻 = 乐曲 0 秒）。
         /// source 携带 clip 时顺带从头播放，保证时钟与出声对齐；source 可为 null。
+        /// leadInSeconds > 0 时出声点后移：时钟从 -leadIn 走到 0 才到乐曲 0 秒（开局倒计时缓冲）。
         /// </summary>
-        public void Setup(double bpm, double offsetSeconds, AudioSource source)
+        public void Setup(double bpm, double offsetSeconds, AudioSource source, double leadInSeconds = 0.0)
         {
             Bpm = bpm > 0.0 ? bpm : 120.0;
             FirstBeatOffsetSeconds = offsetSeconds;
             _source = source;
+            _leadInSeconds = leadInSeconds > 0.0 ? leadInSeconds : 0.0;
 
-            _startDspTime = AudioSettings.dspTime + ScheduleAheadSeconds; // 时钟 0 点 = 计划出声时刻
-            _frozenSongTime = 0.0;
+            _startDspTime = AudioSettings.dspTime + ScheduleAheadSeconds + _leadInSeconds; // 时钟 0 点 = 计划出声时刻
+            _frozenSongTime = -_leadInSeconds;
             _sawSourcePlaying = false;
             _playing = true;
 

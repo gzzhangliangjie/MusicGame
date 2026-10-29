@@ -132,6 +132,11 @@ namespace MusicGame.UI
         private float comboPunchAge = 99f;
         private bool comboBreaking;
         private Text comboCaption;
+        private Coroutine countdownHandle;
+        private Text countdownText;
+        private Image countdownDim;
+        private AudioSource uiAudio;
+        private static AudioClip tickLow, tickHigh;
         private string lyricTarget = "";
         private RectTransform helpScreen;
         private Text diffRecordText;
@@ -605,13 +610,26 @@ namespace MusicGame.UI
             UiKit.Stretch(hudAcc.rectTransform, new Vector2(0.01f, 0.88f), new Vector2(0.30f, 0.985f), new Vector2(24f, 0f), new Vector2(0f, 0f));
             hudScore = UiKit.Label(hudScreen, "score", "0", 44, TextAnchor.MiddleRight, Color.white);
             UiKit.Stretch(hudScore.rectTransform, new Vector2(0.70f, 0.88f), new Vector2(0.99f, 0.985f), new Vector2(0f, 0f), new Vector2(-24f, 0f));
-            // 连击：大数字（Impact 计分板字体）+ 上方小字 COMBO；阶段形态由 ComboVisualLoop 逐帧驱动
-            hudCombo = UiKit.Label(hudScreen, "combo", "", 88, TextAnchor.MiddleCenter, Color.white);
+            // 连击：大数字（Impact 计分板字体 + 双层黑描边 + 投影，太鼓/歌词同款配方）+ 上方 Impact 小字 COMBO；阶段形态由 ComboVisualLoop 逐帧驱动
+            hudCombo = UiKit.Label(hudScreen, "combo", "", 100, TextAnchor.MiddleCenter, Color.white);
             hudCombo.font = UiKit.DigitFont;
-            UiKit.Stretch(hudCombo.rectTransform, new Vector2(0.30f, 0.86f), new Vector2(0.70f, 0.955f));
+            UiKit.Stretch(hudCombo.rectTransform, new Vector2(0.28f, 0.845f), new Vector2(0.72f, 0.955f));
             hudCombo.gameObject.AddComponent<CanvasGroup>();
-            comboCaption = UiKit.Label(hudScreen, "comboCaption", "C O M B O", 18, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.75f));
-            UiKit.Stretch(comboCaption.rectTransform, new Vector2(0.38f, 0.955f), new Vector2(0.62f, 0.985f));
+            var comboOutline1 = hudCombo.gameObject.AddComponent<Outline>();
+            comboOutline1.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            comboOutline1.effectDistance = new Vector2(4.5f, -4.5f);
+            var comboOutline2 = hudCombo.gameObject.AddComponent<Outline>();
+            comboOutline2.effectColor = new Color(0f, 0f, 0f, 0.95f);
+            comboOutline2.effectDistance = new Vector2(2.2f, -2.2f);
+            var comboShadow = hudCombo.gameObject.AddComponent<Shadow>();
+            comboShadow.effectColor = new Color(0f, 0f, 0f, 0.65f);
+            comboShadow.effectDistance = new Vector2(0f, -6f);
+            comboCaption = UiKit.Label(hudScreen, "comboCaption", "C O M B O", 26, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.95f));
+            comboCaption.font = UiKit.DigitFont;
+            var captionOutline = comboCaption.gameObject.AddComponent<Outline>();
+            captionOutline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            captionOutline.effectDistance = new Vector2(1.8f, -1.8f);
+            UiKit.Stretch(comboCaption.rectTransform, new Vector2(0.38f, 0.955f), new Vector2(0.62f, 0.99f));
             comboCaption.raycastTarget = false;
             hudSong = UiKit.Label(hudScreen, "song", "", 24, TextAnchor.MiddleLeft, UiKit.Theme.Dim, true);
             UiKit.Stretch(hudSong.rectTransform, new Vector2(0.01f, 0.01f), new Vector2(0.55f, 0.07f), new Vector2(24f, 0f), new Vector2(0f, 0f));
@@ -1169,6 +1187,7 @@ namespace MusicGame.UI
             if (hudRoutineHandle != null) { StopCoroutine(hudRoutineHandle); hudRoutineHandle = null; }
             if (watchRoutineHandle != null) { StopCoroutine(watchRoutineHandle); watchRoutineHandle = null; }
             if (comboVisualHandle != null) { StopCoroutine(comboVisualHandle); comboVisualHandle = null; }
+            CancelCountdown(); // 上一局若在倒计时中重开/退出，先撤干净
             lyricTarget = "";
             if (gameplayRoot != null)
             {
@@ -1206,6 +1225,7 @@ namespace MusicGame.UI
             gameManager.TaikoMode = taikoMode;
             gameManager.OsuMode = osuMode;
             gameManager.AutoMode = autoMode;
+            gameManager.StartCountdownSeconds = 3f; // 开局 3-2-1 倒计时（Conductor 负时间预备区，0 点出声）
             gameManager.noteTravelTimeSeconds = TravelSeconds;
             try
             {
@@ -1253,6 +1273,7 @@ namespace MusicGame.UI
             comboVisualHandle = StartCoroutine(ComboVisualLoop());
             StartCoroutine(LyricKaraokeLoop());
             watchRoutineHandle = StartCoroutine(SongWatchRoutine(chartEnd, entry.Meta.DurationSeconds));
+            countdownHandle = StartCoroutine(StartCountdownRoutine());
         }
 
         /// <summary>HUD 底部提示：随模式/AUTO 状态刷新（开局与暂停菜单热切换共用）。</summary>
@@ -1382,7 +1403,7 @@ namespace MusicGame.UI
                 : ComboStageColor[comboStage];
             hudCombo.text = combo.ToString();
             if (comboCaption != null)
-                comboCaption.color = new Color(comboStageColorRef.r, comboStageColorRef.g, comboStageColorRef.b, 0.75f);
+                comboCaption.color = new Color(comboStageColorRef.r, comboStageColorRef.g, comboStageColorRef.b, 0.95f);
             comboPunchAmp = milestone ? 0.5f : 0.3f;
             comboRotAmp = milestone ? 4.5f : 1.8f;
             comboTiltDir = -comboTiltDir;
@@ -1657,6 +1678,8 @@ namespace MusicGame.UI
         void StopAllGameplay()
         {
             StopAllCoroutines();
+            countdownHandle = null;
+            HideCountdown();
             hudRoutineHandle = null;
             watchRoutineHandle = null;
             isPaused = false;
@@ -1678,11 +1701,173 @@ namespace MusicGame.UI
         void SetPaused(bool paused)
         {
             if (state != FlowState.Playing) return;
+            if (countdownHandle != null)
+            {
+                // 倒计时进行中：继续键忽略；Esc=取消倒计时回到暂停菜单
+                if (paused)
+                {
+                    CancelCountdown();
+                    isPaused = true;
+                    if (pauseScreen != null) pauseScreen.gameObject.SetActive(true);
+                }
+                return;
+            }
+            if (!paused)
+            {
+                // 恢复前先来一轮 3-2-1（带音效），倒数完才真正解除暂停
+                isPaused = true; // 保持暂停语义，倒计时结束才解除（期间 Esc 可取消回菜单）
+                if (pauseScreen != null) pauseScreen.gameObject.SetActive(false);
+                countdownHandle = StartCoroutine(ResumeCountdownRoutine());
+                return;
+            }
             isPaused = paused;
             if (pauseScreen != null) pauseScreen.gameObject.SetActive(paused);
             if (paused) RefreshPauseAutoButton(); // 每次弹出按最新状态刷 AUTO 开关文案
             // GameManager.SetPaused(bool) 会同步冻结 Conductor 时钟与音频，并挂起判定与结束检测
             TryCallPauseApi(gameManager, paused);
+        }
+
+        // ---------------- 开局/继续 3-2-1 倒计时（美术字数字 + 合成音效） ----------------
+
+        /// <summary>开局倒计时：Conductor 预备期时钟走负时间，按乐曲时间对齐 3/2/1/GO，0 点即出声。</summary>
+        IEnumerator StartCountdownRoutine()
+        {
+            Conductor c = null;
+            float wait = 8f; // PlaySongRoutine 异步建场+载音频，最多等 8s
+            while (c == null && wait > 0f)
+            {
+                c = FindFirstObjectByType<Conductor>();
+                if (c == null) { wait -= Time.unscaledDeltaTime; yield return null; }
+            }
+            if (c == null) { countdownHandle = null; yield break; }
+            // 等 Setup 真正跑完（leadIn 在 Setup 里才写入；此前 IsPlaying=false）
+            wait = 8f;
+            while (!c.IsPlaying && wait > 0f) { wait -= Time.unscaledDeltaTime; yield return null; }
+            if (c.LeadInSeconds <= 0.01f) { countdownHandle = null; yield break; }
+
+            EnsureCountdownUi();
+            EnsureUiAudio();
+            countdownDim.gameObject.SetActive(true);
+            double[] marks = { -3.0, -2.0, -1.0 };
+            string[] nums = { "3", "2", "1" };
+            for (int i = 0; i < marks.Length; i++)
+            {
+                while (c.SongTimeSeconds < marks[i]) yield return null; // 加载/冻结期间自然等待
+                uiAudio.PlayOneShot(tickLow);
+                Debug.Log("[Countdown] " + nums[i] + " @songTime=" + c.SongTimeSeconds.ToString("F2"));
+                yield return PopCountdown(nums[i], 1f);
+            }
+            while (c.SongTimeSeconds < 0.0) yield return null;
+            uiAudio.PlayOneShot(tickHigh);
+            Debug.Log("[Countdown] GO @songTime=" + c.SongTimeSeconds.ToString("F2"));
+            yield return PopCountdown("GO", 0.45f);
+            HideCountdown();
+            countdownHandle = null;
+        }
+
+        /// <summary>暂停继续倒计时：挂钟 3-2-1（每秒一跳+音效），倒数完才真正解除暂停（时钟/MV 一起恢复）。</summary>
+        IEnumerator ResumeCountdownRoutine()
+        {
+            EnsureCountdownUi();
+            EnsureUiAudio();
+            countdownDim.gameObject.SetActive(true);
+            string[] nums = { "3", "2", "1" };
+            for (int i = 0; i < nums.Length; i++)
+            {
+                uiAudio.PlayOneShot(tickLow);
+                yield return PopCountdown(nums[i], 1f);
+            }
+            uiAudio.PlayOneShot(tickHigh);
+            HideCountdown();
+            TryCallPauseApi(gameManager, false);
+            isPaused = false;
+            countdownHandle = null;
+        }
+
+        /// <summary>弹一个倒计时数字：OutBack 感弹缩（1.3→1），持续 dur 秒。</summary>
+        IEnumerator PopCountdown(string label, float dur)
+        {
+            EnsureCountdownUi();
+            countdownText.text = label;
+            countdownText.gameObject.SetActive(true);
+            var rt = countdownText.rectTransform;
+            float t = 0f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / dur);
+                float pop = 1f + 0.30f * (1f - k) * (1f - k);
+                rt.localScale = new Vector3(pop, pop, 1f);
+                yield return null;
+            }
+            rt.localScale = Vector3.one;
+        }
+
+        void CancelCountdown()
+        {
+            if (countdownHandle != null) { StopCoroutine(countdownHandle); countdownHandle = null; }
+            HideCountdown();
+        }
+
+        void HideCountdown()
+        {
+            if (countdownDim != null) countdownDim.gameObject.SetActive(false);
+            if (countdownText != null) countdownText.gameObject.SetActive(false);
+        }
+
+        // 倒计时数字：Impact 美术字——白→金渐变 + 双层黑描边 + 投影（与歌词/连击同配方）
+        void EnsureCountdownUi()
+        {
+            if (countdownText != null) return;
+            countdownDim = UiKit.Panel(hudScreen, "countdownDim", new Color(0f, 0f, 0f, 0.38f));
+            countdownDim.raycastTarget = false;
+            countdownDim.gameObject.SetActive(false);
+            countdownText = UiKit.Label(hudScreen, "countdown", "", 170, TextAnchor.MiddleCenter, Color.white);
+            countdownText.font = UiKit.DigitFont;
+            UiKit.Stretch(countdownText.rectTransform, new Vector2(0.25f, 0.26f), new Vector2(0.75f, 0.74f));
+            countdownText.raycastTarget = false;
+            countdownText.gameObject.AddComponent<TextVerticalGradient>();
+            var o1 = countdownText.gameObject.AddComponent<Outline>();
+            o1.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            o1.effectDistance = new Vector2(5f, -5f);
+            var o2 = countdownText.gameObject.AddComponent<Outline>();
+            o2.effectColor = new Color(0f, 0f, 0f, 0.95f);
+            o2.effectDistance = new Vector2(2.4f, -2.4f);
+            var sh = countdownText.gameObject.AddComponent<Shadow>();
+            sh.effectColor = new Color(0f, 0f, 0f, 0.65f);
+            sh.effectDistance = new Vector2(0f, -7f);
+            countdownText.gameObject.SetActive(false);
+        }
+
+        void EnsureUiAudio()
+        {
+            if (uiAudio == null)
+            {
+                uiAudio = GetComponent<AudioSource>();
+                if (uiAudio == null) uiAudio = gameObject.AddComponent<AudioSource>();
+                uiAudio.playOnAwake = false;
+                uiAudio.spatialBlend = 0f;
+            }
+            if (tickLow == null) tickLow = SynthTick(880f, 0.10f, 0.5f);
+            if (tickHigh == null) tickHigh = SynthTick(1318.5f, 0.18f, 0.6f);
+        }
+
+        // 合成倒计时音：正弦+八度泛音，指数衰减包络（零外部资源，1/2/3 低音、GO 高音）
+        private static AudioClip SynthTick(float freq, float dur, float gain)
+        {
+            const int rate = 44100;
+            int n = Mathf.CeilToInt(dur * rate);
+            var data = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                float t = (float)i / rate;
+                float env = Mathf.Exp(-t * 26f) * gain;
+                float s = Mathf.Sin(2f * Mathf.PI * freq * t) * 0.8f + Mathf.Sin(4f * Mathf.PI * freq * t) * 0.2f;
+                data[i] = s * env;
+            }
+            var clip = AudioClip.Create("CountdownTick" + (int)freq, n, 1, rate, false);
+            clip.SetData(data, 0);
+            return clip;
         }
 
         void OnPauseRestartClicked()

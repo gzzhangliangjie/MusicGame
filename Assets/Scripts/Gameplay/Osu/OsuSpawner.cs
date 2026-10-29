@@ -16,15 +16,15 @@ namespace MusicGame.Gameplay.Osu
         /// <summary>缩圈环合拢时间（秒）：随下落速度档设置（GameManager 建场时写入）。</summary>
         public float ApproachSeconds = 1.2f;
         /// <summary>圆圈视觉半径（世界单位）。</summary>
-        public const float CircleRadius = 0.7f;
+        public const float CircleRadius = 0.9f;
         /// <summary>点击有效半径（略大于视觉圈，判定宽松）。</summary>
-        public const float HitRadius = 0.95f;
+        public const float HitRadius = 1.2f;
         /// <summary>缩圈环初始倍率（3x 收到 1x 时正好到判定点）。</summary>
         public const float ApproachScale = 3.0f;
 
         private const float PlayHalfX = 5.8f; // 圈心活动范围半宽/半高（正交相机 size6 下 4:3 也放得下）
         private const float PlayHalfY = 3.0f;
-        private const float MinJump = 1.7f;   // 相邻圈最小间距（>两圈半径和，避免视觉重叠）
+        private const float MinJump = 2.0f;   // 相邻圈最小间距（>两圈半径和 1.8，避免视觉重叠）
         private const float MaxJump = 5.0f;
         private const float JumpSpeed = 4.0f; // 间距 = Clamp(Δt × JumpSpeed, MinJump, MaxJump)
 
