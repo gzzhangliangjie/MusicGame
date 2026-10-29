@@ -36,3 +36,9 @@ git -c http.sslBackend=schannel \
 - 大包（字体等二进制）易被重置：加 `-c http.version=HTTP/1.1`，或分批提交多次推。
 - 凭据由 `gh auth` 管理，不要把 Token 写进远程 URL 或 git 配置持久化。
 - 排查顺序：`git ls-remote ssh://git@ssh.github.com:443/...` 看远端是否已到位，避免重复推。
+
+
+## 工具脚本规范
+
+- **禁止用 heredoc（<< EOF）向 python/bash 内嵌长文本或代码**：定界符可能被内容静默吞掉导致脚本截断、只执行一半还不报错。需要临时脚本时用 Write 工具写成文件再执行（如 tools/ 下）。
+- 编辑器实例开着时禁止再起第二个 Unity 实例（项目锁会弹窗打断用户）；批量验证前先 `Get-CimInstance Win32_Process` 查 Unity.exe。

@@ -747,7 +747,7 @@ namespace MusicGame.EditorTools
                                     if (comboT != null && int.TryParse(comboT.text, out cv) && cv >= 5)
                                     {
                                         osuComboReady = true;
-                                        osuShotAt = flowTicks + 12; // 12 帧后拍，跳动动画中段
+                                        osuShotAt = flowTicks + 60; // 60 帧后拍：数字完全显形、游戏中段
                                     }
                                     else break;
                                 }

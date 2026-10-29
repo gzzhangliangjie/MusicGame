@@ -308,6 +308,7 @@ namespace MusicGame.UI
             t.fontSize = fontSize;
             t.alignment = align;
             t.color = color ?? Color.white;
+            t.raycastTarget = false; // 纯文本永不参与点击：否则透明矩形会挡住下层按钮（窄窗下纪录面板挡住 AUTO 键事故）
             if (bestFit)
             {
                 t.resizeTextForBestFit = true;

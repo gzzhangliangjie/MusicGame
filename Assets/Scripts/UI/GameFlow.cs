@@ -174,6 +174,13 @@ namespace MusicGame.UI
 
         void OnDestroy() { AudioListener.pause = false; }
 
+        /// <summary>失焦自动暂停：编辑器最小化/切走时帧循环冻结而音频照走，回来自动暂停；时钟冻结就不会跳结算。</summary>
+        void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus && state == FlowState.Playing && !isPaused && countdownHandle == null)
+                SetPaused(true);
+        }
+
         void Update()
         {
             if (!UiKit.EscDown()) return;
@@ -533,12 +540,15 @@ namespace MusicGame.UI
             modeOsuImg = osuBtn.image;
 
             // 底行三键：返回选曲 / 下落速度（五档循环）/ AUTO 观赏
+            // Y 钉画布高度分数：固定像素偏移在窄窗下会向上漂进纪录面板矩形（曾挡住 AUTO 键点击）
             var speedBtn = UiKit.ButtonRect(diffScreen, "btnSpeed", "速度：快速",
                 new Vector2(0f, -466f), new Vector2(250f, 64f), OnSpeedClicked, UiKit.Theme.PanelBg, 22);
+            PinFractionY((RectTransform)speedBtn.transform, 0f, 0.065f);
             speedBtnText = speedBtn.GetComponentInChildren<Text>();
             RefreshSpeedButton();
             var autoBtn = UiKit.ButtonRect(diffScreen, "btnAuto", "AUTO 观赏：关",
                 new Vector2(260f, -466f), new Vector2(250f, 64f), OnAutoToggleClicked, GhostBtn, 20);
+            PinFractionY((RectTransform)autoBtn.transform, 260f, 0.065f);
             autoBtnImg = autoBtn.image;
             autoBtnText = autoBtn.GetComponentInChildren<Text>();
             RefreshAutoButton();
@@ -547,7 +557,8 @@ namespace MusicGame.UI
             var holderRt = UiKit.Node(diffScreen, "list");
             UiKit.Stretch(holderRt);
             diffListHolder = holderRt;
-            UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(-260f, -466f), new Vector2(250f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 24);
+            var backBtn = UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(-260f, -466f), new Vector2(250f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 24);
+            PinFractionY((RectTransform)backBtn.transform, -260f, 0.065f);
             // 右侧本地最佳纪录面板（随模式/歌曲刷新）
             diffRecordText = UiKit.Label(diffScreen, "diffRecords", "", 24, TextAnchor.UpperLeft, UiKit.Theme.Dim, true);
             UiKit.Stretch(diffRecordText.rectTransform, new Vector2(0.60f, 0.12f), new Vector2(0.97f, 0.74f), new Vector2(18f, 0f), new Vector2(-12f, 0f));

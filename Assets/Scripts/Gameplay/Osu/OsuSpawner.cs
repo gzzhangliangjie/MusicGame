@@ -22,6 +22,15 @@ namespace MusicGame.Gameplay.Osu
         /// <summary>缩圈环初始倍率（3x 收到 1x 时正好到判定点）。</summary>
         public const float ApproachScale = 3.0f;
 
+        /// <summary>连击组四色（红/金/绿/蓝，色相全分离）：按组号给圈体染色，独立于主题四轨色，一眼可分。</summary>
+        public static readonly Color[] GroupColors =
+        {
+            new Color(0.95f, 0.30f, 0.35f),
+            new Color(0.98f, 0.78f, 0.25f),
+            new Color(0.30f, 0.85f, 0.45f),
+            new Color(0.30f, 0.55f, 0.98f),
+        };
+
         private const float PlayHalfX = 5.8f; // 圈心活动范围半宽/半高（正交相机 size6 下 4:3 也放得下）
         private const float PlayHalfY = 3.0f;
         private const float MinJump = 2.0f;   // 相邻圈最小间距（>两圈半径和 1.8，避免视觉重叠）

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MusicGame.Gameplay.Osu
@@ -37,11 +38,12 @@ namespace MusicGame.Gameplay.Osu
             consumed = false;
 
             EnsureVisuals();
-            baseColor = NoteSpawner.LaneColors[Mathf.Clamp(colorIndex, 0, 3)];
+            baseColor = OsuSpawner.GroupColors[Mathf.Clamp(colorIndex, 0, 3)];
             body.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
             ring.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
             number.text = numberValue.ToString();
             numberShadow.text = numberValue.ToString();
+            ApplyNumberCentering();
             number.color = new Color(1f, 1f, 1f, 0f);
             numberShadow.color = new Color(0f, 0f, 0f, 0f);
 
@@ -65,31 +67,47 @@ namespace MusicGame.Gameplay.Osu
             ring.sprite = ringSprite;
             ring.sortingOrder = 11;
 
-            // 数字：太鼓同款 Impact 键帽字体 + 黑投影双层（与键帽/气球计数统一），主字白、投影黑
+            // 数字：太鼓同款 Impact 键帽字体 + 近零投影双层（白字黑影）。
+            // 基准位 = 客观实测（金圈盘心 vs 白字质心 +4/+13px @75.7px每单位 → 本地 +0.029/+0.096，取反补偿）
             if (keycapFont == null) keycapFont = NoteSpawner.GetKeycapFont();
             var shadowGo = new GameObject("NumberShadow");
             shadowGo.transform.SetParent(transform, false);
-            shadowGo.transform.localPosition = new Vector3(0.025f, -0.035f, 0f);
             numberShadow = shadowGo.AddComponent<TextMesh>();
-            FillNumberText(numberShadow, keycapFont, 12);
-
+            FillNumberText(numberShadow, 12);
             var numGo = new GameObject("Number");
             numGo.transform.SetParent(transform, false);
-            numGo.transform.localPosition = new Vector3(0f, 0f, 0f);
             number = numGo.AddComponent<TextMesh>();
-            FillNumberText(number, keycapFont, 13);
+            FillNumberText(number, 13);
         }
 
-        private static void FillNumberText(TextMesh tm, Font font, int order)
+        private static void FillNumberText(TextMesh tm, int order)
         {
-            tm.font = font;
+            tm.font = keycapFont;
             tm.fontSize = 64;
             tm.characterSize = 0.075f;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
             var renderer = tm.GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = font.material;
+            renderer.sharedMaterial = keycapFont.material;
             renderer.sortingOrder = order;
+        }
+
+        /// <summary>数字定位 = 实测基准位（消除 OS Impact 在 MiddleAnchor 下的墨迹沉降）
+        /// + CharacterInfo 水平墨迹补偿（步进盒排字让 "1" 等窄数字墨迹偏在一边）。主字与投影同步。</summary>
+        private void ApplyNumberCentering()
+        {
+            const float unitsPerFontUnit = 0.075f * 1.8f; // characterSize × 圈体父级缩放
+            Vector2 comp = new Vector2(-0.029f, +0.096f); // 实测数字偏下 13px → 向上补偿（Y 向上为正，勿再写反）
+            if (keycapFont != null && number.text.Length > 0)
+            {
+                char c = number.text[0];
+                keycapFont.RequestCharactersInTexture(c.ToString(), 64, FontStyle.Normal);
+                CharacterInfo ci;
+                if (keycapFont.GetCharacterInfo(c, out ci, 64, FontStyle.Normal))
+                    comp.x -= ((ci.minX + ci.maxX) * 0.5f - ci.advance * 0.5f) * unitsPerFontUnit;
+            }
+            number.transform.localPosition = new Vector3(comp.x, comp.y, 0f);
+            numberShadow.transform.localPosition = new Vector3(comp.x + 0.008f, comp.y - 0.010f, 0f); // 近零投影：只留一丝深度感
         }
 
         // 圈体：灰阶圆盘（深色外沿+内侧微亮），运行时按连击组染色（同 TaikoSpawner 圆盘做法）
@@ -169,12 +187,13 @@ namespace MusicGame.Gameplay.Osu
             ring.transform.localScale = Vector3.one * scale;
         }
 
-        /// <summary>命中：太鼓鼓面同款敲扁回弹 + 0.18s 大爆放大淡出（Perfect 更爆），动画毕回收。</summary>
+        /// <summary>命中：太鼓鼓面同款敲扁回弹 + 大爆放大淡出（Perfect 更爆），动画毕回收。
+        /// 爆开上限 1.55x：爆开半径 0.9×1.55≈1.4 < 相邻圈最小间距 2.0，不罩住下一个圈。</summary>
         internal void OnHit(Judgement judgement)
         {
             if (state != State.Idle) return;
             state = State.Hit;
-            StartCoroutine(PopRoutine(judgement == Judgement.Perfect ? 2.1f : 1.85f));
+            StartCoroutine(PopRoutine(judgement == Judgement.Perfect ? 1.55f : 1.45f));
         }
 
         /// <summary>Miss：灰化缩小淡出后回收。</summary>
@@ -185,12 +204,12 @@ namespace MusicGame.Gameplay.Osu
             StartCoroutine(MissRoutine());
         }
 
-        // 命中爆开：余弦衰减敲扁（横宽/纵扁+微摆，DrumPunchRoutine 同构）叠加爆开放大淡出（TaikoNote 0.18s 节奏）
+        // 命中爆开：余弦衰减敲扁（横宽/纵扁+微摆，DrumPunchRoutine 同构）叠加短爆放大淡出
         private System.Collections.IEnumerator PopRoutine(float popScale)
         {
             Vector3 startScale = transform.localScale;
             Color bodyC = body.color, ringC = ring.color, numC = number.color, shC = numberShadow.color;
-            const float Dur = 0.18f;
+            const float Dur = 0.12f; // 短爆：下一圈接续前基本播完，避免视觉叠块
             float t = 0f;
             while (t < Dur)
             {
@@ -212,17 +231,18 @@ namespace MusicGame.Gameplay.Osu
             spawner.OnNoteFinished(this);
         }
 
+        // Miss：短灰化（同上，不给下一个圈叠视觉垃圾）
         private System.Collections.IEnumerator MissRoutine()
         {
             Vector3 startScale = transform.localScale;
             Color bodyC = body.color, ringC = ring.color, numC = number.color, shC = numberShadow.color;
             Color grey = new Color(0.55f, 0.55f, 0.55f);
             float t = 0f;
-            while (t < 0.45f)
+            while (t < 0.25f)
             {
                 t += Time.deltaTime;
-                float k = Mathf.Clamp01(t / 0.45f);
-                transform.localScale = startScale * (1f - 0.25f * k);
+                float k = Mathf.Clamp01(t / 0.25f);
+                transform.localScale = startScale * (1f - 0.15f * k);
                 body.color = Color.Lerp(bodyC, new Color(grey.r, grey.g, grey.b, bodyC.a * (1f - k)), Mathf.Min(1f, k * 3f));
                 ring.color = new Color(ringC.r, ringC.g, ringC.b, ringC.a * (1f - k));
                 number.color = new Color(numC.r, numC.g, numC.b, numC.a * (1f - k));
