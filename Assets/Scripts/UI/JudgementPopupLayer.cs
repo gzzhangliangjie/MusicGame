@@ -154,7 +154,7 @@ namespace MusicGame.UI
             if (judgement == Gameplay.Judgement.Miss)
             {
                 // Miss：微放大回落 + 下坠 + 旋转（InQuint 0.75s，参考 osu!lazer）
-                const float Dur = 0.75f;
+                float Dur = OsuMode ? 0.45f : 0.75f; // 缩圈弹窗压在圆圈上方，短命避免叠到下一个圈
                 float t = 0f;
                 while (t < Dur)
                 {
@@ -210,7 +210,7 @@ namespace MusicGame.UI
 
             Vector3 world;
             if (OsuMode)
-                world = OsuAnchorWorld + Vector3.up * 0.55f;
+                world = OsuAnchorWorld + Vector3.up * 1.35f; // 抬到圈顶上方：弹窗不再盖住圈内数字
             else if (TaikoMode)
                 world = new Vector3(Gameplay.Taiko.TaikoSpawner.HitX, Gameplay.Taiko.TaikoSpawner.NoteY + 1.7f, 0f);
             else if (lane >= 0)

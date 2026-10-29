@@ -1280,6 +1280,8 @@ namespace MusicGame.UI
             hudAcc.text = "--";
             shownCombo = -1;
             ShowOnly(hudScreen);
+            EnsureCountdownUi();
+            countdownDim.gameObject.SetActive(true); // 切入即压暗：裸场地闪现后再被倒计时遮罩盖住非常丑
             hudRoutineHandle = StartCoroutine(HudRoutine());
             comboVisualHandle = StartCoroutine(ComboVisualLoop());
             StartCoroutine(LyricKaraokeLoop());
@@ -1753,11 +1755,11 @@ namespace MusicGame.UI
                 c = FindFirstObjectByType<Conductor>();
                 if (c == null) { wait -= Time.unscaledDeltaTime; yield return null; }
             }
-            if (c == null) { countdownHandle = null; yield break; }
+            if (c == null) { countdownHandle = null; HideCountdown(); yield break; }
             // 等 Setup 真正跑完（leadIn 在 Setup 里才写入；此前 IsPlaying=false）
             wait = 8f;
             while (!c.IsPlaying && wait > 0f) { wait -= Time.unscaledDeltaTime; yield return null; }
-            if (c.LeadInSeconds <= 0.01f) { countdownHandle = null; yield break; }
+            if (c.LeadInSeconds <= 0.01f) { countdownHandle = null; HideCountdown(); yield break; }
 
             EnsureCountdownUi();
             EnsureUiAudio();
