@@ -177,6 +177,221 @@ namespace MusicGame.EditorTools
     }
 
     /// <summary>
+    /// 曲库批量重建（batchmode）：扫描工作区根 Songs/ 与 Assets/Songs/ 下全部含音频的歌曲目录，
+    /// 逐首删 analysis.json 缓存 → SongAnalyzer 重分析（新频谱管线，产出 Sustains）→
+    /// 四档谱面重生成落盘 + 回填 meta。旧缓存无 Sustains，必须删缓存强制重跑才有频谱谱面。
+    /// 用法：Unity.exe -batchmode -projectPath &lt;工程&gt;
+    ///       -executeMethod MusicGame.EditorTools.OfflineRebuildAll.Run -logFile &lt;日志&gt;
+    /// </summary>
+    public static class OfflineRebuildAll
+    {
+        private const float SongTimeoutSeconds = 1200f;
+
+        private sealed class Job
+        {
+            public string Dir;
+            public SongMeta Meta;
+            public Task<AudioClip> LoadTask;
+            public AudioClip Clip;
+        }
+
+        private static readonly List<Job> queue = new List<Job>();
+        private static int current = -1;
+        private static SongAnalyzer analyzer;
+        private static float songStartedAt;
+        private static int lastLoggedPercent;
+        private static int passCount, failCount, skipCount;
+
+        public static void Run()
+        {
+            // 关闭进 Play 的域重载：静态状态与 update 订阅得以存活（同 OfflineImport）
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += Bootstrap;
+            Debug.Log("[RebuildAll] 请求进入 Play 模式，开始曲库批量重建");
+        }
+
+        private static void Bootstrap()
+        {
+            if (!EditorApplication.isPlaying || booted) return;
+            booted = true;
+            EditorApplication.update -= Bootstrap;
+            try
+            {
+                string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+                var roots = new List<string>
+                {
+                    Path.Combine(projectRoot, "Songs"),
+                    Path.Combine(Application.dataPath, "Songs"),
+                };
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (string root in roots)
+                {
+                    if (!Directory.Exists(root)) continue;
+                    foreach (string dir in Directory.GetDirectories(root))
+                    {
+                        string full = Path.GetFullPath(dir);
+                        if (!seen.Add(full)) continue;
+                        string metaPath = Path.Combine(full, "meta.json");
+                        if (!File.Exists(metaPath)) { skipCount++; continue; }
+                        SongMeta meta;
+                        try { meta = JsonUtility.FromJson<SongMeta>(File.ReadAllText(metaPath)); }
+                        catch (Exception) { meta = null; }
+                        if (meta == null || string.IsNullOrEmpty(meta.Id)) { skipCount++; continue; }
+                        if (string.IsNullOrEmpty(meta.AudioPath) || !File.Exists(meta.AudioPath)) { skipCount++; continue; }
+                        queue.Add(new Job { Dir = full, Meta = meta });
+                    }
+                }
+                Debug.Log("[RebuildAll] 待重建 " + queue.Count + " 首（跳过 " + skipCount + " 个无音频/无 meta 目录）");
+                if (queue.Count == 0)
+                {
+                    Debug.Log("[RebuildAll] PASS：无需要重建的歌曲");
+                    EditorApplication.Exit(0);
+                    return;
+                }
+                analyzer = new GameObject("RebuildAnalyzer").AddComponent<SongAnalyzer>();
+                EditorApplication.update += Pump;
+                StartNext();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[RebuildAll] FAIL：Bootstrap 异常：" + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static bool booted;
+
+        private static void StartNext()
+        {
+            current++;
+            if (current >= queue.Count) { Finish(); return; }
+            try
+            {
+                Job job = queue[current];
+                // 绕过 SongAnalyzer 缓存：删 analysis.json 强制重跑（谱面稍后整体覆写）
+                string cachePath = Path.Combine(job.Dir, "analysis.json");
+                if (File.Exists(cachePath)) File.Delete(cachePath);
+                songStartedAt = Time.realtimeSinceStartup;
+                lastLoggedPercent = 0;
+                job.LoadTask = AudioImportService.LoadClip(job.Meta.AudioPath);
+                Debug.Log("[RebuildAll] (" + (current + 1) + "/" + queue.Count + ") 开始：" + job.Meta.Title);
+            }
+            catch (Exception e)
+            {
+                SongFail(queue[current], "启动异常：" + e.Message);
+            }
+        }
+
+        private static void Pump()
+        {
+            if (!EditorApplication.isPlaying) return;
+            EditorApplication.QueuePlayerLoopUpdate(); // 推进播放器循环：WebRequest 回调/主线程队列都靠它
+            if (current < 0 || current >= queue.Count) return;
+            Job job = queue[current];
+            try
+            {
+                if (job.Clip == null)
+                {
+                    if (job.LoadTask == null || !job.LoadTask.IsCompleted) { TimeoutCheck(job); return; }
+                    if (job.LoadTask.IsFaulted || job.LoadTask.Result == null)
+                    {
+                        SongFail(job, "音频加载失败");
+                        return;
+                    }
+                    job.Clip = job.LoadTask.Result;
+                    Debug.Log(string.Format("[RebuildAll] 音频就绪 {0:F1}s，开始分析…", job.Clip.length));
+                    analyzer.Analyze(job.Clip, job.Meta.Id,
+                        result => OnSongDone(job, result),
+                        p => OnProgress(p));
+                    return;
+                }
+                TimeoutCheck(job);
+            }
+            catch (Exception e)
+            {
+                SongFail(job, "Pump 异常：" + e.Message);
+            }
+        }
+
+        private static void OnProgress(float progress)
+        {
+            int percent = Mathf.Clamp(Mathf.RoundToInt(progress * 100f), 0, 100);
+            if (percent - lastLoggedPercent >= 25)
+            {
+                lastLoggedPercent = percent;
+                Debug.Log("[RebuildAll] 进度 " + percent + "%");
+            }
+        }
+
+        private static void OnSongDone(Job job, AnalysisResult result)
+        {
+            try
+            {
+                if (result == null || result.Onsets == null) { SongFail(job, "分析返回空结果"); return; }
+                Dictionary<string, ChartData> charts = ChartGenerator.Generate(result, job.Meta);
+                if (charts == null || charts.Count == 0) { SongFail(job, "谱面生成返回空"); return; }
+
+                var diffs = new List<string>();
+                string[] order = { "easy", "normal", "hard", "expert" };
+                foreach (string d in order)
+                    if (charts.ContainsKey(d))
+                    {
+                        ChartIO.Save(charts[d], Path.Combine(job.Dir, "chart_" + d + ".json"));
+                        diffs.Add(d);
+                    }
+                foreach (KeyValuePair<string, ChartData> kv in charts)
+                    if (!diffs.Contains(kv.Key))
+                    {
+                        ChartIO.Save(kv.Value, Path.Combine(job.Dir, "chart_" + kv.Key + ".json"));
+                        diffs.Add(kv.Key);
+                    }
+
+                job.Meta.DurationSeconds = job.Clip.length;
+                job.Meta.Difficulties = diffs;
+                File.WriteAllText(Path.Combine(job.Dir, "meta.json"), JsonUtility.ToJson(job.Meta, true));
+
+                var noteLine = new List<string>();
+                foreach (string d in diffs)
+                    noteLine.Add(d + ":" + charts[d].Notes.Count);
+                Debug.Log(string.Format(
+                    "[RebuildAll] PASS {0}  BPM={1:F1} onsets={2} sustains={3} 谱面[{4}] 用时 {5:F0}s",
+                    job.Meta.Title, result.Bpm, result.Onsets.Count,
+                    result.Sustains != null ? result.Sustains.Count : 0,
+                    string.Join(" ", noteLine.ToArray()),
+                    Time.realtimeSinceStartup - songStartedAt));
+                passCount++;
+                StartNext();
+            }
+            catch (Exception e)
+            {
+                SongFail(job, "写盘异常：" + e.Message);
+            }
+        }
+
+        private static void TimeoutCheck(Job job)
+        {
+            if (Time.realtimeSinceStartup - songStartedAt > SongTimeoutSeconds)
+                SongFail(job, "超时（" + SongTimeoutSeconds + "s）");
+        }
+
+        private static void SongFail(Job job, string reason)
+        {
+            Debug.LogError("[RebuildAll] FAIL " + (job != null && job.Meta != null ? job.Meta.Title : "?") + "：" + reason);
+            failCount++;
+            StartNext();
+        }
+
+        private static void Finish()
+        {
+            Debug.Log("[RebuildAll] 完成：成功 " + passCount + " / 失败 " + failCount + " / 跳过 " + skipCount);
+            Debug.Log(failCount >= queue.Count && queue.Count > 0 ? "[RebuildAll] FAILED" : "[RebuildAll] PASS");
+            EditorApplication.Exit(failCount >= queue.Count && queue.Count > 0 ? 1 : 0);
+        }
+    }
+
+    /// <summary>
     /// 一次性诊断：对 mv.mp4 依次试 4 种 seek 手段，逐 tick 打帧号/时钟，
     /// 找出 2022.3 VideoPlayer 真正生效的起播偏移姿势。
     /// 用法：-executeMethod MusicGame.EditorTools.SeekExperiment.Run -importDir &lt;歌曲目录&gt;
