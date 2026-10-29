@@ -86,13 +86,15 @@ namespace MusicGame.Analysis
                 AnalysisResult result;
                 try
                 {
-                    List<Onset> onsets = job.Detector.Detect(mono, sampleRate);
+                    List<Sustain> sustains;
+                    List<Onset> onsets = job.Detector.Detect(mono, sampleRate, out sustains);
                     double bpm = BpmEstimator.Estimate(onsets);
                     result = new AnalysisResult
                     {
                         Bpm = bpm,
                         OffsetSeconds = EstimateBeatOffset(bpm, onsets),
-                        Onsets = onsets
+                        Onsets = onsets,
+                        Sustains = sustains
                     };
                 }
                 catch (Exception e)

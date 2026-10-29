@@ -27,9 +27,19 @@ namespace MusicGame.Pure.Dsp
             get { return _progress; }
         }
 
-        /// <summary>输入单声道采样与采样率，返回按时间升序的 onset 列表。</summary>
+        /// <summary>输入单声道采样与采样率，返回按时间升序的 onset 列表（不关心持续段时使用）。</summary>
         public List<Onset> Detect(float[] monoSamples, int sampleRate)
         {
+            List<Sustain> unused;
+            return Detect(monoSamples, sampleRate, out unused);
+        }
+
+        /// <summary>
+        /// 输入单声道采样与采样率，返回按时间升序的 onset 列表与各频带持续音段（供谱面生成 hold）。
+        /// </summary>
+        public List<Onset> Detect(float[] monoSamples, int sampleRate, out List<Sustain> sustains)
+        {
+            sustains = new List<Sustain>();
             if (monoSamples == null) throw new ArgumentNullException(nameof(monoSamples));
             if (sampleRate <= 0) throw new ArgumentException("sampleRate must be positive: " + sampleRate);
             _progress = 0f;
@@ -55,9 +65,14 @@ namespace MusicGame.Pure.Dsp
             for (int i = 0; i < FftSize; i++)
                 window[i] = 0.5 - 0.5 * Math.Cos(2.0 * Math.PI * i / FftSize);
 
-            // 每频带每帧的频谱流
+            // 每频带每帧的频谱流 + 幅度能量（能量曲线用于持续音段提取）
             var flux = new double[bands.Length][];
-            for (int b = 0; b < bands.Length; b++) flux[b] = new double[numFrames];
+            var energy = new double[bands.Length][];
+            for (int b = 0; b < bands.Length; b++)
+            {
+                flux[b] = new double[numFrames];
+                energy[b] = new double[numFrames];
+            }
 
             var re = new double[FftSize];
             var im = new double[FftSize];
@@ -78,13 +93,16 @@ namespace MusicGame.Pure.Dsp
                 for (int b = 0; b < bands.Length; b++)
                 {
                     double sum = 0.0;
+                    double mag = 0.0;
                     BandRange r = bands[b].Range;
                     for (int j = r.Lo; j <= r.Hi; j++)
                     {
                         double d = curMag[j] - prevMag[j];
                         if (d > 0.0) sum += d; // 半波整流
+                        mag += curMag[j];
                     }
                     flux[b][f] = sum;
+                    energy[b][f] = mag;
                 }
 
                 // 交换缓冲，下一帧的"上一频谱"
@@ -160,8 +178,86 @@ namespace MusicGame.Pure.Dsp
                     Band = c.Band
                 });
             }
+            sustains = ExtractSustains(energy, bands, numFrames, sampleRate);
             _progress = 1f;
             return onsets;
+        }
+
+        private struct EnergyRun
+        {
+            public int Start;
+            public int End; // 含端
+            public EnergyRun(int start, int end) { Start = start; End = end; }
+        }
+
+        /// <summary>
+        /// 持续音段提取：每频带独立做全曲自适应阈值（均值 + 0.7·标准差），
+        /// 能量连续超阈 ≥0.30s 记为候选段，<0.12s 的短暂跌落合并；段长截断 6s。
+        /// 时间映射用帧起点（能量从该帧窗口起存在），与 onset 的窗中心口径差约半窗，容差内可对齐。
+        /// </summary>
+        private static List<Sustain> ExtractSustains(double[][] energy, BandInfo[] bands, int numFrames, int sampleRate)
+        {
+            var result = new List<Sustain>();
+            double frameSeconds = (double)HopSize / sampleRate;
+            int minFrames = Math.Max(1, (int)Math.Ceiling(0.30 / frameSeconds));
+            int mergeGapFrames = Math.Max(1, (int)Math.Round(0.12 / frameSeconds));
+            const double MaxSegmentSeconds = 6.0;
+            for (int b = 0; b < bands.Length; b++)
+            {
+                double[] e = energy[b];
+                double mean = 0.0;
+                for (int f = 0; f < numFrames; f++) mean += e[f];
+                mean /= numFrames;
+                double variance = 0.0;
+                for (int f = 0; f < numFrames; f++)
+                {
+                    double d = e[f] - mean;
+                    variance += d * d;
+                }
+                double threshold = mean + 0.7 * Math.Sqrt(variance / numFrames);
+
+                // 连续超阈 run
+                var runs = new List<EnergyRun>();
+                int runStart = -1;
+                for (int f = 0; f < numFrames; f++)
+                {
+                    if (e[f] >= threshold)
+                    {
+                        if (runStart < 0) runStart = f;
+                    }
+                    else if (runStart >= 0)
+                    {
+                        runs.Add(new EnergyRun(runStart, f - 1));
+                        runStart = -1;
+                    }
+                }
+                if (runStart >= 0) runs.Add(new EnergyRun(runStart, numFrames - 1));
+                if (runs.Count == 0) continue;
+
+                // 短跌落合并 + 出段
+                var merged = new List<EnergyRun> { runs[0] };
+                for (int i = 1; i < runs.Count; i++)
+                {
+                    EnergyRun last = merged[merged.Count - 1];
+                    if (runs[i].Start - last.End <= mergeGapFrames)
+                        merged[merged.Count - 1] = new EnergyRun(last.Start, runs[i].End);
+                    else
+                        merged.Add(runs[i]);
+                }
+                foreach (EnergyRun run in merged)
+                {
+                    if (run.End - run.Start + 1 < minFrames) continue;
+                    double duration = Math.Min((run.End - run.Start + 1) * frameSeconds, MaxSegmentSeconds);
+                    result.Add(new Sustain
+                    {
+                        TimeSeconds = run.Start * HopSize / (double)sampleRate,
+                        DurationSeconds = duration,
+                        Band = bands[b].Name
+                    });
+                }
+            }
+            result.Sort((x, y) => x.TimeSeconds.CompareTo(y.TimeSeconds));
+            return result;
         }
 
         private static BandRange MakeBand(double loHz, double hiHz, double binHz, int specBins)

@@ -9,13 +9,22 @@ namespace MusicGame.Pure.Generator
     /// 谱面生成器（纯 C#，不依赖 Unity 引擎 API）。
     /// 管线：onset 按强度排序 → 量化到 1/GridDivision 节拍网格（容差随难度收紧）→
     /// 密度预算选点（强拍优先，任意 1 秒窗口不超过 MaxNotesPerSecond）→
-    /// lane 分配（同 lane 最小间隔、hold 期间静默、双押按 DoubleTapChance 且仅中高难度）→
+    /// lane 分配（按 onset 频段映射：低频→0/1 高频→2/3 中频→1/2，太鼓重映射后即咚=低音/咔=高音；
+    /// 同 lane 最小间隔、hold 期间静默、双押按 DoubleTapChance 且跨频段取对侧）→
+    /// hold 由持续音段驱动（长音=长条；无持续段数据的旧缓存回退为间隙启发式）→
     /// 可玩性后处理兜底修正。
     /// 随机数使用 songId+难度派生的固定种子，同一份 AnalysisResult 生成结果可复现。
     /// </summary>
     public class ChartGenerator
     {
         private const int LaneCount = 4;
+
+        // 频段 → 轨道集合：低音(底鼓/贝斯)走左两轨、高频(军鼓/踩镲)走右两轨、中频(人声/旋律)走中间。
+        // 四轨 0/1 在太鼓重映射下=咚(红)，2/3=咔(蓝)——低频音符天然落在咚上。
+        private static readonly int[] LowLanes = { 0, 1 };
+        private static readonly int[] MidLanes = { 1, 2 };
+        private static readonly int[] HighLanes = { 2, 3 };
+        private static readonly int[] AllLanes = { 0, 1, 2, 3 };
 
         /// <summary>量化吸附容差（占一个网格步长的比例），难度越高越紧。</summary>
         private static readonly Dictionary<string, double> QuantizeToleranceFraction =
@@ -77,11 +86,23 @@ namespace MusicGame.Pure.Generator
                 Slot existing;
                 if (slots.TryGetValue(index, out existing))
                 {
-                    if (o.Strength > existing.Strength) existing.Strength = o.Strength;
+                    if (o.Strength > existing.Strength)
+                    {
+                        existing.Strength = o.Strength;
+                        existing.Band = NormalizeBand(o.Band);
+                        existing.RawTime = o.TimeSeconds;
+                    }
                 }
                 else
                 {
-                    slots[index] = new Slot { Index = index, Time = time, Strength = o.Strength };
+                    slots[index] = new Slot
+                    {
+                        Index = index,
+                        Time = time,
+                        Strength = o.Strength,
+                        Band = NormalizeBand(o.Band),
+                        RawTime = o.TimeSeconds
+                    };
                 }
             }
             if (slots.Count == 0) return chart;
@@ -116,18 +137,22 @@ namespace MusicGame.Pure.Generator
             }
             if (accepted.Count == 0) return chart;
 
-            // ---- 3) lane 分配（按时间顺序处理，便于跟踪 lane 占用/hold）----
+            // ---- 3) lane 分配（按时间顺序处理，便于跟踪 lane 占用/hold；持续段驱动音乐 hold）----
             accepted.Sort((a, b) => a.Index.CompareTo(b.Index));
-            List<NoteData> notes = AssignLanes(accepted, profile, beatSeconds, rng);
+            List<Sustain> sustains = analysis != null && analysis.Sustains != null
+                ? analysis.Sustains
+                : new List<Sustain>();
+            List<NoteData> notes = AssignLanes(accepted, profile, beatSeconds, rng, sustains);
 
             // ---- 4) 可玩性后处理兜底修正 ----
             chart.Notes = PostProcess(notes, profile);
             return chart;
         }
 
-        /// <summary>按时间顺序分配 lane、hold 与双押，产出时间递增的音符列表。</summary>
+        /// <summary>按时间顺序分配 lane、hold 与双押，产出时间递增的音符列表。
+        /// hold 优先由同频段持续音段驱动（长音=长条，时长=能量持续），无匹配回退为间隙启发式。</summary>
         private static List<NoteData> AssignLanes(List<Slot> accepted, DifficultyProfile profile,
-            double beatSeconds, Random rng)
+            double beatSeconds, Random rng, List<Sustain> sustains)
         {
             var notes = new List<NoteData>();
             var laneFreeAt = new double[LaneCount]; // 每个 lane 下一个可用时间（含同 lane 间隔/hold 占用）
@@ -138,9 +163,33 @@ namespace MusicGame.Pure.Generator
             int holdQuota = (int)Math.Round(totalNotes * profile.HoldRatio);
             int holdsPlaced = 0;
 
+            // 持续段按频带分组（升序），配已消费标记：一个持续段最多产出一条 hold
+            var bandSustains = new Dictionary<string, List<Sustain>>();
+            var consumedSustains = new HashSet<Sustain>();
+            foreach (Sustain st in sustains)
+            {
+                if (st == null || st.DurationSeconds <= 0.0) continue;
+                string band = NormalizeBand(st.Band);
+                List<Sustain> list;
+                if (!bandSustains.TryGetValue(band, out list))
+                {
+                    list = new List<Sustain>();
+                    bandSustains[band] = list;
+                }
+                list.Add(st);
+            }
+            foreach (List<Sustain> list in bandSustains.Values)
+                list.Sort((a, b) => a.TimeSeconds.CompareTo(b.TimeSeconds));
+
+            // 音乐 hold 走满额配额；间隙启发式 hold 便宜且贪婪（时间序见缝就插），
+            // 有持续段数据时只允许它用一半配额，避免把音乐 hold 饿死
+            int fallbackHoldCap = bandSustains.Count > 0 ? holdQuota / 2 : holdQuota;
+            int fallbackHoldsPlaced = 0;
+
             double minHold = Math.Max(beatSeconds * 0.25, 0.15); // 短于此不如 tap
             double maxHold = beatSeconds * 2.0;
             double tailGap = Math.Max(0.03, profile.MinSameLaneGapSeconds * 0.25); // hold 结尾距下一音符的空隙
+            var activeHoldEnds = new List<double>(); // 进行中的音乐 hold 结束时刻（并发限制用）
 
             for (int i = 0; i < accepted.Count; i++)
             {
@@ -150,14 +199,16 @@ namespace MusicGame.Pure.Generator
 
                 if (s.Double)
                 {
-                    // 双押：同一时刻两个不同 lane 的 tap（先占住第一个 lane 再选第二个，保证不重叠）
-                    int a = ChooseLane(laneFreeAt, t, lastLane, rng);
+                    // 双押：主 lane 取本频段侧，副 lane 取对侧（低频+高频同时响的和弦感）；
+                    // 对侧满时回退任意可用 lane
+                    int[] side = BandLanes(s.Band);
+                    int a = ChooseLane(laneFreeAt, t, lastLane, rng, side);
                     if (a >= 0)
                     {
                         notes.Add(Tap(t, a));
                         laneFreeAt[a] = t + profile.MinSameLaneGapSeconds;
                     }
-                    int b = ChooseLane(laneFreeAt, t, a, rng);
+                    int b = ChooseLane(laneFreeAt, t, a, rng, ComplementLanes(s.Band));
                     if (b >= 0)
                     {
                         notes.Add(Tap(t, b));
@@ -167,19 +218,44 @@ namespace MusicGame.Pure.Generator
                     continue; // 极端情况下两个 lane 都不可用则整槽丢弃
                 }
 
-                int lane = ChooseLane(laneFreeAt, t, lastLane, rng);
+                int lane = ChooseLane(laneFreeAt, t, lastLane, rng, BandLanes(s.Band));
                 if (lane < 0) continue; // 无 lane 可用：丢弃该点（后处理兜底统计口径）
 
-                // hold：仅当配额未满且与下一音符的间隔容得下最短 hold；
+                // 音乐 hold（优先）：同频段持续段 → 长音=长条，可跨其他 lane 的音符
+                // （只占本 lane；约束=最大时长、并发 ≤2 防四键全按住）
+                activeHoldEnds.RemoveAll(end => end <= t + 1e-9);
+                if (holdsPlaced < holdQuota && activeHoldEnds.Count < 2)
+                {
+                    Sustain match = FindSustain(bandSustains, consumedSustains, s.Band, s.RawTime, 0.20);
+                    if (match != null)
+                    {
+                        double dur = Math.Min(match.TimeSeconds + match.DurationSeconds - t, maxHold);
+                        if (dur >= minHold)
+                        {
+                            notes.Add(new NoteData { Time = t, Lane = lane, Type = "hold", Duration = dur });
+                            holdsPlaced++;
+                            consumedSustains.Add(match);
+                            activeHoldEnds.Add(t + dur);
+                            laneFreeAt[lane] = t + dur + profile.MinSameLaneGapSeconds;
+                            lastLane = lane;
+                            continue;
+                        }
+                    }
+                }
+
+                // 旧启发式 hold（无持续段匹配时的回退）：与下一音符的间隔容得下才放，
                 // 时长截止到下一音符之前 → hold 期间整谱静默，杜绝交叉配置
                 double gapToNext = nextTime - t;
-                if (holdsPlaced < holdQuota && gapToNext >= minHold + tailGap)
+                if (holdsPlaced < holdQuota && fallbackHoldsPlaced < fallbackHoldCap
+                    && gapToNext >= minHold + tailGap)
                 {
                     double holdDuration = Math.Min(gapToNext - tailGap, maxHold);
                     if (holdDuration >= minHold)
                     {
                         notes.Add(new NoteData { Time = t, Lane = lane, Type = "hold", Duration = holdDuration });
                         holdsPlaced++;
+                        fallbackHoldsPlaced++;
+                        activeHoldEnds.Add(t + holdDuration);
                         laneFreeAt[lane] = t + holdDuration + profile.MinSameLaneGapSeconds;
                         lastLane = lane;
                         continue;
@@ -193,13 +269,64 @@ namespace MusicGame.Pure.Generator
             return notes;
         }
 
-        /// <summary>挑一个可用 lane：优先久未使用、避开与上一音同 lane（减少同键连打）。</summary>
-        private static int ChooseLane(double[] laneFreeAt, double t, int avoidLane, Random rng)
+        /// <summary>找一条可与该音符配对的同频段持续段：未被消费，且起点距 onset 原始时刻 ≤0.20s（取最早者）。</summary>
+        private static Sustain FindSustain(Dictionary<string, List<Sustain>> bandSustains,
+            HashSet<Sustain> consumed, string band, double rawTime, double tolerance)
+        {
+            List<Sustain> list;
+            if (!bandSustains.TryGetValue(NormalizeBand(band), out list)) return null;
+            foreach (Sustain st in list)
+            {
+                if (consumed.Contains(st)) continue;
+                if (Math.Abs(st.TimeSeconds - rawTime) <= tolerance) return st;
+                if (st.TimeSeconds > rawTime + tolerance) break; // 已排序，后面更晚
+            }
+            return null;
+        }
+
+        private static int[] BandLanes(string band)
+        {
+            switch (NormalizeBand(band))
+            {
+                case "low": return LowLanes;
+                case "high": return HighLanes;
+                default: return MidLanes;
+            }
+        }
+
+        /// <summary>双押副 lane 的对侧轨道：低↔高互为对侧，中频配外侧两轨。</summary>
+        private static int[] ComplementLanes(string band)
+        {
+            switch (NormalizeBand(band))
+            {
+                case "low": return HighLanes;
+                case "high": return LowLanes;
+                default: return new[] { 0, 3 };
+            }
+        }
+
+        private static string NormalizeBand(string band)
+        {
+            return band == "low" || band == "high" ? band : "mid";
+        }
+
+        /// <summary>挑一个可用 lane：在候选轨道集合内优先久未使用、避开与上一音同 lane（减少同键连打）；
+        /// 候选集全忙时放宽到全部轨道（可玩性优先于频段语义）。</summary>
+        private static int ChooseLane(double[] laneFreeAt, double t, int avoidLane, Random rng, int[] allowedLanes)
+        {
+            int best = ChooseLaneWithin(laneFreeAt, t, avoidLane, rng, allowedLanes);
+            if (best < 0) best = ChooseLaneWithin(laneFreeAt, t, avoidLane, rng, AllLanes);
+            return best;
+        }
+
+        private static int ChooseLaneWithin(double[] laneFreeAt, double t, int avoidLane, Random rng, int[] lanes)
         {
             int best = -1;
             double bestScore = double.MinValue;
-            for (int lane = 0; lane < LaneCount; lane++)
+            for (int i = 0; i < lanes.Length; i++)
             {
+                int lane = lanes[i];
+                if (lane < 0 || lane >= LaneCount) continue;
                 if (laneFreeAt[lane] > t + 1e-9) continue; // 该 lane 仍被占用
                 double score = Math.Min(t - laneFreeAt[lane], 2.0); // 空闲越久越优先（封顶，避免压过惩罚项）
                 if (lane == avoidLane) score -= 10.0;               // 强烈避免与上一音同 lane
@@ -333,7 +460,15 @@ namespace MusicGame.Pure.Generator
             public long Index;     // 网格序号（相对第 0 拍，可为负）
             public double Time;    // 量化后的绝对时间（秒）
             public double Strength; // 槽内最强 onset 的归一化强度
+            public string Band;    // 槽内最强 onset 的频段（low/mid/high）
+            public double RawTime; // 槽内最强 onset 的原始时刻（持续段匹配用）
             public bool Double;    // 是否双押（占 2 个音符预算）
+
+            public Slot()
+            {
+                Band = "mid";
+                RawTime = 0.0;
+            }
         }
     }
 }

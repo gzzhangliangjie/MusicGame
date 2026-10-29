@@ -13,7 +13,9 @@ namespace AnalysisCore
     ///    → ≥18 个 onset 落在预期时刻 ±30ms，且 BpmEstimator ≈ 120(±1)；
     /// ③ ChartGenerator 喂合成 onset → 四档谱均满足：时间升序、nps ≤ MaxNotesPerSecond、
     ///    同 lane 间隔 ≥ MinSameLaneGapSeconds、hold 期间同 lane 无重叠新 note；
-    /// ④ Lyrics 解析 LRC（时间戳/元数据/空行/乱序行）并按时刻取行。
+    /// ④ Lyrics 解析 LRC（时间戳/元数据/空行/乱序行）并按时刻取行；
+    /// ⑤ 频谱语义：100Hz 长音 → 检测器 low 频段 sustain、5kHz click onset 判 high、
+    ///    单频段 onset 全谱 lane 落点正确（low→0/1 high→2/3）、持续段驱动出音乐 hold（可跨 lane 音符）。
     /// 每项打印 PASS/FAIL 行，任一失败 Environment.Exit(1)。
     /// </summary>
     internal static class Program
@@ -38,6 +40,10 @@ namespace AnalysisCore
             // ④ LRC 歌词解析
             try { allOk &= CheckLyrics(); }
             catch (Exception e) { Fail("lyrics check threw: " + e.Message); allOk = false; }
+
+            // ⑤ 频谱语义：频段→lane 映射 + 持续段 hold + 检测器 sustain 提取
+            try { allOk &= CheckSpectrumSemantics(); }
+            catch (Exception e) { Fail("spectrum check threw: " + e.Message); allOk = false; }
 
             Console.WriteLine();
             if (!allOk)
@@ -231,6 +237,195 @@ namespace AnalysisCore
                       + " third=" + third + "(" + (s3 ?? "null") + ")"
                       + " interlude=" + interlude + "('" + (s4 ?? "null") + "')");
             return ok;
+        }
+
+        // ---------------- ⑤ 频谱语义 ----------------
+        private static bool CheckSpectrumSemantics()
+        {
+            bool allOk = true;
+
+            // A) 检测器持续段提取：100Hz 低音长音 t=1..4s + 5kHz 短 click 每 0.5s
+            const int sampleRate = 44100;
+            const double durationSeconds = 10.0;
+            var mono = new float[(int)(sampleRate * durationSeconds)];
+            for (int i = (int)(1.0 * sampleRate); i < (int)(4.0 * sampleRate); i++)
+            {
+                double edge = Math.Min(1.0, Math.Min((i - 1.0 * sampleRate) / (0.03 * sampleRate),
+                                                     (4.0 * sampleRate - i) / (0.03 * sampleRate)));
+                mono[i] += (float)(0.6 * Math.Sin(2.0 * Math.PI * 100.0 * i / sampleRate) * edge);
+            }
+            var rng = new Random(77);
+            int clickLength = (int)(0.03 * sampleRate);
+            for (int k = 1; k <= 19; k++)
+            {
+                int start = (int)Math.Round(k * 0.5 * sampleRate);
+                for (int i = 0; i < clickLength && start + i < mono.Length; i++)
+                    mono[start + i] += (float)(0.8 * Math.Sin(2.0 * Math.PI * 5000.0 * i / sampleRate)
+                                               * Math.Exp(-i / (0.006 * sampleRate)));
+            }
+            var detector = new SpectralFluxOnsetDetector();
+            List<Sustain> sustains;
+            List<Onset> onsets = detector.Detect(mono, sampleRate, out sustains);
+
+            bool toneSustain = false;
+            foreach (Sustain st in sustains)
+            {
+                if (st.Band == "low" && Math.Abs(st.TimeSeconds - 1.0) <= 0.25 && st.DurationSeconds >= 2.4)
+                {
+                    toneSustain = true;
+                    break;
+                }
+            }
+            if (toneSustain)
+                Pass("Sustain: low-band sustain found at ~1.0s covering the 100Hz tone (of "
+                     + sustains.Count + " total sustains)");
+            else
+            {
+                Fail("Sustain: no low-band sustain near t=1.0 dur>=2.4 (total " + sustains.Count + ")");
+                allOk = false;
+            }
+
+            int clickMatched = 0;
+            int clickHigh = 0;
+            for (int k = 1; k <= 19; k++)
+            {
+                double expected = k * 0.5;
+                foreach (Onset o in onsets)
+                {
+                    if (Math.Abs(o.TimeSeconds - expected) <= 0.030)
+                    {
+                        clickMatched++;
+                        if (o.Band == "high") clickHigh++;
+                        break;
+                    }
+                }
+            }
+            bool clickBands = clickMatched >= 15 && clickHigh >= clickMatched * 0.7;
+            if (clickBands)
+                Pass("Sustain: click onsets " + clickHigh + "/" + clickMatched + " in high band (need >=70%)");
+            else
+            {
+                Fail("Sustain: click onsets " + clickHigh + "/" + clickMatched + " in high band (need >=15 matched, >=70%)");
+                allOk = false;
+            }
+
+            // B) 频段→lane 映射（normal 无双押）：全 low onset → lane∈{0,1}；全 high → lane∈{2,3}
+            allOk &= CheckBandLanes("low", new[] { 0, 1 });
+            allOk &= CheckBandLanes("high", new[] { 2, 3 });
+
+            // C) 持续段驱动 hold：mid 网格 onset + 两条 mid sustain（t=1.0 dur2.0 / t=5.0 dur1.0）
+            //    → 应出现 t≈1.0 与 t≈5.0、lane∈{1,2} 的 hold（时长被 maxHold=1s 截断）
+            var midOnsets = new List<Onset>();
+            for (int k = 0; k < 80; k++)
+                midOnsets.Add(new Onset { TimeSeconds = k * 0.25, Strength = 0.6, Band = "mid" });
+            var sustainAnalysis = new AnalysisResult
+            {
+                Bpm = 120.0,
+                OffsetSeconds = 0.0,
+                Onsets = midOnsets,
+                Sustains = new List<Sustain>
+                {
+                    new Sustain { TimeSeconds = 1.0, DurationSeconds = 2.0, Band = "mid" },
+                    new Sustain { TimeSeconds = 5.0, DurationSeconds = 1.0, Band = "mid" },
+                }
+            };
+            var holdMeta = new SongMeta
+            {
+                Id = "selftest-hold",
+                Title = "Hold Test",
+                AudioPath = "",
+                DurationSeconds = 20.0,
+                Difficulties = new List<string> { "normal" }
+            };
+            Dictionary<string, ChartData> holdCharts = ChartGenerator.Generate(sustainAnalysis, holdMeta);
+            ChartData holdChart;
+            if (holdCharts == null || !holdCharts.TryGetValue("normal", out holdChart) || holdChart == null)
+            {
+                Fail("SustainHold: normal chart missing");
+                return false;
+            }
+            int holdsAt1 = 0;
+            int holdsAt5 = 0;
+            int crossing = 0;
+            var holdLaneOk = true;
+            foreach (NoteData n in holdChart.Notes)
+            {
+                if (n.Type == "hold")
+                {
+                    if (Math.Abs(n.Time - 1.0) <= 0.21)
+                    {
+                        holdsAt1++;
+                        if (n.Lane != 1 && n.Lane != 2) holdLaneOk = false;
+                        if (n.Duration < 0.9 - 1e-9 || n.Duration > 1.0 + 1e-9) holdLaneOk = false;
+                    }
+                    if (Math.Abs(n.Time - 5.0) <= 0.21)
+                    {
+                        holdsAt5++;
+                        if (n.Lane != 1 && n.Lane != 2) holdLaneOk = false;
+                    }
+                }
+                else if (n.Time > 1.05 && n.Time < 1.95) crossing++;
+            }
+            bool holdOk = holdsAt1 == 1 && holdsAt5 == 1 && crossing >= 2 && holdLaneOk;
+            if (holdOk)
+                Pass("SustainHold: music holds at 1.0s/5.0s lanes 1..2, " + crossing
+                     + " crossing notes during hold (band semantics hold)");
+            else
+            {
+                Fail("SustainHold: holdsAt1=" + holdsAt1 + " holdsAt5=" + holdsAt5
+                     + " crossing=" + crossing + " lane/durOk=" + holdLaneOk);
+                allOk = false;
+            }
+            string holdValidationError = ValidateChart(holdChart, DifficultyProfiles.All["normal"]);
+            if (holdValidationError != null)
+            {
+                Fail("SustainHold: constraint violation: " + holdValidationError);
+                allOk = false;
+            }
+            return allOk;
+        }
+
+        // 单频段 onset 全谱 → 断言所有音符 lane 落在该频段映射集合内（normal 档无双押）
+        private static bool CheckBandLanes(string band, int[] allowedLanes)
+        {
+            var onsets = new List<Onset>();
+            for (int k = 0; k < 80; k++)
+                onsets.Add(new Onset { TimeSeconds = k * 0.25, Strength = 0.8, Band = band });
+            var analysis = new AnalysisResult { Bpm = 120.0, OffsetSeconds = 0.0, Onsets = onsets };
+            var meta = new SongMeta
+            {
+                Id = "selftest-band-" + band,
+                Title = "Band " + band,
+                AudioPath = "",
+                DurationSeconds = 20.0,
+                Difficulties = new List<string> { "normal" }
+            };
+            Dictionary<string, ChartData> charts = ChartGenerator.Generate(analysis, meta);
+            ChartData chart;
+            if (charts == null || !charts.TryGetValue("normal", out chart) || chart == null)
+            {
+                Fail("BandLanes '" + band + "': normal chart missing");
+                return false;
+            }
+            int inSet = 0;
+            int outOfSet = 0;
+            foreach (NoteData n in chart.Notes)
+            {
+                bool ok = false;
+                foreach (int lane in allowedLanes) if (n.Lane == lane) ok = true;
+                if (ok) inSet++; else outOfSet++;
+            }
+            // 越轨落点来自"两轨全忙时放宽到全轨"的可玩性兜底（间隙 hold 占道等），
+            // 语义只要求绝大多数音符尊重频段映射
+            bool pass = inSet > 0 && outOfSet * 8 <= inSet + outOfSet;
+            if (pass)
+                Pass("BandLanes '" + band + "': " + inSet + "/" + (inSet + outOfSet)
+                     + " notes in lanes {" + allowedLanes[0] + "," + allowedLanes[1]
+                     + "} (" + outOfSet + " widened for playability)");
+            else
+                Fail("BandLanes '" + band + "': " + outOfSet + "/" + (inSet + outOfSet) + " notes outside lanes {"
+                     + allowedLanes[0] + "," + allowedLanes[1] + "} (need <=12.5%)");
+            return pass;
         }
 
         // 返回 null 表示通过；否则返回违规描述。音符须已按时间升序（第一项检查保证）。

@@ -36,21 +36,31 @@ namespace MusicGame.Pure.Model
         public double MvStartSeconds; // MV 起播偏移：歌曲 t=0 对应的 MV 内时间（0=从头，旧 meta 缺省即 0）
     }
 
-    /// <summary>onset 检测出的一个拍点。Band 取 low/mid/high 三频带之一。</summary>
-    [Serializable]
-    public class Onset
-    {
-        public double TimeSeconds; // 拍点时间（秒）
-        public double Strength;    // 归一化强度 0..1
-        public string Band;        // low | mid | high
-    }
+/// <summary>onset 检测出的一个拍点。Band 取 low/mid/high 三频带之一。</summary>
+[Serializable]
+public class Onset
+{
+    public double TimeSeconds; // 拍点时间（秒）
+    public double Strength;    // 归一化强度 0..1
+    public string Band;        // low | mid | high
+}
 
-    /// <summary>音频分析中间结果（Songs/&lt;songId&gt;/analysis.json），各难度谱面由它派生。</summary>
-    [Serializable]
-    public class AnalysisResult
-    {
-        public double Bpm;           // 估计 BPM
-        public double OffsetSeconds; // 估计的第 0 拍偏移（秒）
-        public List<Onset> Onsets = new List<Onset>();
-    }
+/// <summary>持续音段：某频带能量持续高于自适应阈值的时间区间（人声/合成器长音、贝斯长音等），供谱面生成 hold。</summary>
+[Serializable]
+public class Sustain
+{
+    public double TimeSeconds;     // 起点时间（秒）
+    public double DurationSeconds; // 持续时长（秒）
+    public string Band;            // low | mid | high
+}
+
+/// <summary>音频分析中间结果（Songs/&lt;songId&gt;/analysis.json），各难度谱面由它派生。</summary>
+[Serializable]
+public class AnalysisResult
+{
+    public double Bpm;           // 估计 BPM
+    public double OffsetSeconds; // 估计的第 0 拍偏移（秒）
+    public List<Onset> Onsets = new List<Onset>();
+    public List<Sustain> Sustains = new List<Sustain>(); // 旧缓存缺省为空 → 生成器回退为非频谱 hold 逻辑
+}
 }
