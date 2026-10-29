@@ -13,8 +13,8 @@ namespace MusicGame.Gameplay.Osu
     /// </summary>
     public class OsuSpawner : MonoBehaviour
     {
-        /// <summary>缩圈环合拢时间（秒），与音符下落时距一致。</summary>
-        public const float ApproachSeconds = 1.2f;
+        /// <summary>缩圈环合拢时间（秒）：随下落速度档设置（GameManager 建场时写入）。</summary>
+        public float ApproachSeconds = 1.2f;
         /// <summary>圆圈视觉半径（世界单位）。</summary>
         public const float CircleRadius = 0.7f;
         /// <summary>点击有效半径（略大于视觉圈，判定宽松）。</summary>

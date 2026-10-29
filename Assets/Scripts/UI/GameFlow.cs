@@ -66,6 +66,19 @@ namespace MusicGame.UI
         Text pauseAutoBtnText;
         Image pauseAutoBtnImg;
 
+        // 下落速度五档（音符旅行秒数，越小越快；缩圈模式的合拢时间同用此值）。默认"快速"。
+        static readonly float[] TravelSpeedSeconds = { 1.6f, 1.2f, 0.9f, 0.7f, 0.5f };
+        static readonly string[] TravelSpeedNames = { "慢速", "标准", "快速", "极速", "疾风" };
+        const string TravelSpeedPrefKey = "MusicGame.TravelSpeed";
+        int travelSpeedIndex = 2;
+        Text speedBtnText;
+
+        /// <summary>当前速度档的音符下落时间（秒）。</summary>
+        float TravelSeconds
+        {
+            get { return TravelSpeedSeconds[Mathf.Clamp(travelSpeedIndex, 0, TravelSpeedSeconds.Length - 1)]; }
+        }
+
         /// <summary>本地纪录键的模式段（四轨 4K / 太鼓 TAIKO / 缩圈 OSU）。</summary>
         string ModeKey => osuMode ? "OSU" : taikoMode ? "TAIKO" : "4K";
 
@@ -130,6 +143,7 @@ namespace MusicGame.UI
         {
             Palette.Restore();
             autoMode = PlayerPrefs.GetInt(AutoModePrefKey, 0) == 1;
+            travelSpeedIndex = Mathf.Clamp(PlayerPrefs.GetInt(TravelSpeedPrefKey, 2), 0, TravelSpeedSeconds.Length - 1);
             canvas = UiKit.EnsureCanvas();
             var backdropGo = new GameObject("UiBackdrop", typeof(RectTransform));
             backdropGo.transform.SetParent(canvas.transform, false);
@@ -513,9 +527,13 @@ namespace MusicGame.UI
             modeTaikoImg = taikoBtn.image;
             modeOsuImg = osuBtn.image;
 
-            // AUTO 观赏开关：底部与返回按钮并排（曾钉在歌名文字带上遮字，已改底部行）
+            // 底行三键：返回选曲 / 下落速度（五档循环）/ AUTO 观赏
+            var speedBtn = UiKit.ButtonRect(diffScreen, "btnSpeed", "速度：快速",
+                new Vector2(0f, -466f), new Vector2(250f, 64f), OnSpeedClicked, UiKit.Theme.PanelBg, 22);
+            speedBtnText = speedBtn.GetComponentInChildren<Text>();
+            RefreshSpeedButton();
             var autoBtn = UiKit.ButtonRect(diffScreen, "btnAuto", "AUTO 观赏：关",
-                new Vector2(230f, -466f), new Vector2(340f, 64f), OnAutoToggleClicked, GhostBtn, 24);
+                new Vector2(260f, -466f), new Vector2(250f, 64f), OnAutoToggleClicked, GhostBtn, 20);
             autoBtnImg = autoBtn.image;
             autoBtnText = autoBtn.GetComponentInChildren<Text>();
             RefreshAutoButton();
@@ -524,7 +542,7 @@ namespace MusicGame.UI
             var holderRt = UiKit.Node(diffScreen, "list");
             UiKit.Stretch(holderRt);
             diffListHolder = holderRt;
-            UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(-230f, -466f), new Vector2(340f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 26);
+            UiKit.ButtonRect(diffScreen, "btnBack", "返回选曲", new Vector2(-260f, -466f), new Vector2(250f, 64f), OnDiffBackClicked, UiKit.Theme.PanelBg, 24);
             // 右侧本地最佳纪录面板（随模式/歌曲刷新）
             diffRecordText = UiKit.Label(diffScreen, "diffRecords", "", 24, TextAnchor.UpperLeft, UiKit.Theme.Dim, true);
             UiKit.Stretch(diffRecordText.rectTransform, new Vector2(0.60f, 0.12f), new Vector2(0.97f, 0.74f), new Vector2(18f, 0f), new Vector2(-12f, 0f));
@@ -556,6 +574,21 @@ namespace MusicGame.UI
         void OnAutoToggleClicked()
         {
             SetAutoModePref(!autoMode);
+        }
+
+        /// <summary>下落速度五档循环并持久化（下一局生效；缩圈模式合拢时间同步用此值）。</summary>
+        void OnSpeedClicked()
+        {
+            travelSpeedIndex = (travelSpeedIndex + 1) % TravelSpeedSeconds.Length;
+            PlayerPrefs.SetInt(TravelSpeedPrefKey, travelSpeedIndex);
+            PlayerPrefs.Save();
+            RefreshSpeedButton();
+        }
+
+        void RefreshSpeedButton()
+        {
+            if (speedBtnText != null)
+                speedBtnText.text = "速度：" + TravelSpeedNames[travelSpeedIndex];
         }
 
         void RefreshAutoButton()
@@ -1173,6 +1206,7 @@ namespace MusicGame.UI
             gameManager.TaikoMode = taikoMode;
             gameManager.OsuMode = osuMode;
             gameManager.AutoMode = autoMode;
+            gameManager.noteTravelTimeSeconds = TravelSeconds;
             try
             {
                 gameManager.PlaySong(entry.Meta, diff);

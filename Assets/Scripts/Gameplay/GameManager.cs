@@ -593,6 +593,7 @@ namespace MusicGame.Gameplay
                 osuSpawner = new GameObject("OsuSpawner").AddComponent<Osu.OsuSpawner>();
                 osuSpawner.transform.SetParent(runtimeRoot.transform, false);
                 osuSpawner.Game = this;
+                osuSpawner.ApproachSeconds = noteTravelTimeSeconds; // 缩圈节奏跟随下落速度档
                 osuSpawner.Setup(chart, conductor, pool, lastSongId + "|" + lastDifficulty);
             }
             else

@@ -141,7 +141,7 @@ namespace MusicGame.Gameplay.Osu
             double untilHit = time - now;
 
             // 淡入：出现后 0.35s 内从全透到全显
-            float age = (float)(now - (time - OsuSpawner.ApproachSeconds));
+            float age = (float)(now - (time - spawner.ApproachSeconds));
             float fadeIn = Mathf.Clamp01(age / 0.35f);
             float alpha = fadeIn * fadeIn * (3f - 2f * fadeIn); // smoothstep
             body.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
@@ -149,7 +149,7 @@ namespace MusicGame.Gameplay.Osu
             number.color = new Color(0.10f, 0.10f, 0.16f, alpha);
 
             // 缩圈环：ApproachScale → 1，合拢瞬间即判定点（晚到不再收缩，贴边等待判定）
-            float k = Mathf.Clamp01((float)(untilHit / OsuSpawner.ApproachSeconds));
+            float k = Mathf.Clamp01((float)(untilHit / spawner.ApproachSeconds));
             float scale = 1f + (OsuSpawner.ApproachScale - 1f) * k;
             ring.transform.localScale = Vector3.one * scale;
         }
