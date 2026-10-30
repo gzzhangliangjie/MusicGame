@@ -245,7 +245,11 @@ namespace MusicGame.Gameplay
                 conductor.Pause(); // 暂停中开局：取消计划播放，Resume 时重排（Conductor.Pause 支持未到点的 PlayScheduled）
                 Debug.Log("[Pause] 预备期暂停请求生效：时钟已建但保持冻结");
             }
-            if (mvBackdrop != null) mvBackdrop.Play(); // MV 与音乐同步开播
+            if (mvBackdrop != null)
+            {
+                if (paused) mvBackdrop.PlayPaused(); // 暂停中开局：MV 同步压制，Resume 补播（否则暂停页底下 MV 独走）
+                else mvBackdrop.Play(); // MV 与音乐同步开播
+            }
             Debug.Log("[Play] 时钟启动 bpm=" + chart.Bpm.ToString("F1") + " leadIn=" + StartCountdownSeconds.ToString("F1")
                 + (clip != null ? " 有声" : " 无声模式"));
 

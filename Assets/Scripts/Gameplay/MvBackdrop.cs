@@ -9,7 +9,8 @@ namespace MusicGame.Gameplay
     /// 半透明（Alpha）铺满相机视野，压低存在感不抢音符轨道。
     /// 音频轨不输出（曲声来自 audioSource 的 audio.mp3）；视频文件按歌曲目录 mv.mp4 约定，
     /// 由 GameManager 在存在文件时创建——缺文件零开销零影响。
-    /// 随 GameManager.SetPaused 同步暂停/恢复；宿主销毁时释放 RT 与材质。
+    /// 随 GameManager.SetPaused 同步暂停/恢复（压制位不变量：暂停期内播放器若自行恢复
+    /// ——循环边界/seek 竞态——Update 逐帧压回）；宿主销毁时释放 RT 与材质。
     /// </summary>
     public class MvBackdrop : MonoBehaviour
     {
@@ -42,6 +43,13 @@ namespace MusicGame.Gameplay
         private float seekStartedRealtime = -1f;
         private bool seekGiveUpLogged;
         private bool firstFrameLogged;
+        /// <summary>游戏暂停压制中：置位后播放器不得出帧，Update 逐帧纠偏（现场实测 VideoPlayer.Pause
+        /// 会被循环边界重启竞态顶掉，须主动压回）。</summary>
+        private bool suppressed;
+        /// <summary>压制期基线帧号：tripwire 按"帧号变了"判推进，不信任 isPlaying（实测 Pause 后
+        /// isPlaying=false 帧仍推进）。</summary>
+        private long suppressedFrame = long.MinValue;
+        private int suppressViolations;
 
         /// <summary>创建 MV 背景；视频不存在或相机缺失返回 null（调用方免判）。
         /// startSeconds = 歌曲起点对应的 MV 内时间（对不齐的 MV 从此处起播，负值按 0 处理）。</summary>
@@ -121,28 +129,66 @@ namespace MusicGame.Gameplay
             // 逐帧重试直到落点生效）
             if (startSeconds > 0.01 && player.frameRate > 0)
                 pendingStartSeek = true;
-            if (startRequested && !player.isPlaying) player.Play(); // 开拍先于解码就绪时补播
+            if (startRequested && !suppressed && !player.isPlaying) player.Play(); // 开拍先于解码就绪时补播（暂停压制期不出帧）
         }
 
         /// <summary>与音乐同步开播（GameManager 时钟启动后调用；解码未就绪则记意图，OnPrepared 补播）。</summary>
         public void Play()
         {
             startRequested = true;
-            if (player != null && player.isPrepared && !player.isPlaying) player.Play();
+            if (player != null && player.isPrepared && !player.isPlaying && !suppressed)
+            {
+                player.playbackSpeed = 1f;
+                player.Play();
+            }
+        }
+
+        /// <summary>暂停中开局：记开播意图（OnPrepared 补播/Resume 都依赖），但压制起播，Resume() 时补播。</summary>
+        public void PlayPaused()
+        {
+            startRequested = true;
+            suppressed = true;
         }
 
         public void Pause()
         {
-            if (player != null && player.isPlaying) player.Pause();
+            suppressed = true;
+            if (player != null && player.isPlaying)
+            {
+                player.Pause();
+                // 双保险：实测 Pause() 后 isPlaying=false 帧仍往 RT 推，playbackSpeed=0 直接掐解码时钟
+                player.playbackSpeed = 0f;
+                suppressedFrame = player.frame;
+                suppressViolations = 0;
+                Debug.Log("[MvBackdrop] 暂停 @frame=" + player.frame + "（playbackSpeed=0 压制）");
+            }
         }
 
         public void Resume()
         {
-            if (player != null && startRequested && player.isPrepared && !player.isPlaying) player.Play();
+            suppressed = false;
+            suppressedFrame = long.MinValue;
+            if (player != null)
+            {
+                player.playbackSpeed = 1f;
+                if (startRequested && player.isPrepared && !player.isPlaying) player.Play();
+            }
         }
 
         private void Update()
         {
+            // 暂停压制不变量：压制期帧号不得推进（不信任 isPlaying——实测 Pause 后它报 false 帧照走）；
+            // 推进了就再刹一次并留全量诊断，供定位 Playback 引擎层根因
+            if (suppressed && player != null && suppressedFrame != long.MinValue && player.frame != suppressedFrame)
+            {
+                suppressedFrame = player.frame;
+                suppressViolations++;
+                Debug.LogWarning("[MvBackdrop] 压制期帧仍推进 ->frame=" + player.frame
+                    + " isPlaying=" + player.isPlaying + " speed=" + player.playbackSpeed
+                    + " loop=" + player.isLooping + "，第 " + suppressViolations + " 次压回");
+                if (player.isPlaying) player.Pause();
+                player.playbackSpeed = 0f;
+            }
             if (!firstFrameLogged && player != null && player.frame > 0)
             {
                 firstFrameLogged = true;

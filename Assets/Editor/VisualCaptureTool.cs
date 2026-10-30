@@ -396,6 +396,228 @@ namespace MusicGame.EditorTools
             else m.Invoke(gf, new object[] { paused });
         }
 
+        // ---------------- MV 暂停回归验收（用户报障：对局中暂停 MV 照播） ----------------
+
+        private static int mvStep;
+        private static int mvTicks;
+        private static float mvT0;
+        private static long mvFrameA, mvFrameB;
+
+        /// <summary>带 MV 的歌走完整用户路径：①开局预备期暂停→MV 不得抢跑；②继续→正常起播；
+        /// ③对局中暂停≥2s→MV 帧纹丝不动；④继续→MV 恢复。四步任一破功即 Exit(1)。</summary>
+        public static void CaptureMvPauseFlow()
+        {
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity");
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
+            Screen.SetResolution(1280, 720, false);
+            mvStep = 0; mvTicks = 0;
+            EditorApplication.isPlaying = true;
+            EditorApplication.update += MvPump;
+            Debug.Log("[VisCap][MvPause] MV 暂停回归验收启动");
+        }
+
+        private static void MvLog(string msg) { Debug.Log("[VisCap][MvPause] " + msg); }
+
+        private static void MvFail(string msg)
+        {
+            Debug.LogError("[VisCap][MvPause] 失败：" + msg);
+            EditorApplication.Exit(1);
+        }
+
+        private static UnityEngine.Video.VideoPlayer MvPlayer()
+        {
+            var go = GameObject.Find("MvBackdrop");
+            return go != null ? go.GetComponent<UnityEngine.Video.VideoPlayer>() : null;
+        }
+
+        /// <summary>现场全量诊断：场上所有 VideoPlayer 的帧/状态（防多实例、防状态误报）。</summary>
+        private static string MvDump()
+        {
+            var all = Object.FindObjectsByType<UnityEngine.Video.VideoPlayer>(FindObjectsSortMode.None);
+            var sb = new System.Text.StringBuilder("vp数=" + all.Length);
+            foreach (var v in all)
+                sb.Append(" [go=").Append(v.gameObject.name).Append(" frame=").Append(v.frame)
+                  .Append(" playing=").Append(v.isPlaying).Append(" prepared=").Append(v.isPrepared)
+                  .Append(" loop=").Append(v.isLooping).Append(" speed=").Append(v.playbackSpeed).Append("]");
+            return sb.ToString();
+        }
+
+        /// <summary>复算 GameFlow.ScanSongs 的目录序（同根序+meta 过滤+Id 去重），返回第一个
+        /// mv.mp4 + chart_easy.json 齐全的歌曲在列表中的下标；列表项按同序创建，按下标点。</summary>
+        private static int FindMvSongIndex()
+        {
+            string[] roots =
+            {
+                System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Songs")),
+                System.IO.Path.Combine(Application.dataPath, "Songs"),
+            };
+            var seen = new System.Collections.Generic.HashSet<string>();
+            int index = 0;
+            foreach (var root in roots)
+            {
+                if (!System.IO.Directory.Exists(root)) continue;
+                foreach (var dir in System.IO.Directory.GetDirectories(root))
+                {
+                    var metaPath = System.IO.Path.Combine(dir, "meta.json");
+                    if (!System.IO.File.Exists(metaPath)) continue;
+                    SongMeta meta = null;
+                    try { meta = JsonUtility.FromJson<SongMeta>(System.IO.File.ReadAllText(metaPath)); }
+                    catch (System.Exception) { }
+                    if (meta == null) continue;
+                    if (string.IsNullOrEmpty(meta.Id)) meta.Id = new System.IO.DirectoryInfo(dir).Name;
+                    if (!seen.Add(meta.Id)) continue;
+                    if (System.IO.File.Exists(System.IO.Path.Combine(dir, "mv.mp4"))
+                        && System.IO.File.Exists(System.IO.Path.Combine(dir, "chart_easy.json")))
+                        return index;
+                    index++;
+                }
+            }
+            return -1;
+        }
+
+        private static void MvPump()
+        {
+            if (!EditorApplication.isPlaying) return;
+            try
+            {
+                var gf = Object.FindFirstObjectByType<MusicGame.UI.GameFlow>();
+                if (gf == null) return;
+                var gm = Object.FindFirstObjectByType<MusicGame.Gameplay.GameManager>();
+                var cond = Object.FindFirstObjectByType<MusicGame.Core.Conductor>();
+                var vp = MvPlayer();
+
+                switch (mvStep)
+                {
+                    case 0: // 主菜单 → 开始游戏
+                        if (GameObject.Find("btnStart") != null)
+                        {
+                            ClickButton("btnStart"); MvLog("已点开始游戏"); mvStep = 1; mvTicks = 0;
+                        }
+                        else if (++mvTicks > 3000) MvFail("等主菜单超时");
+                        break;
+
+                    case 1: // 选曲列表 → 点带 MV 的歌（复算 ScanSongs 序按下标点）
+                        if (GameObject.Find("songItem") == null) { if (++mvTicks > 3000) MvFail("等选曲列表超时"); break; }
+                        {
+                            int idx = FindMvSongIndex();
+                            if (idx < 0) { MvFail("曲库中没有 mv.mp4+chart_easy 齐全的歌"); break; }
+                            var content = GameObject.Find("songItem").transform.parent;
+                            int i = 0; UnityEngine.UI.Button hit = null;
+                            foreach (Transform child in content)
+                            {
+                                if (child.name != "songItem") continue;
+                                if (i++ == idx) { hit = child.GetComponent<UnityEngine.UI.Button>(); break; }
+                            }
+                            if (hit == null) { MvFail("列表第 " + idx + " 项未找到"); break; }
+                            hit.onClick.Invoke();
+                            MvLog("已选第 " + idx + " 项（带 MV 的歌）");
+                            mvStep = 2; mvTicks = 0;
+                        }
+                        break;
+
+                    case 2: // 难度页 → easy
+                        if (GameObject.Find("diff_easy") != null)
+                        {
+                            ClickButton("diff_easy"); MvLog("已选 easy"); mvStep = 3; mvTicks = 0;
+                        }
+                        else if (++mvTicks > 3000) MvFail("等难度页超时");
+                        break;
+
+                    case 3: // 预备期锚点：MV 已建、playing 仍 false → 暂停（走 pendingPause 记账路径）
+                        if (vp == null) { if (++mvTicks > 3000) MvFail("等 MvBackdrop 出现超时"); break; }
+                        {
+                            var f = gm != null ? gm.GetType().GetField("playing",
+                                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) : null;
+                            bool playing = f != null && (bool)f.GetValue(gm);
+                            if (playing) { MvFail("错过预备期窗口（playing 已 true）"); break; }
+                            InvokeSetPaused(gf, true);
+                            mvFrameA = vp.frame;
+                            mvT0 = Time.realtimeSinceStartup;
+                            MvLog("预备期暂停 @frame=" + mvFrameA + "（pendingPause 记账路径）");
+                            mvStep = 4; mvTicks = 0;
+                        }
+                        break;
+
+                    case 4: // 暂停页弹出后再等 1.5s（真在播必走几十帧）→ MV 帧不得动
+                        if (GameObject.Find("btnResume") != null && Time.realtimeSinceStartup - mvT0 > 1.5f)
+                        {
+                            if (vp == null) { MvFail("暂停后 MvBackdrop 消失"); break; }
+                            mvFrameB = vp.frame;
+                            if (mvFrameB != mvFrameA) { MvFail("预备期暂停 MV 抢跑：frame " + mvFrameA + " -> " + mvFrameB + "，" + MvDump()); break; }
+                            MvLog("预备期暂停 MV 冻结 @frame=" + mvFrameB);
+                            ClickButton("btnResume");
+                            MvLog("点继续（3-2-1）");
+                            mvStep = 5; mvTicks = 0;
+                        }
+                        else if (++mvTicks > 6000) MvFail("暂停页未弹出");
+                        break;
+
+                    case 5: // 恢复后等 MV 真起播、时钟进正数区
+                        if (vp != null && vp.isPlaying && vp.frame > 0 && cond != null && cond.SongTimeSeconds > 2.0)
+                        {
+                            mvFrameA = vp.frame;
+                            mvT0 = Time.realtimeSinceStartup;
+                            MvLog("恢复后 MV 播放中 frame=" + vp.frame + " @songTime=" + cond.SongTimeSeconds.ToString("F2"));
+                            mvStep = 6; mvTicks = 0;
+                        }
+                        else if (++mvTicks > 12000)
+                            MvFail("继续后 MV/时钟未起播（vp=" + (vp != null) + " isPlaying=" + (vp != null && vp.isPlaying)
+                                + " frame=" + (vp != null ? vp.frame.ToString() : "-")
+                                + " songTime=" + (cond != null ? cond.SongTimeSeconds.ToString("F2") : "-") + "）");
+                        break;
+
+                    case 6: // 再播 1s 拉开帧差 → 对局中暂停（用户报障场景）
+                        if (Time.realtimeSinceStartup - mvT0 > 1.0f)
+                        {
+                            InvokeSetPaused(gf, true);
+                            mvFrameB = vp.frame;
+                            mvT0 = Time.realtimeSinceStartup;
+                            MvLog("对局中暂停 @frame=" + mvFrameB + " @songTime=" + cond.SongTimeSeconds.ToString("F2"));
+                            mvStep = 7; mvTicks = 0;
+                        }
+                        break;
+
+                    case 7: // 暂停 ≥2s → 帧纹丝不动才算过（压制位兜底如有触发会留 Warning 日志）
+                        if (GameObject.Find("btnResume") != null && Time.realtimeSinceStartup - mvT0 > 2.0f)
+                        {
+                            long now = vp.frame;
+                            if (now != mvFrameB) { MvFail("暂停期 MV 仍在播：frame " + mvFrameB + " -> " + now + "，" + MvDump()); break; }
+                            ScreenCapture.CaptureScreenshot(CaptureDir + "/vis_mvpause.png");
+                            MvLog("对局中暂停 MV 冻结 @frame=" + now + "，截图存证");
+                            mvStep = 8; mvTicks = 0;
+                        }
+                        else if (++mvTicks > 6000) MvFail("对局中暂停页未弹出");
+                        break;
+
+                    case 8: // 截图落盘缓冲
+                        if (mvTicks > 30)
+                        {
+                            ClickButton("btnResume");
+                            MvLog("点继续，验证 MV 恢复");
+                            mvStep = 9; mvTicks = 0;
+                        }
+                        else mvTicks++;
+                        break;
+
+                    case 9: // 恢复后 MV 帧必须重新推进
+                        if (vp != null && vp.frame > mvFrameB && cond.SongTimeSeconds > 0.0)
+                        {
+                            MvLog("回归验收通过：暂停全链路 MV 行为正确");
+                            EditorApplication.Exit(0);
+                        }
+                        else if (++mvTicks > 12000)
+                            MvFail("继续后 MV 未恢复（frame=" + (vp != null ? vp.frame.ToString() : "-") + " ≤ " + mvFrameB + "）");
+                        break;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[VisCap][MvPause] 异常 @step" + mvStep + ": " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
         private static int menuTicks;
         /// <summary>主菜单截图验收：Main.unity 进 Play，等入场动效播完截一帧后退出。</summary>
         public static void CaptureMenu()
