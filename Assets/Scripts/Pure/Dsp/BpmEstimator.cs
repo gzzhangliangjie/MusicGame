@@ -27,6 +27,9 @@ namespace MusicGame.Pure.Dsp
             if (onsets == null || onsets.Count < 2) return 0.0;
 
             // ---- onset 强度包络 ----
+            // 开方压缩：Strength 全局可比后低频 onset 的 per-bin flux 天然远大于高频
+            // （底鼓集中能量 vs 镲片摊在几百个 bin），线性加权会让包络只剩低频节奏，
+            // 自相关出假峰（实测 木鱼与金鱼 112.25→75.00）。开方保序削垄断，BPM 复原。
             double lastTime = 0.0;
             for (int i = 0; i < onsets.Count; i++)
                 if (onsets[i].TimeSeconds > lastTime) lastTime = onsets[i].TimeSeconds;
@@ -38,8 +41,9 @@ namespace MusicGame.Pure.Dsp
                 double pos = onsets[i].TimeSeconds / EnvelopeStep;
                 int i0 = (int)Math.Floor(pos);
                 double frac = pos - i0;
-                if (i0 >= 0 && i0 < length) envelope[i0] += onsets[i].Strength * (1.0 - frac);
-                if (i0 + 1 >= 0 && i0 + 1 < length) envelope[i0 + 1] += onsets[i].Strength * frac;
+                double w = Math.Sqrt(Math.Max(0.0, onsets[i].Strength));
+                if (i0 >= 0 && i0 < length) envelope[i0] += w * (1.0 - frac);
+                if (i0 + 1 >= 0 && i0 + 1 < length) envelope[i0 + 1] += w * frac;
             }
 
             // ---- 自相关（无偏归一化），滞后对应 60..200 BPM ----

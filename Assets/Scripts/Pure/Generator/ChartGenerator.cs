@@ -9,8 +9,9 @@ namespace MusicGame.Pure.Generator
     /// 谱面生成器（纯 C#，不依赖 Unity 引擎 API）。
     /// 管线：onset 按强度排序 → 量化到 1/GridDivision 节拍网格（容差随难度收紧）→
     /// 密度预算选点（强拍优先，任意 1 秒窗口不超过 MaxNotesPerSecond）→
-    /// lane 分配（按 onset 频段映射：低频→0/1 高频→2/3 中频→1/2，太鼓重映射后即咚=低音/咔=高音；
+    /// lane 分配（按 onset 频段映射：低频→0/1 高频→2/3 中频→1/2，服务四轨/osu 的轨道语义；
     /// 同 lane 最小间隔、hold 期间静默、双押按 DoubleTapChance 且跨频段取对侧）→
+    /// 副色定标 AssignKatFlags（太鼓咔/跑酷空中，相对强度规则，与 lane/频带无关）→
     /// hold 由持续音段驱动（长音=长条；无持续段数据的旧缓存回退为间隙启发式）→
     /// 可玩性后处理兜底修正。
     /// 随机数使用 songId+难度派生的固定种子，同一份 AnalysisResult 生成结果可复现。
@@ -18,9 +19,21 @@ namespace MusicGame.Pure.Generator
     public class ChartGenerator
     {
         private const int LaneCount = 4;
+        // 副色（太鼓咔/跑酷空中）定标参数——节奏时序不动，只定颜色层：
+        //   基色：弱于局部最强(±半拍)的一半 → 副色（音乐语义：主拍重击=主色，陪衬=副色）；
+        //   连打段交替：间隔 ≤0.75 拍且 ≥KatStreamMinNotes 连续音符按主副交替（官方谱 D-K 滚奏手感）；
+        //   同色连长 ≤KatRunCap（防同一键按到底）；副色占比 ≤KatMaxShare（官方谱健康区间上沿）。
+        // 5 首真歌模拟（tools/donkat_v2_sim.py）：交替率 94~100%，最长同色 5~6，蓝占比收在 45%。
+        // 刻意不用频带判定——纯相对强度与叠加频带条件结果逐音一致（tools/donkat_band_ab.py），
+        // 且相对量不随归一化方式摆动（频带定色曾在 sum/mean 间 35:65↔82:18 翻饼）。
+        private const double KatAlpha = 0.5;
+        private const int KatStreamMinNotes = 3;
+        private const int KatRunCap = 6;
+        private const double KatMaxShare = 0.45;
 
         // 频段 → 轨道集合：低音(底鼓/贝斯)走左两轨、高频(军鼓/踩镲)走右两轨、中频(人声/旋律)走中间。
-        // 四轨 0/1 在太鼓重映射下=咚(红)，2/3=咔(蓝)——低频音符天然落在咚上。
+        // 四轨轨道语义：0/1=低频侧（左），2/3=高频侧（右），1/2=中频居中——只服务四轨/osu 列分布。
+        // 太鼓/跑酷的主副色不看 lane，由 AssignKatFlags 的相对强度规则决定。
         private static readonly int[] LowLanes = { 0, 1 };
         private static readonly int[] MidLanes = { 1, 2 };
         private static readonly int[] HighLanes = { 2, 3 };
@@ -146,6 +159,9 @@ namespace MusicGame.Pure.Generator
 
             // ---- 4) 可玩性后处理兜底修正 ----
             chart.Notes = PostProcess(notes, profile);
+            // ---- 5) 副色定标放最后：连打交替/同色连长上限要对 PostProcess 之后的最终音符集收口，
+            //      否则丢弃音符会把两段同色拼成超长段 ----
+            AssignKatFlags(chart.Notes, accepted, beatSeconds);
             return chart;
         }
 
@@ -267,6 +283,98 @@ namespace MusicGame.Pure.Generator
                 lastLane = lane;
             }
             return notes;
+        }
+
+        /// <summary>
+        /// 副色定标（太鼓咔/跑酷空中）：基色=强度 &lt; KatAlpha×局部窗(±半拍)最强者 → 副色；
+        /// 连打段（间隔 ≤0.75 拍、长度 ≥KatStreamMinNotes）按主副交替出滚奏手感；
+        /// 同色连长超 KatRunCap 把段内最弱音翻成对色；副色总数超 KatMaxShare 翻回最弱者。
+        /// 首要保证节奏正确（时序一律不动），颜色层负责音乐语义与游戏性之间的平衡：
+        /// 全强副歌段不再一键到底（用户实测反馈），连打段始终有换键节奏。
+        /// </summary>
+        private static void AssignKatFlags(List<NoteData> notes, List<Slot> accepted, double beatSeconds)
+        {
+            int n = notes.Count;
+            if (n == 0) return;
+            double win = beatSeconds > 1e-6 ? beatSeconds : 0.5; // ±win/2 局部窗
+
+            // 音符强度 = 生成它的槽位强度（双押两音同槽）
+            var strengthByTime = new Dictionary<double, double>();
+            foreach (Slot s in accepted)
+                if (!strengthByTime.ContainsKey(s.Time) || s.Strength > strengthByTime[s.Time])
+                    strengthByTime[s.Time] = s.Strength;
+
+            var times = new double[n];
+            var strg = new double[n];
+            for (int i = 0; i < n; i++)
+            {
+                times[i] = notes[i].Time;
+                strengthByTime.TryGetValue(notes[i].Time, out double v);
+                strg[i] = v;
+            }
+
+            // ---- 基色：相对强度 ----
+            var kat = new bool[n];
+            int lo = 0, hi = 0;
+            for (int i = 0; i < n; i++)
+            {
+                while (lo < i && times[i] - times[lo] > win * 0.5 + 1e-9) lo++;
+                if (hi < i) hi = i;
+                while (hi + 1 < n && times[hi + 1] - times[i] <= win * 0.5 + 1e-9) hi++;
+                double localMax = 0.0;
+                for (int j = lo; j <= hi; j++) localMax = Math.Max(localMax, strg[j]);
+                kat[i] = strg[i] < KatAlpha * localMax;
+            }
+
+            // ---- 连打段交替：从段首基色出发 D-K-D-K ----
+            double streamGap = win * 0.75;
+            int i2 = 0;
+            while (i2 < n)
+            {
+                int j = i2;
+                while (j + 1 < n && times[j + 1] - times[j] <= streamGap + 1e-9) j++;
+                if (j - i2 + 1 >= KatStreamMinNotes)
+                {
+                    bool c0 = kat[i2];
+                    for (int k = i2; k <= j; k++) kat[k] = ((k - i2) & 1) == 0 ? c0 : !c0;
+                }
+                i2 = j + 1;
+            }
+
+            // ---- 副色占比上限：最强者先翻回主色 ----
+            int count = 0;
+            for (int i = 0; i < n; i++) if (kat[i]) count++;
+            int maxKat = (int)(n * KatMaxShare);
+            if (count > maxKat)
+            {
+                var order = new List<int>(count);
+                for (int i = 0; i < n; i++) if (kat[i]) order.Add(i);
+                order.Sort((a, b) => strg[b].CompareTo(strg[a]));
+                for (int k = 0; k < count - maxKat; k++) kat[order[k]] = false;
+            }
+
+            // ---- 同色连长上限：确定性切分——超长段从段首起每第 KatRunCap+1 个音翻对色，
+            //      扫描指针只前进、翻转点左侧段长 ≤KatRunCap 已定型。不能"翻段内最弱音"：
+            //      翻转会与相邻对色段合并再超长，来回振荡守卫次数耗尽后漏修（实测 r10~11 残留）----
+            {
+                int k = 0;
+                while (k < n)
+                {
+                    int e = k;
+                    while (e + 1 < n && kat[e + 1] == kat[k]) e++;
+                    if (e - k + 1 > KatRunCap)
+                    {
+                        for (int p = k + KatRunCap; p <= e; p += KatRunCap + 1) kat[p] = !kat[p];
+                        k = k + KatRunCap + 1; // 翻转点之后的同色剩余段复查（可能仍超长）
+                    }
+                    else
+                    {
+                        k = e + 1;
+                    }
+                }
+            }
+
+            for (int i = 0; i < n; i++) notes[i].Kat = kat[i];
         }
 
         /// <summary>找一条可与该音符配对的同频段持续段：未被消费，且起点距 onset 原始时刻 ≤0.20s（取最早者）。</summary>

@@ -42,3 +42,4 @@ git -c http.sslBackend=schannel \
 
 - **禁止用 heredoc（<< EOF）向 python/bash 内嵌长文本或代码**：定界符可能被内容静默吞掉导致脚本截断、只执行一半还不报错。需要临时脚本时用 Write 工具写成文件再执行（如 tools/ 下）。
 - 编辑器实例开着时禁止再起第二个 Unity 实例（项目锁会弹窗打断用户）；批量验证前先 `Get-CimInstance Win32_Process` 查 Unity.exe。
+- **全曲库批量重建用现成的 `OfflineRebuildAll.Run`，不要逐首起 Unity**：单次 batchmode 启动扫 `Songs/` 全目录、逐首删 analysis.json 缓存强制重分析（实现在 `Assets/Editor/OfflineImport.cs`，用法见其文件头注释），比逐首调 `OfflineImport.Run` 省 N-1 次 Unity 启动开销；逐首入口仅用于单曲重跑。

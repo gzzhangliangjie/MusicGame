@@ -8,9 +8,11 @@ namespace MusicGame.Pure.Model
     public class NoteData
     {
         public double Time;     // 判定时间（秒，乐曲时间轴）
-        public int Lane;        // 轨道 0-3（预留扩展）
+        public int Lane;        // 轨道 0-3（四轨/osu 模式的列；太鼓/跑酷重映射后另作他名）
         public string Type;     // tap | hold
         public double Duration; // hold 时长（秒）
+        public bool Kat;        // 副色音符：太鼓=咔(蓝)、跑酷=空中，按相对强度规则定（ChartGenerator.AssignKatFlags）；
+                                // 四轨/osu 模式忽略。旧谱面缺省 false → 全主色（咚/地面）
     }
 
     /// <summary>谱面：一首歌某个难度的完整音符列表（Songs/&lt;songId&gt;/chart_*.json）。</summary>

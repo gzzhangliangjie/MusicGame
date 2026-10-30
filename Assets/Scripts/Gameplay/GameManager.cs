@@ -176,7 +176,7 @@ namespace MusicGame.Gameplay
         {
             audioOffsetSeconds = PlayerPrefs.GetFloat(AudioOffsetPrefKey, 0f);
 
-            // 1) 载谱：Songs/<songId>/chart_<difficulty>.json；太鼓模式重映射轨道（0/1→咚 2/3→咔 hold→连击）
+            // 1) 载谱：Songs/<songId>/chart_<difficulty>.json；太鼓模式重映射轨道（Kat→咔 其余→咚 hold→连击）
             string chartPath = FindChartPath(lastSongId, lastDifficulty);
             ChartData chart = null;
             if (chartPath != null)
@@ -780,7 +780,8 @@ namespace MusicGame.Gameplay
         }
 
         // 歌词：优先 <歌曲名>.lrc（与歌曲同名），回退 lyrics.lrc；缺失/损坏静默降级为无歌词
-        // 太鼓轨道重映射：lane 0/1 → 0(咚)，lane 2/3 → 1(咔)，hold → 2(连击条)；其余字段原样复制
+        // 太鼓轨道重映射：Kat=true → 1(咔/蓝)，false → 0(咚/红)（主副色由生成器相对强度规则定，见
+        // ChartGenerator.AssignKatFlags，与 lane 无关），hold → 2(连击条)；其余字段原样复制
         private static ChartData RemapChartForTaiko(ChartData source)
         {
             var mapped = new ChartData
@@ -798,7 +799,7 @@ namespace MusicGame.Gameplay
                 mapped.Notes.Add(new NoteData
                 {
                     Time = note.Time,
-                    Lane = hold ? 2 : (note.Lane <= 1 ? 0 : 1),
+                    Lane = hold ? 2 : (note.Kat ? 1 : 0),
                     Type = hold ? "hold" : "tap",
                     Duration = note.Duration
                 });
@@ -807,7 +808,8 @@ namespace MusicGame.Gameplay
         }
 
         // 跑酷轨道重映射（public static：GameFlow 结算总数与无头冒烟测试（Editor 程序集）按重映射后口径统计判定数）：
-        // lane 0/1 → 0(地面)，lane 2/3 → 1(空中)，hold 保持所在轨；同时刻同轨去重（tap 优先），
+        // Kat=true → 1(空中)，false → 0(地面)（主副色由生成器相对强度规则定，见 ChartGenerator.AssignKatFlags），
+        // hold 按同一规则占轨；同时刻同轨去重（tap 优先），
         // 同轨 hold 区间内的后续音符丢弃（按键被长条占用，无法再判）。其余字段原样复制。
         public static ChartData RemapChartForMuse(ChartData source)
         {
@@ -819,7 +821,7 @@ namespace MusicGame.Gameplay
                 items.Add(new NoteData
                 {
                     Time = note.Time,
-                    Lane = note.Lane <= 1 ? 0 : 1,
+                    Lane = note.Kat ? 1 : 0,
                     Type = hold ? "hold" : "tap",
                     Duration = hold ? note.Duration : 0.0
                 });

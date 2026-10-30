@@ -9,6 +9,9 @@ namespace MusicGame.Pure.Dsp
     /// Hann 窗 2048 / hop 512；低(20-150Hz)、中(150-2000Hz)、高(2000Hz-Nyquist)
     /// 三频带各自计算半波整流频谱流，并用滑动窗口自适应阈值（均值 + k·标准差）
     /// 检出候选帧；跨频带在最小间隔内合并取最强者，强度最终归一化到 0..1。
+    /// 频谱流按频带内 bin 数取平均：high 带覆盖 ~93% 的 FFT bin（44.1kHz 下 979 个，
+    /// mid 仅 93、low 仅 7），直接求和会让 high 的噪声底累加天然碾压跨带合并，
+    /// 太鼓重映射后表现为蓝色（咔）压倒性偏多。
     /// 参数已用合成信号（440Hz 正弦、120BPM 脉冲轨）离线验证。
     /// </summary>
     public class SpectralFluxOnsetDetector
@@ -101,7 +104,10 @@ namespace MusicGame.Pure.Dsp
                         if (d > 0.0) sum += d; // 半波整流
                         mag += curMag[j];
                     }
-                    flux[b][f] = sum;
+                    // 按 bin 数平均：三带宽度差两个数量级，直接求和时 high 带的噪声底
+                    // 累加必胜跨带合并，几乎全部 onset 被判成 high（太鼓咔偏多）。
+                    // 各带内自适应阈值随缩放平移，检出结果不变；改变的是合并胜负与强度可比性。
+                    flux[b][f] = sum / (r.Hi - r.Lo + 1);
                     energy[b][f] = mag;
                 }
 

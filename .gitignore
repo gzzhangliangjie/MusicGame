@@ -56,3 +56,8 @@ references/
 
 # 视觉验收临时截图
 vis_capture_*.png
+
+# ===== 本机验证/测试产物（不入库） =====
+/unity-*.log
+/shot_*.png
+tools/__pycache__/

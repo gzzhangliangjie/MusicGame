@@ -2,2701 +2,3206 @@
     "SongId": "song_73d9b60f15",
     "Difficulty": "easy",
     "Bpm": 112.25,
-    "OffsetSeconds": 0.45,
+    "OffsetSeconds": 0.385,
     "Notes": [
         {
-            "Time": 0.583630289532294,
-            "Lane": 2,
-            "Type": "hold",
-            "Duration": 0.21339086859688195
-        },
-        {
-            "Time": 0.984521158129176,
-            "Lane": 3,
-            "Type": "hold",
-            "Duration": 0.6142817371937641
-        },
-        {
-            "Time": 1.78630289532294,
+            "Time": 0.5186302895322941,
             "Lane": 1,
             "Type": "hold",
-            "Duration": 0.21339086859688217
+            "Duration": 1.069042316258352,
+            "Kat": false
         },
         {
-            "Time": 2.1871937639198224,
+            "Time": 0.919521158129176,
             "Lane": 0,
             "Type": "hold",
-            "Duration": 0.7479120267260582
+            "Duration": 0.6142817371937641,
+            "Kat": false
         },
         {
-            "Time": 3.1226057906458806,
-            "Lane": 2,
-            "Type": "hold",
-            "Duration": 0.6142817371937639
-        },
-        {
-            "Time": 3.9243875278396445,
-            "Lane": 3,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 4.191648106904232,
-            "Lane": 1,
-            "Type": "hold",
-            "Duration": 0.6142817371937639
-        },
-        {
-            "Time": 4.993429844097996,
-            "Lane": 0,
-            "Type": "hold",
-            "Duration": 0.3470211581291762
-        },
-        {
-            "Time": 5.527951002227172,
-            "Lane": 2,
-            "Type": "hold",
-            "Duration": 0.6142817371937639
-        },
-        {
-            "Time": 6.329732739420936,
+            "Time": 1.7213028953229402,
             "Lane": 3,
             "Type": "hold",
-            "Duration": 0.7479120267260582
+            "Duration": 0.21339086859688173,
+            "Kat": false
         },
         {
-            "Time": 7.265144766146994,
-            "Lane": 1,
-            "Type": "hold",
-            "Duration": 0.21339086859688195
-        },
-        {
-            "Time": 7.666035634743876,
-            "Lane": 0,
-            "Type": "hold",
-            "Duration": 1.069042316258352
-        },
-        {
-            "Time": 9.135968819599109,
-            "Lane": 2,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 9.269599109131404,
-            "Lane": 3,
-            "Type": "hold",
-            "Duration": 1.069042316258352
-        },
-        {
-            "Time": 10.605902004454343,
-            "Lane": 1,
-            "Type": "hold",
-            "Duration": 0.3470211581291771
-        },
-        {
-            "Time": 11.14042316258352,
-            "Lane": 0,
-            "Type": "hold",
-            "Duration": 0.34702115812917536
-        },
-        {
-            "Time": 11.674944320712696,
+            "Time": 2.122193763919822,
             "Lane": 2,
             "Type": "hold",
-            "Duration": 0.34702115812917536
+            "Duration": 0.4806514476614705,
+            "Kat": false
         },
         {
-            "Time": 12.20946547884187,
-            "Lane": 3,
-            "Type": "hold",
-            "Duration": 1.0151726057906459
-        },
-        {
-            "Time": 13.412138084632517,
-            "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 13.679398663697106,
+            "Time": 2.7903452115812925,
             "Lane": 0,
             "Type": "hold",
-            "Duration": 1.0151726057906459
+            "Duration": 0.21339086859688195,
+            "Kat": false
         },
         {
-            "Time": 14.882071269487751,
-            "Lane": 2,
-            "Type": "hold",
-            "Duration": 0.21339086859688195
-        },
-        {
-            "Time": 15.282962138084633,
-            "Lane": 3,
-            "Type": "hold",
-            "Duration": 0.4806514476614705
-        },
-        {
-            "Time": 15.951113585746104,
+            "Time": 3.1912360801781745,
             "Lane": 1,
             "Type": "hold",
-            "Duration": 0.4806514476614687
+            "Duration": 0.4806514476614696,
+            "Kat": false
         },
         {
-            "Time": 16.619265033407573,
+            "Time": 3.859387527839644,
             "Lane": 0,
             "Type": "hold",
-            "Duration": 0.3470211581291771
+            "Duration": 0.7479120267260582,
+            "Kat": true
         },
         {
-            "Time": 17.15378619153675,
+            "Time": 4.794799554565702,
+            "Lane": 1,
+            "Type": "hold",
+            "Duration": 0.6142817371937639,
+            "Kat": false
+        },
+        {
+            "Time": 5.596581291759466,
             "Lane": 2,
             "Type": "hold",
-            "Duration": 0.747912026726059
+            "Duration": 0.6142817371937639,
+            "Kat": false
         },
         {
-            "Time": 18.08919821826281,
-            "Lane": 3,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 18.2228285077951,
+            "Time": 6.39836302895323,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
+            "Type": "hold",
+            "Duration": 0.6142817371937639,
+            "Kat": false
         },
         {
-            "Time": 19.960022271714924,
-            "Lane": 0,
+            "Time": 7.200144766146994,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 20.093652561247219,
-            "Lane": 2,
-            "Type": "tap",
-            "Duration": 0.0
+            "Time": 7.467405345211581,
+            "Lane": 3,
+            "Type": "hold",
+            "Duration": 0.6142817371937657,
+            "Kat": false
         },
         {
-            "Time": 21.296325167037865,
+            "Time": 8.269187082405347,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
+            "Type": "hold",
+            "Duration": 0.7479120267260573,
+            "Kat": false
         },
         {
-            "Time": 21.697216035634747,
-            "Lane": 3,
+            "Time": 9.204599109131405,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 22.766258351893098,
+            "Time": 9.338229398663698,
             "Lane": 0,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 22.89988864142539,
-            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 23.83530066815145,
+            "Time": 10.40727171492205,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 24.236191536748334,
-            "Lane": 3,
+            "Time": 10.674532293986637,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 24.9043429844098,
-            "Lane": 0,
+            "Time": 12.144465478841872,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 25.305233853006685,
+            "Time": 12.41172605790646,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 26.240645879732744,
+            "Time": 13.614398663697106,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 27.176057906458799,
-            "Lane": 3,
+            "Time": 13.748028953229399,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 27.44331848552339,
-            "Lane": 0,
+            "Time": 14.817071269487752,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 28.245100222717153,
+            "Time": 14.950701559020045,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 28.779621380846327,
+            "Time": 16.554265033407576,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 29.58140311804009,
-            "Lane": 3,
+            "Time": 16.821525612472166,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 30.249554565701563,
-            "Lane": 0,
+            "Time": 18.291458797327399,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 31.051336302895327,
+            "Time": 18.425089086859694,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 31.585857461024504,
+            "Time": 19.895022271714926,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 32.521269487750569,
-            "Lane": 3,
+            "Time": 20.02865256124722,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 32.65489977728286,
-            "Lane": 0,
+            "Time": 21.632216035634749,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 33.72394209354121,
+            "Time": 21.899476614699336,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 34.525723830734978,
+            "Time": 23.10214922048998,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 35.06024498886415,
-            "Lane": 3,
+            "Time": 23.235779510022277,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 35.86202672605791,
-            "Lane": 0,
+            "Time": 24.43845211581292,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 36.396547884187089,
+            "Time": 24.70571269487751,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 36.93106904231627,
+            "Time": 25.507494432071274,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 37.46559020044544,
-            "Lane": 3,
+            "Time": 25.908385300668156,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 38.000111358574617,
-            "Lane": 0,
+            "Time": 26.843797327394215,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 38.80189309576838,
+            "Time": 27.1110579064588,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 39.06915367483297,
+            "Time": 27.912839643652565,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 39.87093541202673,
-            "Lane": 3,
+            "Time": 28.714621380846329,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 40.13819599109132,
-            "Lane": 0,
+            "Time": 29.11551224944321,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 40.939977728285089,
+            "Time": 29.917293986636975,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 41.20723830734967,
+            "Time": 30.71907572383074,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 42.00902004454343,
-            "Lane": 3,
+            "Time": 30.986336302895329,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 42.276280623608027,
-            "Lane": 0,
+            "Time": 32.45626948775056,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 43.07806236080179,
-            "Lane": 2,
-            "Type": "tap",
-            "Duration": 0.0
+            "Time": 32.723530066815147,
+            "Lane": 0,
+            "Type": "hold",
+            "Duration": 0.3532953300102548,
+            "Kat": false
         },
         {
-            "Time": 43.61258351893097,
+            "Time": 33.52531180400891,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 44.41436525612473,
+            "Time": 33.7925723830735,
             "Lane": 3,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 44.948886414253909,
+            "Time": 34.59435412026726,
             "Lane": 0,
+            "Type": "hold",
+            "Duration": 0.5142173083041612,
+            "Kat": false
+        },
+        {
+            "Time": 34.995244988864147,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 45.48340757238308,
+            "Time": 35.663396436525619,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 46.01792873051226,
+            "Time": 36.46517817371938,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
+            "Type": "hold",
+            "Duration": 0.3384499441944513,
+            "Kat": false
         },
         {
-            "Time": 46.55244988864143,
+            "Time": 36.999699331848557,
+            "Lane": 0,
+            "Type": "hold",
+            "Duration": 1.01136642778863,
+            "Kat": false
+        },
+        {
+            "Time": 37.53422048997773,
             "Lane": 3,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 38.33600222717149,
+            "Lane": 1,
+            "Type": "hold",
+            "Duration": 0.3368322399486914,
+            "Kat": true
         },
         {
-            "Time": 47.3542316258352,
+            "Time": 38.87052338530067,
             "Lane": 0,
-            "Type": "tap",
-            "Duration": 0.0
+            "Type": "hold",
+            "Duration": 0.5221296759238143,
+            "Kat": false
         },
         {
-            "Time": 47.62149220489979,
+            "Time": 39.405044543429848,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 48.55690423162584,
+            "Time": 39.93956570155902,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
+            "Type": "hold",
+            "Duration": 0.5444252281462028,
+            "Kat": false
         },
         {
-            "Time": 48.824164810690437,
-            "Lane": 3,
-            "Type": "tap",
-            "Duration": 0.0
+            "Time": 40.74134743875278,
+            "Lane": 0,
+            "Type": "hold",
+            "Duration": 0.36958226646263628,
+            "Kat": false
         },
         {
-            "Time": 49.6259465478842,
-            "Lane": 0,
+            "Time": 41.27586859688196,
+            "Lane": 1,
+            "Type": "hold",
+            "Duration": 0.41555997454661056,
+            "Kat": false
+        },
+        {
+            "Time": 41.81038975501114,
+            "Lane": 3,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 50.42772828507796,
+            "Time": 42.34491091314031,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 50.962249443207138,
-            "Lane": 1,
+            "Time": 43.14669265033408,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 51.89766146993319,
-            "Lane": 3,
+            "Time": 43.681213808463258,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 52.43218262806237,
+            "Time": 44.21573496659243,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 53.100334075723839,
-            "Lane": 2,
+            "Time": 44.75025612472161,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 53.63485523385302,
-            "Lane": 1,
+            "Time": 45.55203786191537,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 54.16937639198219,
-            "Lane": 3,
+            "Time": 45.952928730512258,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 55.104788418708249,
+            "Time": 46.88834075723831,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 55.372048997772839,
-            "Lane": 2,
+            "Time": 47.422861915367487,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 56.708351893095777,
-            "Lane": 1,
+            "Time": 48.35827394209355,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 56.975612472160367,
-            "Lane": 3,
+            "Time": 48.49190423162584,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 57.77739420935413,
+            "Time": 49.828207126948779,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 58.57917594654789,
-            "Lane": 2,
+            "Time": 50.095467706013369,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 58.84643652561248,
-            "Lane": 1,
+            "Time": 50.89724944320713,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 59.648218262806249,
-            "Lane": 3,
+            "Time": 51.431770601336307,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 60.31636971046771,
-            "Lane": 0,
+            "Time": 51.966291759465487,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 61.251781737193777,
-            "Lane": 2,
+            "Time": 52.50081291759466,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 61.78630289532295,
+            "Time": 53.03533407572383,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 62.72171492204901,
-            "Lane": 3,
+            "Time": 53.837115812917598,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 62.98897550111359,
-            "Lane": 0,
+            "Time": 54.371636971046779,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 63.79075723830736,
+            "Time": 54.90615812917595,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 64.45890868596882,
-            "Lane": 1,
+            "Time": 55.975200445434307,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 65.1270601336303,
-            "Lane": 3,
+            "Time": 56.24246102449889,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 65.52795100222719,
+            "Time": 57.04424276169265,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 66.46336302895324,
+            "Time": 57.31150334075724,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 67.265144766147,
+            "Time": 58.113285077951008,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 67.53240534521159,
-            "Lane": 3,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 68.33418708240535,
+            "Time": 58.380545657015598,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 69.00233853006682,
+            "Time": 59.18232739420936,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 69.6704899777283,
+            "Time": 59.71684855233853,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 70.20501113585748,
-            "Lane": 3,
+            "Time": 60.251369710467709,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 71.27405345211582,
-            "Lane": 0,
+            "Time": 61.05315144766148,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 71.5413140311804,
-            "Lane": 2,
+            "Time": 61.58767260579065,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 72.34309576837417,
+            "Time": 62.122193763919828,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 72.87761692650335,
-            "Lane": 3,
+            "Time": 62.656714922049008,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 73.8130289532294,
-            "Lane": 0,
+            "Time": 63.45849665924277,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 74.080289532294,
-            "Lane": 2,
+            "Time": 63.99301781737194,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 75.01570155902006,
+            "Time": 64.52753897550113,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 75.95111358574612,
-            "Lane": 3,
+            "Time": 65.0620601336303,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 76.4856347438753,
-            "Lane": 0,
+            "Time": 65.73021158129177,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 77.28741648106906,
-            "Lane": 2,
+            "Time": 66.66562360801783,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 77.68830734966594,
+            "Time": 66.93288418708242,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 78.4900890868597,
-            "Lane": 3,
+            "Time": 67.86829621380848,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 79.29187082405346,
-            "Lane": 0,
+            "Time": 68.26918708240535,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 79.82639198218264,
-            "Lane": 2,
+            "Time": 69.6054899777283,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 80.36091314031181,
+            "Time": 69.73912026726059,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 80.89543429844099,
-            "Lane": 3,
+            "Time": 70.94179287305124,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 81.42995545657017,
-            "Lane": 0,
+            "Time": 71.20905345211583,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 82.23173719376394,
+            "Time": 72.27809576837417,
             "Lane": 2,
-            "Type": "tap",
-            "Duration": 0.0
+            "Type": "hold",
+            "Duration": 0.35392237221539349,
+            "Kat": false
         },
         {
-            "Time": 82.49899777282852,
+            "Time": 72.81261692650335,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 83.56804008908687,
-            "Lane": 3,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 84.10256124721605,
+            "Time": 73.34713808463254,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 84.63708240534523,
+            "Time": 73.8816592427617,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 85.3052338530067,
+            "Time": 74.41618040089088,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 86.24064587973276,
-            "Lane": 3,
+            "Time": 74.95070155902006,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 86.77516703786194,
-            "Lane": 0,
+            "Time": 75.48522271714923,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 87.3096881959911,
+            "Time": 76.28700445434299,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 87.84420935412028,
+            "Time": 76.55426503340759,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 88.37873051224946,
-            "Lane": 3,
+            "Time": 77.35604677060135,
+            "Lane": 2,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 77.62330734966594,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 89.18051224944323,
+            "Time": 78.55871937639199,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 89.44777282850781,
+            "Time": 78.69234966592429,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 90.24955456570157,
+            "Time": 79.62776169265035,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 91.05133630289534,
-            "Lane": 3,
+            "Time": 79.89502227171494,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 91.31859688195992,
-            "Lane": 0,
+            "Time": 80.6968040089087,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 92.12037861915369,
-            "Lane": 2,
+            "Time": 81.23132516703788,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 92.65489977728287,
+            "Time": 82.03310690423165,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 93.18942093541205,
-            "Lane": 3,
+            "Time": 82.83488864142541,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 93.72394209354121,
-            "Lane": 0,
+            "Time": 83.10214922048999,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 94.25846325167039,
+            "Time": 84.03756124721605,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 94.79298440979957,
-            "Lane": 1,
+            "Time": 84.17119153674834,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 95.46113585746103,
-            "Lane": 3,
+            "Time": 85.2402338530067,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 95.86202672605792,
-            "Lane": 0,
-            "Type": "tap",
-            "Duration": 0.0
+            "Time": 85.37386414253899,
+            "Lane": 2,
+            "Type": "hold",
+            "Duration": 0.9811471953294984,
+            "Kat": true
         },
         {
-            "Time": 96.93106904231627,
-            "Lane": 2,
+            "Time": 86.30927616926505,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 97.46559020044545,
+            "Time": 86.44290645879734,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 98.00011135857463,
-            "Lane": 3,
+            "Time": 87.3783184855234,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 99.06915367483298,
+            "Time": 88.18010022271716,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 99.33641425389756,
-            "Lane": 2,
+            "Time": 88.44736080178176,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 100.13819599109132,
-            "Lane": 1,
+            "Time": 89.24914253897552,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 100.6727171492205,
-            "Lane": 3,
+            "Time": 89.78366369710469,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 101.20723830734969,
+            "Time": 90.58544543429845,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 101.74175946547885,
-            "Lane": 2,
+            "Time": 90.85270601336305,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 102.27628062360803,
-            "Lane": 1,
+            "Time": 91.65448775055681,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 102.81080178173721,
-            "Lane": 3,
+            "Time": 92.45626948775058,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 103.34532293986638,
-            "Lane": 0,
+            "Time": 92.72353006681516,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 104.14710467706014,
+            "Time": 93.7925723830735,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 104.41436525612474,
-            "Lane": 1,
+            "Time": 94.0598329621381,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 105.2161469933185,
-            "Lane": 3,
+            "Time": 94.86161469933187,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 105.48340757238309,
+            "Time": 95.12887527839645,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 106.28518930957685,
+            "Time": 95.93065701559022,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 106.55244988864144,
+            "Time": 96.86606904231627,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 107.3542316258352,
-            "Lane": 3,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 107.6214922048998,
+            "Time": 96.99969933184856,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 108.42327394209356,
-            "Lane": 2,
+            "Time": 98.06874164810692,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 108.69053452115814,
-            "Lane": 1,
+            "Time": 98.3360022271715,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 109.75957683741649,
-            "Lane": 3,
+            "Time": 99.13778396436527,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 110.16046770601338,
+            "Time": 99.40504454342985,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 110.96224944320714,
+            "Time": 100.20682628062362,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 111.49677060133632,
+            "Time": 101.00860801781738,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 112.03129175946549,
-            "Lane": 3,
+            "Time": 101.27586859688198,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 112.56581291759467,
-            "Lane": 0,
+            "Time": 102.07765033407574,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 113.10033407572385,
-            "Lane": 2,
+            "Time": 102.8794320712695,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 113.76848552338531,
+            "Time": 103.41395322939869,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 114.57026726057907,
-            "Lane": 3,
+            "Time": 104.21573496659245,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 115.23841870824055,
+            "Time": 105.01751670378622,
             "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 105.55203786191538,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 115.77293986636973,
+            "Time": 106.08655902004456,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 116.70835189309578,
-            "Lane": 1,
+            "Time": 106.88834075723833,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 117.37650334075726,
-            "Lane": 3,
+            "Time": 107.69012249443209,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 118.04465478841873,
+            "Time": 108.22464365256127,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 118.4455456570156,
+            "Time": 108.75916481069044,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 119.38095768374166,
+            "Time": 109.5609465478842,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 119.51458797327396,
-            "Lane": 3,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 120.58363028953231,
+            "Time": 109.8282071269488,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 121.11815144766149,
-            "Lane": 2,
+            "Time": 110.62998886414256,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 121.65267260579066,
-            "Lane": 1,
+            "Time": 110.89724944320715,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 122.18719376391984,
-            "Lane": 3,
+            "Time": 111.69903118040091,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 122.72171492204902,
+            "Time": 111.96629175946549,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 123.25623608017819,
+            "Time": 113.03533407572385,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 123.79075723830737,
+            "Time": 113.16896436525615,
             "Lane": 1,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 124.32527839643655,
-            "Lane": 3,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 124.85979955456571,
+            "Time": 114.1043763919822,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 125.39432071269489,
-            "Lane": 2,
-            "Type": "tap",
-            "Duration": 0.0
-        },
-        {
-            "Time": 126.46336302895324,
+            "Time": 114.23800668151449,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 126.73062360801784,
-            "Lane": 3,
+            "Time": 115.17341870824055,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 127.5324053452116,
-            "Lane": 0,
+            "Time": 115.44067928730515,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 127.79966592427619,
-            "Lane": 2,
+            "Time": 116.24246102449891,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 128.60144766146994,
+            "Time": 116.64335189309579,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 129.1359688195991,
-            "Lane": 3,
+            "Time": 117.31150334075726,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 129.6704899777283,
-            "Lane": 0,
+            "Time": 118.24691536748331,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 130.20501113585747,
-            "Lane": 2,
+            "Time": 118.3805456570156,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 130.73953229398664,
+            "Time": 119.31595768374166,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 131.27405345211583,
-            "Lane": 3,
+            "Time": 119.44958797327397,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 132.07583518930958,
+            "Time": 120.51863028953231,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 132.34309576837416,
-            "Lane": 2,
+            "Time": 120.9195211581292,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 133.41213808463253,
-            "Lane": 1,
+            "Time": 121.85493318485526,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 133.94665924276169,
-            "Lane": 3,
+            "Time": 122.65671492204902,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 134.48118040089089,
+            "Time": 123.19123608017819,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 135.28296213808464,
+            "Time": 123.72575723830737,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 136.21837416481069,
+            "Time": 124.52753897550113,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 136.61926503340758,
-            "Lane": 3,
+            "Time": 124.92842984409802,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 137.68830734966594,
-            "Lane": 0,
+            "Time": 125.59658129175948,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 137.95556792873053,
-            "Lane": 2,
+            "Time": 126.39836302895324,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 138.75734966592428,
+            "Time": 126.66562360801784,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 139.02461024498889,
-            "Lane": 3,
+            "Time": 127.4674053452116,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 139.82639198218264,
-            "Lane": 0,
+            "Time": 127.86829621380848,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 140.3609131403118,
-            "Lane": 2,
+            "Time": 129.0709688195991,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 140.895434298441,
+            "Time": 129.471859688196,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 141.42995545657016,
-            "Lane": 3,
+            "Time": 130.40727171492206,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 141.96447661469933,
+            "Time": 131.20905345211583,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 143.03351893095769,
-            "Lane": 2,
+            "Time": 131.60994432071269,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 143.30077951002228,
-            "Lane": 1,
+            "Time": 132.54535634743878,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 144.10256124721605,
-            "Lane": 3,
+            "Time": 133.34713808463253,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 144.50345211581294,
+            "Time": 133.6143986636971,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 145.17160356347439,
-            "Lane": 2,
+            "Time": 135.08433184855236,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 146.24064587973275,
-            "Lane": 1,
+            "Time": 135.35159242761694,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 146.50790645879733,
-            "Lane": 3,
+            "Time": 136.42063474387528,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 147.3096881959911,
+            "Time": 136.55426503340758,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 147.57694877505569,
-            "Lane": 2,
+            "Time": 137.48967706013364,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 148.37873051224944,
-            "Lane": 1,
+            "Time": 137.7569376391982,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 148.91325167037864,
-            "Lane": 3,
+            "Time": 138.558719376392,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 149.4477728285078,
+            "Time": 139.62776169265036,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 150.51681514476616,
-            "Lane": 2,
+            "Time": 139.89502227171495,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 150.78407572383075,
-            "Lane": 1,
+            "Time": 140.69680400890869,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 151.5858574610245,
-            "Lane": 3,
+            "Time": 140.96406458797328,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 151.8531180400891,
+            "Time": 141.76584632516706,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 152.65489977728286,
-            "Lane": 2,
+            "Time": 142.03310690423164,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 152.92216035634744,
-            "Lane": 1,
+            "Time": 142.8348886414254,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 153.7239420935412,
-            "Lane": 3,
+            "Time": 143.10214922049,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 154.25846325167039,
+            "Time": 143.90393095768375,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 154.79298440979958,
-            "Lane": 2,
+            "Time": 144.17119153674833,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 155.32750556792875,
-            "Lane": 1,
+            "Time": 144.9729732739421,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 155.8620267260579,
-            "Lane": 3,
+            "Time": 145.50749443207128,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 156.3965478841871,
+            "Time": 146.30927616926506,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 156.93106904231628,
-            "Lane": 2,
+            "Time": 147.1110579064588,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 157.46559020044544,
-            "Lane": 1,
+            "Time": 148.18010022271717,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 158.00011135857464,
-            "Lane": 3,
+            "Time": 148.44736080178175,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 158.5346325167038,
+            "Time": 149.24914253897553,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 159.06915367483297,
+            "Time": 149.5164031180401,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 159.60367483296217,
+            "Time": 150.31818485523386,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 160.13819599109133,
-            "Lane": 3,
+            "Time": 150.58544543429844,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 161.20723830734969,
-            "Lane": 0,
+            "Time": 151.3872271714922,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 161.74175946547886,
-            "Lane": 2,
+            "Time": 151.6544877505568,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 162.27628062360803,
+            "Time": 152.45626948775058,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 163.0780623608018,
-            "Lane": 3,
+            "Time": 152.72353006681517,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 163.34532293986639,
-            "Lane": 0,
+            "Time": 153.5253118040089,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 164.14710467706014,
+            "Time": 153.7925723830735,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 164.41436525612475,
-            "Lane": 1,
+            "Time": 154.59435412026728,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 165.48340757238308,
-            "Lane": 3,
+            "Time": 154.86161469933186,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 166.15155902004455,
+            "Time": 155.66339643652564,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 166.55244988864144,
-            "Lane": 2,
+            "Time": 155.9306570155902,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 167.2206013363029,
-            "Lane": 1,
+            "Time": 156.73243875278397,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 167.75512249443208,
-            "Lane": 3,
+            "Time": 156.99969933184856,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 168.28964365256125,
+            "Time": 157.80148106904233,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 168.82416481069044,
-            "Lane": 2,
+            "Time": 158.0687416481069,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 169.89320712694878,
-            "Lane": 1,
+            "Time": 158.8705233853007,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 170.02683741648108,
-            "Lane": 3,
+            "Time": 159.13778396436528,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 170.96224944320714,
+            "Time": 159.93956570155903,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 171.36314031180403,
-            "Lane": 2,
+            "Time": 160.4740868596882,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 172.0312917594655,
-            "Lane": 1,
+            "Time": 161.27586859688197,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 172.56581291759466,
-            "Lane": 3,
+            "Time": 162.07765033407575,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 173.10033407572386,
+            "Time": 162.34491091314033,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 173.63485523385303,
-            "Lane": 2,
+            "Time": 163.14669265033408,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 174.3030066815145,
-            "Lane": 1,
+            "Time": 163.41395322939867,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 175.23841870824055,
-            "Lane": 3,
+            "Time": 164.21573496659244,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 176.1738307349666,
+            "Time": 164.48299554565703,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 176.97561247216036,
-            "Lane": 2,
+            "Time": 165.2847772828508,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 177.37650334075725,
-            "Lane": 1,
+            "Time": 165.55203786191539,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 178.0446547884187,
-            "Lane": 3,
+            "Time": 166.35381959910914,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 178.4455456570156,
+            "Time": 166.6210801781737,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 179.11369710467708,
-            "Lane": 2,
+            "Time": 167.4228619153675,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 179.51458797327397,
-            "Lane": 1,
+            "Time": 167.69012249443208,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 180.3163697104677,
-            "Lane": 3,
+            "Time": 168.49190423162586,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 180.5836302895323,
+            "Time": 169.16005567928733,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 181.38541202672608,
-            "Lane": 2,
+            "Time": 169.82820712694878,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 181.65267260579066,
-            "Lane": 1,
+            "Time": 170.62998886414256,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 182.72171492204903,
-            "Lane": 3,
+            "Time": 170.89724944320714,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 183.38986636971047,
+            "Time": 171.6990311804009,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 183.79075723830736,
-            "Lane": 2,
+            "Time": 171.9662917594655,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 184.8597995545657,
-            "Lane": 1,
+            "Time": 172.76807349665925,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 185.2606904231626,
-            "Lane": 3,
+            "Time": 173.56985523385303,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 185.92884187082408,
+            "Time": 174.10437639198219,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 186.9978841870824,
-            "Lane": 2,
+            "Time": 174.90615812917597,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 187.3987750556793,
-            "Lane": 1,
+            "Time": 175.17341870824056,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 188.06692650334078,
-            "Lane": 3,
+            "Time": 175.9752004454343,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 188.86870824053453,
+            "Time": 176.2424610244989,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 189.13596881959914,
-            "Lane": 2,
+            "Time": 177.04424276169267,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 190.07138084632519,
-            "Lane": 1,
+            "Time": 177.57876391982183,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 190.73953229398667,
-            "Lane": 3,
+            "Time": 178.3805456570156,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 191.27405345211583,
+            "Time": 179.18232739420936,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 192.07583518930958,
-            "Lane": 2,
+            "Time": 179.44958797327397,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 192.34309576837419,
-            "Lane": 1,
+            "Time": 180.2513697104677,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 193.41213808463253,
-            "Lane": 3,
+            "Time": 180.5186302895323,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 193.9466592427617,
+            "Time": 181.32041202672608,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 194.48118040089089,
+            "Time": 181.58767260579067,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 195.01570155902005,
+            "Time": 182.3894543429844,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 195.55022271714925,
-            "Lane": 3,
+            "Time": 182.65671492204903,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 196.0847438752784,
-            "Lane": 0,
+            "Time": 183.45849665924278,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 196.61926503340758,
-            "Lane": 2,
+            "Time": 183.72575723830736,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 197.42104677060136,
+            "Time": 184.52753897550114,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 197.68830734966594,
-            "Lane": 3,
+            "Time": 184.7947995545657,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 198.49008908685969,
-            "Lane": 0,
+            "Time": 185.59658129175947,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 198.7573496659243,
-            "Lane": 2,
+            "Time": 185.99747216035636,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 199.55913140311805,
+            "Time": 186.9328841870824,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 199.82639198218264,
-            "Lane": 3,
+            "Time": 187.7346659242762,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 200.6281737193764,
-            "Lane": 0,
+            "Time": 188.80370824053453,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 200.895434298441,
-            "Lane": 2,
+            "Time": 189.07096881959914,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 201.69721603563475,
+            "Time": 189.87275055679289,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 201.96447661469936,
-            "Lane": 3,
+            "Time": 190.67453229398667,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 202.7662583518931,
-            "Lane": 0,
+            "Time": 191.20905345211583,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 203.03351893095769,
-            "Lane": 2,
+            "Time": 192.01083518930958,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 204.10256124721605,
+            "Time": 193.07987750556794,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 204.9043429844098,
-            "Lane": 3,
+            "Time": 193.34713808463253,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 205.1716035634744,
-            "Lane": 0,
+            "Time": 194.1489198218263,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 205.97338530066816,
-            "Lane": 2,
+            "Time": 195.35159242761694,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 206.77516703786194,
+            "Time": 195.48522271714925,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 207.3096881959911,
-            "Lane": 3,
+            "Time": 196.4206347438753,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 207.84420935412028,
-            "Lane": 0,
+            "Time": 197.22241648106906,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 208.64599109131405,
-            "Lane": 2,
+            "Time": 197.48967706013364,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 209.4477728285078,
+            "Time": 198.2914587973274,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 210.11592427616928,
-            "Lane": 3,
+            "Time": 198.558719376392,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 211.05133630289533,
-            "Lane": 0,
+            "Time": 199.36050111358578,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 211.58585746102453,
-            "Lane": 2,
+            "Time": 199.89502227171495,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 212.12037861915369,
+            "Time": 200.69680400890869,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 212.65489977728286,
-            "Lane": 3,
+            "Time": 200.9640645879733,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 213.18942093541205,
-            "Lane": 0,
+            "Time": 201.76584632516706,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 213.7239420935412,
-            "Lane": 2,
+            "Time": 202.03310690423164,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 214.25846325167039,
+            "Time": 202.8348886414254,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 214.79298440979958,
-            "Lane": 3,
+            "Time": 203.36940979955458,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 215.59476614699333,
-            "Lane": 0,
+            "Time": 204.17119153674836,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 215.8620267260579,
-            "Lane": 2,
+            "Time": 204.9729732739421,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 216.93106904231628,
+            "Time": 205.24023385300669,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 217.46559020044544,
-            "Lane": 3,
+            "Time": 206.04201559020047,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 218.00011135857464,
-            "Lane": 0,
+            "Time": 206.57653674832964,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 218.5346325167038,
-            "Lane": 2,
+            "Time": 207.1110579064588,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 219.06915367483297,
+            "Time": 208.18010022271717,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 219.73730512249444,
-            "Lane": 3,
+            "Time": 208.44736080178175,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 220.13819599109133,
-            "Lane": 0,
+            "Time": 209.24914253897553,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 221.20723830734969,
-            "Lane": 2,
+            "Time": 209.5164031180401,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 221.47449888641428,
+            "Time": 210.31818485523386,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 222.27628062360803,
-            "Lane": 3,
+            "Time": 210.58544543429847,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 222.8108017817372,
+            "Time": 211.3872271714922,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 211.92174832962139,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 223.34532293986639,
-            "Lane": 2,
+            "Time": 212.72353006681517,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 224.14710467706017,
+            "Time": 213.5253118040089,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 213.79257238307353,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 224.41436525612475,
-            "Lane": 3,
+            "Time": 214.59435412026728,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 225.2161469933185,
+            "Time": 214.86161469933186,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 215.66339643652564,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 225.48340757238308,
+            "Time": 215.9306570155902,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 226.28518930957686,
+            "Time": 216.73243875278397,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 226.55244988864144,
-            "Lane": 3,
+            "Time": 216.99969933184858,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 227.3542316258352,
-            "Lane": 0,
+            "Time": 217.80148106904233,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 227.6214922048998,
-            "Lane": 2,
+            "Time": 218.0687416481069,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 228.42327394209355,
+            "Time": 218.8705233853007,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 228.69053452115814,
-            "Lane": 3,
+            "Time": 219.13778396436528,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 229.8932071269488,
-            "Lane": 0,
+            "Time": 219.93956570155903,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 230.56135857461028,
-            "Lane": 2,
+            "Time": 220.4740868596882,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 231.22951002227175,
+            "Time": 221.27586859688197,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 232.0312917594655,
-            "Lane": 3,
+            "Time": 222.07765033407575,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 232.83307349665928,
+            "Time": 222.34491091314033,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": true
+        },
+        {
+            "Time": 223.1466926503341,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 233.10033407572386,
-            "Lane": 2,
+            "Time": 223.4139532293987,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 234.16937639198219,
+            "Time": 224.21573496659244,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 225.0175167037862,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 234.57026726057908,
-            "Lane": 3,
+            "Time": 225.55203786191539,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 226.35381959910917,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 235.23841870824055,
+            "Time": 226.62108017817375,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 235.63930957683744,
-            "Lane": 2,
+            "Time": 227.4228619153675,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": true
+        },
+        {
+            "Time": 227.69012249443208,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 236.3074610244989,
+            "Time": 228.49190423162586,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 236.70835189309578,
-            "Lane": 3,
+            "Time": 228.75916481069045,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 237.51013363028955,
+            "Time": 229.5609465478842,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 237.91102449888644,
-            "Lane": 2,
+            "Time": 229.8282071269488,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 230.62998886414256,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 238.8464365256125,
+            "Time": 230.89724944320714,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 239.51458797327397,
-            "Lane": 3,
+            "Time": 231.6990311804009,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": true
+        },
+        {
+            "Time": 231.9662917594655,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 240.04910913140314,
+            "Time": 232.76807349665928,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 240.5836302895323,
+            "Time": 233.03533407572386,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 241.51904231625839,
+            "Time": 233.8371158129176,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 242.05356347438755,
-            "Lane": 3,
+            "Time": 234.10437639198219,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 242.72171492204903,
+            "Time": 234.90615812917597,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 235.17341870824056,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 243.25623608017819,
-            "Lane": 2,
+            "Time": 235.97520044543433,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 244.05801781737197,
+            "Time": 236.2424610244989,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 237.04424276169267,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 244.59253897550114,
-            "Lane": 3,
+            "Time": 237.57876391982186,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 245.6615812917595,
+            "Time": 238.3805456570156,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 239.18232739420939,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 245.92884187082408,
-            "Lane": 2,
+            "Time": 239.44958797327397,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 247.26514476614703,
+            "Time": 240.2513697104677,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 240.5186302895323,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 247.5324053452116,
-            "Lane": 3,
+            "Time": 241.45404231625839,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 241.58767260579067,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 248.33418708240536,
+            "Time": 242.65671492204903,
             "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 242.9239755011136,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 248.86870824053455,
+            "Time": 243.99301781737197,
             "Lane": 2,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": true
+        },
+        {
+            "Time": 244.52753897550114,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 249.4032293986637,
+            "Time": 245.0620601336303,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 250.20501113585747,
-            "Lane": 3,
+            "Time": 245.5965812917595,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 246.13110244988867,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 250.73953229398667,
+            "Time": 246.66562360801783,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 251.808574610245,
-            "Lane": 2,
+            "Time": 247.60103563474389,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 247.7346659242762,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 252.0758351893096,
+            "Time": 248.93733853006683,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 253.14487750556794,
-            "Lane": 3,
+            "Time": 249.7391202672606,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 250.54090200445436,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 253.41213808463253,
+            "Time": 251.6099443207127,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 254.2139198218263,
-            "Lane": 2,
+            "Time": 251.743574610245,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 252.67898663697108,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 254.48118040089089,
+            "Time": 253.21350779510025,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 255.55022271714925,
-            "Lane": 3,
+            "Time": 253.7480289532294,
+            "Lane": 0,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 254.2825501113586,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 255.81748329621383,
+            "Time": 254.81707126948778,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 256.88652561247218,
-            "Lane": 2,
+            "Time": 255.61885300668153,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 255.88611358574614,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 257.15378619153679,
+            "Time": 256.82152561247218,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 258.35645879732746,
-            "Lane": 3,
+            "Time": 257.48967706013368,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 258.4900890868597,
+            "Time": 258.1578285077951,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 259.42550111358579,
+            "Time": 258.558719376392,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 259.36050111358579,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 259.6927616926503,
-            "Lane": 1,
+            "Time": 259.89502227171496,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 260.4945434298441,
-            "Lane": 3,
+            "Time": 260.4295434298441,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 261.2963251670379,
+            "Time": 260.96406458797329,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 261.9644766146993,
+            "Time": 261.76584632516707,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 262.3653674832962,
+            "Time": 262.03310690423168,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 263.70167037861918,
-            "Lane": 3,
+            "Time": 262.8348886414254,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 263.8353006681515,
-            "Lane": 0,
+            "Time": 263.7703006681515,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 265.0379732739421,
+            "Time": 264.03756124721607,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 265.438864142539,
+            "Time": 265.1066035634744,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 266.77516703786196,
-            "Lane": 0,
+            "Time": 265.2402338530067,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 267.04242761692657,
-            "Lane": 3,
+            "Time": 266.71016703786196,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 268.24510022271718,
+            "Time": 266.8437973273942,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 268.37873051224946,
+            "Time": 268.31373051224946,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 269.4477728285078,
-            "Lane": 0,
+            "Time": 268.44736080178179,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 269.5814031180401,
-            "Lane": 3,
+            "Time": 269.5164031180401,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 270.51681514476618,
+            "Time": 269.6500334075724,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 271.31859688195996,
+            "Time": 270.58544543429846,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 271.5858574610245,
-            "Lane": 0,
+            "Time": 271.3872271714922,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 272.78853006681518,
-            "Lane": 3,
+            "Time": 271.6544877505568,
+            "Lane": 1,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 272.99079064587979,
+            "Lane": 2,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 273.12442093541207,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 272.92216035634746,
+            "Time": 274.3270935412027,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 274.2584632516704,
+            "Time": 274.460723830735,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 274.79298440979957,
+            "Time": 275.39613585746107,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 275.32750556792879,
-            "Lane": 3,
+            "Time": 276.0642873051225,
+            "Lane": 2,
+            "Type": "tap",
+            "Duration": 0.0,
+            "Kat": false
+        },
+        {
+            "Time": 276.5988084632517,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 276.2629175946548,
+            "Time": 277.1333296213809,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 276.5301781737194,
+            "Time": 277.9351113585746,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 277.46559020044546,
-            "Lane": 0,
+            "Time": 278.7368930957684,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 278.4010022271715,
-            "Lane": 3,
+            "Time": 279.004153674833,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 279.069153674833,
+            "Time": 279.80593541202679,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 279.87093541202679,
+            "Time": 280.0731959910913,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 280.1381959910913,
-            "Lane": 0,
+            "Time": 280.8749777282851,
+            "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 281.20723830734968,
-            "Lane": 3,
+            "Time": 281.14223830734968,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 281.340868596882,
+            "Time": 282.07765033407579,
             "Lane": 2,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 282.4099109131403,
+            "Time": 282.4785412026726,
             "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": true
         },
         {
-            "Time": 282.5435412026726,
+            "Time": 283.547583518931,
             "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 284.0134743875279,
-            "Lane": 3,
+            "Time": 283.81484409799557,
+            "Lane": 1,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         },
         {
-            "Time": 284.14710467706018,
-            "Lane": 2,
+            "Time": 284.7502561247216,
+            "Lane": 0,
             "Type": "tap",
-            "Duration": 0.0
+            "Duration": 0.0,
+            "Kat": false
         }
     ]
 }
